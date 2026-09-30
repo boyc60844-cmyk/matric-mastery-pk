@@ -22,10 +22,15 @@ import {
   StudentProgress,
   Badge,
 } from "@/lib/progress";
+import { auth, onAuthStateChanged, db, doc, getDoc, User } from "@/src/firebase";
+import AuthButton from "@/components/AuthButton";
+import { Cloud, Heart, Shield } from "lucide-react";
 
 export default function DashboardPage() {
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [badges, setBadges] = useState<Badge[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [cloudStats, setCloudStats] = useState<{ hearts: number; league: string } | null>(null);
 
   const refreshData = () => {
     const data = loadProgress();
@@ -36,7 +41,31 @@ export default function DashboardPage() {
   useEffect(() => {
     refreshData();
     window.addEventListener("mm_progress_updated", refreshData);
-    return () => window.removeEventListener("mm_progress_updated", refreshData);
+
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        try {
+          const snap = await getDoc(doc(db, "users", u.uid));
+          if (snap.exists()) {
+            const d = snap.data();
+            setCloudStats({
+              hearts: d.hearts ?? 5,
+              league: d.league ?? "Bronze",
+            });
+          }
+        } catch (e) {
+          console.warn("Could not fetch user cloud stats:", e);
+        }
+      } else {
+        setCloudStats(null);
+      }
+    });
+
+    return () => {
+      window.removeEventListener("mm_progress_updated", refreshData);
+      unsub();
+    };
   }, []);
 
   if (!progress) return null;
@@ -96,6 +125,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <AuthButton />
           <Link
             href="/mock-tests"
             className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-heading font-black text-black hover:bg-accent/90 transition-transform active:scale-95 shadow-glow"
@@ -104,6 +134,76 @@ export default function DashboardPage() {
             <span>Take New Mock Test</span>
           </Link>
         </div>
+      </div>
+
+      {/* Cloud Sync & Login Status Banner */}
+      <div className="mt-6">
+        {user ? (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || "User"}
+                  className="h-10 w-10 rounded-xl object-cover border border-emerald-400/40"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400 text-black font-black">
+                  <Cloud size={20} />
+                </div>
+              )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-heading text-sm font-bold text-white">
+                    Cloud Synced with Firebase
+                  </h3>
+                  <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-400">
+                    Active
+                  </span>
+                </div>
+                <p className="text-xs text-muted">
+                  Logged in as <span className="text-white font-medium">{user.displayName || user.email}</span> &bull; XP and mistakes are automatically synced to the cloud.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs font-mono font-bold">
+              <span className="flex items-center gap-1 rounded-lg bg-black/40 px-2.5 py-1 text-red-400 border border-white/10">
+                <Heart size={13} className="fill-red-400" />
+                <span>{cloudStats?.hearts ?? 5}/5 Hearts</span>
+              </span>
+              <span className="flex items-center gap-1 rounded-lg bg-black/40 px-2.5 py-1 text-accent border border-white/10">
+                <Shield size={13} />
+                <span>{cloudStats?.league ?? "Bronze"}</span>
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-accent/40 bg-accent/5 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-black font-black shadow-glow">
+                <Zap size={20} />
+              </div>
+              <div>
+                <h3 className="font-heading text-sm font-bold text-white">
+                  You are viewing Guest / Local Mode
+                </h3>
+                <p className="text-xs text-muted">
+                  Your data is currently only on this browser. Sign in with Google to save your XP, streaks, and mistake reviews to the cloud!
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/login"
+                className="rounded-xl border border-accent/60 bg-accent/15 px-3.5 py-2 text-xs font-heading font-black text-accent hover:bg-accent hover:text-black transition-colors"
+              >
+                Go to Login Page &rarr;
+              </Link>
+              <AuthButton />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top Gamification Bar (Level, Streak, XP, Daily Goal) */}

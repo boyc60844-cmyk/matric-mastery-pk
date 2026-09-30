@@ -21,9 +21,20 @@ import LegalPage from "@/app/legal/page";
 import MockTestsPage from "@/app/mock-tests/page";
 import PastPapersPage from "@/app/past-papers/page";
 import DashboardPage from "@/app/dashboard/page";
+import LeaderboardPage from "@/app/leaderboard/page";
+import LoginPage from "@/app/login/page";
 import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
+import {
+  auth,
+  db,
+  doc,
+  getDoc,
+  setDoc,
+  onAuthStateChanged,
+  serverTimestamp,
+} from "@/src/firebase";
 
 function PageRenderer() {
   const pathname = usePathname();
@@ -42,6 +53,10 @@ function PageRenderer() {
       document.title = "Matric Mastery Past Papers Practice | Punjab & Federal Boards";
     } else if (cleanPath === "/dashboard") {
       document.title = "Matric Mastery Student Dashboard | Progress & Analytics";
+    } else if (cleanPath === "/leaderboard") {
+      document.title = "Matric Mastery Leaderboard | Top Punjab Board Performers";
+    } else if (cleanPath === "/login" || cleanPath === "/signin") {
+      document.title = "Student Cloud Login | Matric Mastery PK";
     } else if (cleanPath === "/strategies" || cleanPath.startsWith("/strategies/")) {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
@@ -68,6 +83,10 @@ function PageRenderer() {
     pageContent = <PastPapersPage />;
   } else if (cleanPath === "/dashboard" || cleanPath === "/progress" || cleanPath === "/analytics") {
     pageContent = <DashboardPage />;
+  } else if (cleanPath === "/leaderboard" || cleanPath === "/toppers") {
+    pageContent = <LeaderboardPage />;
+  } else if (cleanPath === "/login" || cleanPath === "/signin" || cleanPath === "/auth") {
+    pageContent = <LoginPage />;
   } else if (cleanPath === "/paper-hacks") {
     pageContent = <PaperHacksPage />;
   } else if (cleanPath === "/resources") {
@@ -116,6 +135,34 @@ function PageRenderer() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const ref = doc(db, "users", user.uid);
+          const snap = await getDoc(ref);
+          if (!snap.exists()) {
+            await setDoc(ref, {
+              displayName: user.displayName || "Student",
+              email: user.email || "",
+              xp: parseInt(localStorage.getItem("xp") || localStorage.getItem("totalXP") || "0", 10),
+              streak: parseInt(localStorage.getItem("streak") || localStorage.getItem("matric_streak") || "0", 10),
+              hearts: 5,
+              league: "Bronze",
+              totalQuestions: 0,
+              accuracy: 0,
+              createdAt: serverTimestamp(),
+              lastLogin: serverTimestamp(),
+            });
+          }
+        } catch (err) {
+          console.warn("Firebase user sync warning:", err);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <RouterProvider>
       <MotionProvider>

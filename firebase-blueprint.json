@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with Duolingo-style XP, streaks, hearts, and league",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "xp": { "type": "number" },
+        "streak": { "type": "number" },
+        "hearts": { "type": "number" },
+        "league": { "type": "string" },
+        "totalQuestions": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "lastLogin": { "type": "string" }
+      },
+      "required": ["displayName", "xp", "streak", "hearts"]
+    },
+    "Mistake": {
+      "title": "Mistake",
+      "description": "Wrong answer recorded for spaced repetition review",
+      "type": "object",
+      "properties": {
+        "question": { "type": "string" },
+        "correctAnswer": { "type": "string" },
+        "userAnswer": { "type": "string" },
+        "chapter": { "type": "string" },
+        "nextReview": { "type": "number" }
+      },
+      "required": ["question", "correctAnswer", "userAnswer", "nextReview"]
+    },
+    "ChapterProgress": {
+      "title": "ChapterProgress",
+      "description": "Student syllabus and chapter mastery progress",
+      "type": "object",
+      "properties": {
+        "completedLessons": { "type": "number" },
+        "accuracy": { "type": "number" }
+      }
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public weekly leaderboard rankings entry",
+      "type": "object",
+      "properties": {
+        "xp": { "type": "number" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" }
+      },
+      "required": ["xp", "displayName"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "Private user account profile and gamification stats"
+    },
+    "/mistakes/{uid}/questions/{id}": {
+      "schema": "Mistake",
+      "description": "Spaced repetition questions for review"
+    },
+    "/progress/{uid}/chapters/{id}": {
+      "schema": "ChapterProgress",
+      "description": "Student chapter completion stats"
+    },
+    "/leaderboard/weekly/{uid}": {
+      "schema": "LeaderboardEntry",
+      "description": "Public weekly leaderboard ranks"
+    }
+  }
+}

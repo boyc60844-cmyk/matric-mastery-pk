@@ -1,6 +1,16 @@
 // lib/progress.ts
 // LocalStorage-backed gamification, XP, streak, daily goals, and mock test history.
 
+import {
+  auth,
+  db,
+  doc,
+  updateDoc,
+  setDoc,
+  increment,
+  serverTimestamp,
+} from "@/src/firebase";
+
 export interface DailyGoal {
   id: string;
   title: string;
@@ -163,7 +173,63 @@ export function addXP(amount: number, reason?: string): { newXP: number; added: 
   const progress = loadProgress();
   progress.xp = (progress.xp || 0) + amount;
   saveProgress(progress);
+
+  // Sync to Firebase if authenticated
+  if (typeof window !== "undefined" && auth.currentUser) {
+    const uid = auth.currentUser.uid;
+    const userRef = doc(db, "users", uid);
+    updateDoc(userRef, {
+      xp: increment(amount),
+      lastLogin: serverTimestamp(),
+    }).catch((err) => console.warn("Firebase XP update error:", err));
+
+    const leaderRef = doc(db, "leaderboard/weekly", uid);
+    setDoc(
+      leaderRef,
+      {
+        xp: increment(amount),
+        displayName: auth.currentUser.displayName || "Student",
+        photoURL: auth.currentUser.photoURL || "",
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    ).catch((err) => console.warn("Firebase Leaderboard update error:", err));
+  }
+
   return { newXP: progress.xp, added: amount };
+}
+
+// Record wrong question for spaced repetition in Firestore
+export async function recordMistake(
+  question: string,
+  correctAnswer: string,
+  userAnswer: string,
+  chapter: string = "General"
+) {
+  if (typeof window !== "undefined" && auth.currentUser) {
+    try {
+      const uid = auth.currentUser.uid;
+      const mistakeId = Date.now().toString();
+      const mistakeRef = doc(db, `mistakes/${uid}/questions/${mistakeId}`);
+      await setDoc(mistakeRef, {
+        question,
+        correctAnswer,
+        userAnswer,
+        chapter,
+        nextReview: Date.now() + 86400000,
+        createdAt: serverTimestamp(),
+      });
+
+      // Deduct heart and update question metrics
+      const userRef = doc(db, "users", uid);
+      await updateDoc(userRef, {
+        hearts: increment(-1),
+        totalQuestions: increment(1),
+      });
+    } catch (err) {
+      console.warn("Error recording mistake in Firebase:", err);
+    }
+  }
 }
 
 export function recordStrategyView(slug: string): void {

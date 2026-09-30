@@ -8,14 +8,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { whatsappLink } from "@/lib/utils";
 import Button from "./Button";
 import Logo from "./Logo";
+import AuthButton from "./AuthButton";
 
 const navLinks = [
   { href: "/my-story", label: "Start Here" },
   { href: "/strategies", label: "Strategies", badge: "30+" },
   { href: "/mock-tests", label: "Mock Tests", badge: "New" },
   { href: "/past-papers", label: "Past Papers" },
-  { href: "/resources", label: "Resources" },
+  { href: "/leaderboard", label: "Leaderboard", badge: "Live" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/login", label: "Login / Account", badge: "Sync" },
+  { href: "/resources", label: "Resources" },
   { href: "/about", label: "About" },
 ];
 
@@ -122,6 +125,7 @@ export default function Header() {
 
           {/* Desktop Right CTA */}
           <div className="hidden lg:flex items-center gap-3">
+            <AuthButton />
             <Button
               href={whatsappLink()}
               variant="whatsapp"
@@ -132,8 +136,9 @@ export default function Header() {
             </Button>
           </div>
 
-          {/* Mobile Actions: Fast Search + Hamburger */}
+          {/* Mobile Actions: Fast Search + Auth + Hamburger */}
           <div className="flex items-center gap-2 lg:hidden">
+            <AuthButton />
             <Link
               href="/strategies"
               className="flex h-10 items-center gap-1.5 rounded-xl border border-white/10 bg-[#141416] px-3 text-xs font-heading font-bold text-muted hover:text-accent hover:border-accent/40 transition-colors"
@@ -182,6 +187,15 @@ export default function Header() {
           >
             <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-lg flex-col justify-between px-5">
               <div>
+                {/* Mobile Auth & Cloud Sync Card */}
+                <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/15 bg-[#141418] p-3.5 shadow-md">
+                  <div>
+                    <p className="text-xs font-heading font-black text-white">Student Cloud Sync</p>
+                    <p className="text-[11px] text-muted">Save XP, Streaks &amp; Mistakes</p>
+                  </div>
+                  <AuthButton />
+                </div>
+
                 {/* Mobile Quick Featured Callout */}
                 <div className="mb-5 rounded-2xl border border-accent/30 bg-[#121214] p-4 shadow-brutalist-yellow">
                   <div className="flex items-center justify-between text-xs">

@@ -25,7 +25,7 @@ import {
   AnyQuestion,
   MCQQuestion,
 } from "@/lib/question-bank";
-import { recordMockTestResult, MockTestResult } from "@/lib/progress";
+import { recordMockTestResult, MockTestResult, recordMistake } from "@/lib/progress";
 
 export default function MockTestsPage() {
   const [stage, setStage] = useState<"setup" | "exam" | "results">("setup");
@@ -133,6 +133,10 @@ export default function MockTestsPage() {
           topicStats[topic].correct += 1;
         } else {
           incorrectCount += 1;
+          const mcq = q as MCQQuestion;
+          const userAnsStr = mcq.options[Number(ans)] || "Incorrect Option";
+          const correctAnsStr = mcq.options[mcq.correctIndex] || "Correct Option";
+          recordMistake(mcq.text, correctAnsStr, userAnsStr, topic);
         }
       } else {
         // Short / Long self-evaluated or marked as answered
