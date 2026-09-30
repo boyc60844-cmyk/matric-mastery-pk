@@ -10,13 +10,13 @@ import Button from "./Button";
 import Logo from "./Logo";
 
 const navLinks = [
-  { href: "/", label: "Home" },
+  { href: "/my-story", label: "Start Here" },
   { href: "/strategies", label: "Strategies", badge: "30+" },
-  { href: "/paper-hacks", label: "Paper Hacks" },
+  { href: "/mock-tests", label: "Mock Tests", badge: "New" },
+  { href: "/past-papers", label: "Past Papers" },
   { href: "/resources", label: "Resources" },
-  { href: "/my-story", label: "My Story" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/about", label: "About" },
-  { href: "/legal", label: "Legal" },
 ];
 
 const mobileQuickTags = [

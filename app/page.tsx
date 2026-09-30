@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, BookOpen, Eye, MapPin, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
@@ -131,6 +132,118 @@ export default function HomePage() {
                 sublabel="100% Free Forever"
               />
             </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          YOUR MATRIC TOOLKIT (Interactive Exam-Prep Engine)
+          ========================================================================= */}
+      <section className="relative mx-auto max-w-site px-5 py-16 md:py-20">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-heading font-black text-accent uppercase tracking-wider">
+              <Zap size={13} /> Interactive Study Platform
+            </span>
+            <h2 className="mt-3 font-heading text-2xl sm:text-3xl font-black text-white">
+              Your Matric Toolkit
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Built directly for Punjab Boards &amp; Federal Board: solve doubts, drill timed mock tests, generate past paper templates, and monitor syllabus retention.
+            </p>
+          </div>
+          <Button href="/mock-tests" variant="secondary" className="text-xs">
+            Open All Tools <ArrowRight size={14} />
+          </Button>
+        </div>
+
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Tool 1: Ask a Doubt */}
+          <Reveal delay={0}>
+            <Link href="/mock-tests" className="block group">
+              <Card tilt={true} depth="hover-yellow" className="flex h-full flex-col justify-between p-6">
+                <div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-black font-black shadow-glow mb-4">
+                    <span className="text-xl">💡</span>
+                  </div>
+                  <h3 className="font-heading text-base font-bold text-white group-hover:text-accent transition-colors">
+                    Ask a Doubt
+                  </h3>
+                  <p className="mt-2 text-xs text-muted leading-relaxed">
+                    Instant step-by-step solutions for Math, Physics, and Chemistry questions with Punjab Board formulas and Urdu support.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-1 text-xs font-heading font-black text-accent">
+                  <span>Ask in Floating Assistant</span> &rarr;
+                </div>
+              </Card>
+            </Link>
+          </Reveal>
+
+          {/* Tool 2: Take a Mock Test */}
+          <Reveal delay={60}>
+            <Link href="/mock-tests" className="block group">
+              <Card tilt={true} depth="hover-yellow" className="flex h-full flex-col justify-between p-6">
+                <div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-black font-black shadow-glow mb-4">
+                    <span className="text-xl">⏱️</span>
+                  </div>
+                  <h3 className="font-heading text-base font-bold text-white group-hover:text-accent transition-colors">
+                    Take a Mock Test
+                  </h3>
+                  <p className="mt-2 text-xs text-muted leading-relaxed">
+                    Timed 25, 50, or 75 marks exam sessions with accurate countdown timers, auto-submit, and downloadable performance reports.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-1 text-xs font-heading font-black text-accent">
+                  <span>Start Mock Test</span> &rarr;
+                </div>
+              </Card>
+            </Link>
+          </Reveal>
+
+          {/* Tool 3: Practice Papers */}
+          <Reveal delay={120}>
+            <Link href="/past-papers" className="block group">
+              <Card tilt={true} depth="hover-yellow" className="flex h-full flex-col justify-between p-6">
+                <div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-black font-black shadow-glow mb-4">
+                    <span className="text-xl">📜</span>
+                  </div>
+                  <h3 className="font-heading text-base font-bold text-white group-hover:text-accent transition-colors">
+                    Practice Papers
+                  </h3>
+                  <p className="mt-2 text-xs text-muted leading-relaxed">
+                    Authentic Board paper templates across Multan, Lahore, Rawalpindi, and FBISE from 2019 to 2025 with printable sheets.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-1 text-xs font-heading font-black text-accent">
+                  <span>Generate Paper Set</span> &rarr;
+                </div>
+              </Card>
+            </Link>
+          </Reveal>
+
+          {/* Tool 4: Track Progress */}
+          <Reveal delay={180}>
+            <Link href="/dashboard" className="block group">
+              <Card tilt={true} depth="hover-yellow" className="flex h-full flex-col justify-between p-6">
+                <div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-black font-black shadow-glow mb-4">
+                    <span className="text-xl">📈</span>
+                  </div>
+                  <h3 className="font-heading text-base font-bold text-white group-hover:text-accent transition-colors">
+                    Track Progress
+                  </h3>
+                  <p className="mt-2 text-xs text-muted leading-relaxed">
+                    Monitor your study streak, XP levels, daily goal checklists, test accuracy, and focus areas without signing up.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-1 text-xs font-heading font-black text-accent">
+                  <span>Open Student Dashboard</span> &rarr;
+                </div>
+              </Card>
+            </Link>
           </Reveal>
         </div>
       </section>

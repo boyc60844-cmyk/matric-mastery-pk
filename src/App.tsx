@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { usePathname, RouterProvider } from "@/src/context/RouterContext";
 import { motion, AnimatePresence } from "framer-motion";
 import MotionProvider from "@/components/MotionProvider";
@@ -16,6 +17,10 @@ import PaperHacksPage from "@/app/paper-hacks/page";
 import ResourcesPage from "@/app/resources/page";
 import AboutPage from "@/app/about/page";
 import LegalPage from "@/app/legal/page";
+import MockTestsPage from "@/app/mock-tests/page";
+import PastPapersPage from "@/app/past-papers/page";
+import DashboardPage from "@/app/dashboard/page";
+import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
 
@@ -28,6 +33,23 @@ function PageRenderer() {
     cleanPath = cleanPath.slice(0, -1);
   }
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (cleanPath === "/mock-tests") {
+      document.title = "Matric Mastery Mock Tests Pakistan | Timed Exam Practice";
+    } else if (cleanPath === "/past-papers") {
+      document.title = "Matric Mastery Past Papers Practice | Punjab & Federal Boards";
+    } else if (cleanPath === "/dashboard") {
+      document.title = "Matric Mastery Student Dashboard | Progress & Analytics";
+    } else if (cleanPath === "/strategies" || cleanPath.startsWith("/strategies/")) {
+      document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
+    } else if (cleanPath === "/my-story") {
+      document.title = "My Story & Verification | Matric Mastery PK";
+    } else {
+      document.title = "Matric Mastery | Punjab Board Strategies & Exam Platform";
+    }
+  }, [cleanPath]);
+
   let pageContent = null;
 
   if (cleanPath === "" || cleanPath === "/" || cleanPath === "/home") {
@@ -39,6 +61,12 @@ function PageRenderer() {
   } else if (cleanPath.startsWith("/strategies/")) {
     const slug = cleanPath.replace("/strategies/", "");
     pageContent = <StrategyDetailPage slug={slug} />;
+  } else if (cleanPath === "/mock-tests" || cleanPath === "/test" || cleanPath === "/tests") {
+    pageContent = <MockTestsPage />;
+  } else if (cleanPath === "/past-papers" || cleanPath === "/papers") {
+    pageContent = <PastPapersPage />;
+  } else if (cleanPath === "/dashboard" || cleanPath === "/progress" || cleanPath === "/analytics") {
+    pageContent = <DashboardPage />;
   } else if (cleanPath === "/paper-hacks") {
     pageContent = <PaperHacksPage />;
   } else if (cleanPath === "/resources") {
@@ -98,6 +126,7 @@ export default function App() {
           <main className="flex-1">
             <PageRenderer />
           </main>
+          <FloatingDoubtButton />
           <Footer />
         </div>
       </MotionProvider>

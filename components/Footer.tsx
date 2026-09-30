@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { whatsappLink } from "@/lib/utils";
+import DeploymentStatus from "@/components/DeploymentStatus";
 
 const links = [
   { href: "/", label: "Home" },
-  { href: "/my-story", label: "My Story" },
+  { href: "/my-story", label: "Start Here" },
   { href: "/strategies", label: "Strategies" },
+  { href: "/mock-tests", label: "Mock Tests" },
+  { href: "/past-papers", label: "Past Papers" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/paper-hacks", label: "Paper Hacks" },
   { href: "/resources", label: "Resources" },
   { href: "/about", label: "About" },
@@ -47,7 +51,7 @@ export default function Footer() {
 
         <div>
           <p className="font-heading text-xs font-black uppercase tracking-wider text-muted">
-            Community
+            Community & Support
           </p>
           <ul className="mt-4 space-y-3 text-sm">
             <li className="text-muted font-medium">Multan, Punjab</li>
@@ -63,8 +67,11 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 py-6 text-center text-xs text-muted font-mono">
-        Built by a 10th Grader from Multan for Punjab Board.
+      <div className="border-t border-white/10 px-5 py-6">
+        <div className="mx-auto flex max-w-site flex-col items-center justify-between gap-4 text-xs font-mono text-muted sm:flex-row">
+          <span>Built by a 10th Grader from Multan for Punjab Board.</span>
+          <DeploymentStatus />
+        </div>
       </div>
     </footer>
   );

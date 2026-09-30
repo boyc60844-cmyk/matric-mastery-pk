@@ -17,7 +17,10 @@ import Reveal from "@/components/Reveal";
 import Card from "@/components/Card";
 import ArticleCard from "@/components/ArticleCard";
 import CircularReadingProgress from "@/components/CircularReadingProgress";
+import VoicePlayer from "@/components/VoicePlayer";
+import ArticleSummarizer from "@/components/ArticleSummarizer";
 import { getArticle, strategyArticles, StrategyArticle } from "@/lib/content";
+import { recordStrategyView, markStrategyCompleted } from "@/lib/progress";
 
 interface StrategyDetailPageProps {
   slug: string;
@@ -29,9 +32,10 @@ export default function StrategyDetailPage({ slug }: StrategyDetailPageProps) {
   const [copied, setCopied] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // Local storage reading tracking
+  // Local storage reading tracking + Gamification progress
   useEffect(() => {
     try {
+      recordStrategyView(article.slug);
       const stored = localStorage.getItem("matric_mastery_read_slugs");
       if (stored) {
         const parsed = JSON.parse(stored) as string[];
@@ -52,6 +56,7 @@ export default function StrategyDetailPage({ slug }: StrategyDetailPageProps) {
       } else {
         list.push(article.slug);
         setIsCompleted(true);
+        markStrategyCompleted(article.slug);
       }
       localStorage.setItem("matric_mastery_read_slugs", JSON.stringify(list));
     } catch {
@@ -195,6 +200,14 @@ export default function StrategyDetailPage({ slug }: StrategyDetailPageProps) {
           </div>
         </Reveal>
 
+        {/* 🎙️ Voice Learning Audio Player */}
+        <Reveal delay={120} className="mt-6">
+          <VoicePlayer
+            title={article.title}
+            textToRead={`${article.description}. ${article.intro}. ${article.quickWin || ""}`}
+          />
+        </Reveal>
+
         {/* ⚡ Section 10: QUICK WIN BOX */}
         {article.quickWin && (
           <Reveal delay={140} className="mt-8">
@@ -209,6 +222,11 @@ export default function StrategyDetailPage({ slug }: StrategyDetailPageProps) {
             </div>
           </Reveal>
         )}
+
+        {/* 🧠 AI Strategy Summarizer & Mind Map */}
+        <Reveal delay={150}>
+          <ArticleSummarizer article={article} />
+        </Reveal>
 
         {/* Intro Paragraph */}
         <Reveal delay={160} className="mt-8">
