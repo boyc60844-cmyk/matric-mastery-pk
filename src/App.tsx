@@ -5,6 +5,7 @@ import MotionProvider from "@/components/MotionProvider";
 import Background from "@/components/Background";
 import ScrollProgress from "@/components/ScrollProgress";
 import CursorGlow from "@/components/CursorGlow";
+import Cursor3D from "@/components/Cursor3D";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -121,6 +122,7 @@ export default function App() {
         <div className="relative min-h-screen bg-[#0A0A0A] text-white selection:bg-[#FFD60A] selection:text-black antialiased font-sans flex flex-col justify-between">
           <ScrollProgress />
           <CursorGlow />
+          <Cursor3D />
           <Background />
           <Header />
           <main className="flex-1">

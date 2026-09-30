@@ -8,6 +8,9 @@ import ArticleCard from "@/components/ArticleCard";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import NewsletterForm from "@/components/NewsletterForm";
 import Hero3DStack from "@/components/Hero3DStack";
+import Hero3DCanvas from "@/components/Hero3DCanvas";
+import Subject3DCards from "@/components/Subject3DCards";
+import Features3DParticles from "@/components/Features3DParticles";
 import { strategyArticles, paperHacks } from "@/lib/content";
 import { whatsappLink } from "@/lib/utils";
 
@@ -31,6 +34,9 @@ export default function HomePage() {
           1. HERO — THE SHOWPIECE (What is Matric Mastery?)
           ========================================================================= */}
       <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28">
+        {/* Real 3D Three.js Canvas: Floating Book, Atom, Graduation Cap & 800 Particles */}
+        <Hero3DCanvas />
+
         {/* Subtle cinematic spotlight glow behind headline */}
         <div
           className="pointer-events-none absolute top-10 left-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(255,214,10,0.14)_0%,rgba(255,214,10,0.02)_50%,transparent_75%)] blur-3xl opacity-80"
@@ -249,10 +255,18 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          3. PROBLEM & FEATURE SECTION (4 Distinctive CSS-Crafted Visuals)
+          REAL 3D SUBJECT VAULT (Physics, Chemistry, Math, Biology 3D Tilt Cards)
           ========================================================================= */}
-      <section className="relative mx-auto max-w-site px-5 py-20 md:py-28">
-        <div className="max-w-2xl">
+      <Subject3DCards />
+
+      {/* =========================================================================
+          3. PROBLEM & FEATURE SECTION (4 Distinctive CSS-Crafted Visuals with 3D Depth)
+          ========================================================================= */}
+      <section className="relative mx-auto max-w-site px-5 py-20 md:py-28 overflow-hidden">
+        {/* 3D Subtle Particle Field (300 particles, low opacity 0.3) */}
+        <Features3DParticles />
+
+        <div className="relative z-10 max-w-2xl">
           <SectionHeading
             eyebrow="The Core Problem"
             title="Why Hardworking Students Lose Marks in Board Exams"
