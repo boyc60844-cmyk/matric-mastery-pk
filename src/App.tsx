@@ -26,15 +26,6 @@ import LoginPage from "@/app/login/page";
 import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
-import {
-  auth,
-  db,
-  doc,
-  getDoc,
-  setDoc,
-  onAuthStateChanged,
-  serverTimestamp,
-} from "@/src/firebase";
 
 function PageRenderer() {
   const pathname = usePathname();
@@ -135,34 +126,6 @@ function PageRenderer() {
 }
 
 export default function App() {
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const ref = doc(db, "users", user.uid);
-          const snap = await getDoc(ref);
-          if (!snap.exists()) {
-            await setDoc(ref, {
-              displayName: user.displayName || "Student",
-              email: user.email || "",
-              xp: parseInt(localStorage.getItem("xp") || localStorage.getItem("totalXP") || "0", 10),
-              streak: parseInt(localStorage.getItem("streak") || localStorage.getItem("matric_streak") || "0", 10),
-              hearts: 5,
-              league: "Bronze",
-              totalQuestions: 0,
-              accuracy: 0,
-              createdAt: serverTimestamp(),
-              lastLogin: serverTimestamp(),
-            });
-          }
-        } catch (err) {
-          console.warn("Firebase user sync warning:", err);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
   return (
     <RouterProvider>
       <MotionProvider>

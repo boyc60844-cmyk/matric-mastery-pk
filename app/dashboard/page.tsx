@@ -22,7 +22,8 @@ import {
   StudentProgress,
   Badge,
 } from "@/lib/progress";
-import { auth, onAuthStateChanged, db, doc, getDoc, User } from "@/src/firebase";
+import { auth } from "@/src/firebase";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import AuthButton from "@/components/AuthButton";
 import { Cloud, Heart, Shield } from "lucide-react";
 
@@ -42,21 +43,13 @@ export default function DashboardPage() {
     refreshData();
     window.addEventListener("mm_progress_updated", refreshData);
 
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (u) {
-        try {
-          const snap = await getDoc(doc(db, "users", u.uid));
-          if (snap.exists()) {
-            const d = snap.data();
-            setCloudStats({
-              hearts: d.hearts ?? 5,
-              league: d.league ?? "Bronze",
-            });
-          }
-        } catch (e) {
-          console.warn("Could not fetch user cloud stats:", e);
-        }
+        setCloudStats({
+          hearts: 5,
+          league: "Bronze",
+        });
       } else {
         setCloudStats(null);
       }

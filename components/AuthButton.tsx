@@ -1,21 +1,16 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { auth, googleProvider } from "@/src/firebase";
 import {
-  auth,
-  googleProvider,
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-  db,
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-  User,
-} from "@/src/firebase";
+  type User,
+} from "firebase/auth";
 import { Zap, Heart, Flame, Trophy, LogOut, User as UserIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "@/src/context/RouterContext";
 
 interface UserProfileData {
   displayName: string;
@@ -24,11 +19,10 @@ interface UserProfileData {
   streak: number;
   hearts: number;
   league: string;
-  totalQuestions?: number;
-  accuracy?: number;
 }
 
 export default function AuthButton() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,51 +30,36 @@ export default function AuthButton() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        try {
-          const userRef = doc(db, "users", currentUser.uid);
-          const snap = await getDoc(userRef);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            uid: currentUser.uid,
+            displayName: currentUser.displayName,
+            email: currentUser.email,
+            photoURL: currentUser.photoURL,
+          })
+        );
 
-          if (!snap.exists()) {
-            const initialXP = parseInt(localStorage.getItem("totalXP") || localStorage.getItem("xp") || "0", 10);
-            const initialStreak = parseInt(localStorage.getItem("matric_streak") || localStorage.getItem("streak") || "1", 10);
+        const currentXP = parseInt(
+          localStorage.getItem("totalXP") || localStorage.getItem("xp") || "120",
+          10
+        );
+        const currentStreak = parseInt(
+          localStorage.getItem("matric_streak") || localStorage.getItem("streak") || "1",
+          10
+        );
 
-            const newProfile: UserProfileData = {
-              displayName: currentUser.displayName || "Student",
-              email: currentUser.email || "",
-              xp: initialXP,
-              streak: initialStreak,
-              hearts: 5,
-              league: "Bronze",
-              totalQuestions: 0,
-              accuracy: 0,
-            };
-
-            await setDoc(userRef, {
-              ...newProfile,
-              createdAt: serverTimestamp(),
-              lastLogin: serverTimestamp(),
-            });
-
-            // Also seed into weekly leaderboard
-            const leaderRef = doc(db, "leaderboard/weekly", currentUser.uid);
-            await setDoc(leaderRef, {
-              xp: initialXP,
-              displayName: currentUser.displayName || "Student",
-              photoURL: currentUser.photoURL || "",
-              updatedAt: serverTimestamp(),
-            });
-
-            setProfile(newProfile);
-          } else {
-            const data = snap.data() as UserProfileData;
-            setProfile(data);
-          }
-        } catch (err) {
-          console.warn("Error fetching user profile:", err);
-        }
+        setProfile({
+          displayName: currentUser.displayName || "Student",
+          email: currentUser.email || "",
+          xp: currentXP,
+          streak: currentStreak,
+          hearts: 5,
+          league: "Bronze",
+        });
       } else {
         setProfile(null);
       }
@@ -104,7 +83,19 @@ export default function AuthButton() {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      await signInWithPopup(auth, googleProvider);
+      const res = await signInWithPopup(auth, googleProvider);
+      if (res?.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            uid: res.user.uid,
+            displayName: res.user.displayName,
+            email: res.user.email,
+            photoURL: res.user.photoURL,
+          })
+        );
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       console.warn("Login cancelled or failed:", err);
     } finally {
@@ -115,7 +106,10 @@ export default function AuthButton() {
   const handleLogout = async () => {
     try {
       setMenuOpen(false);
+      localStorage.removeItem("user");
       await signOut(auth);
+      setUser(null);
+      setProfile(null);
     } catch (err) {
       console.error("Logout error:", err);
     }
@@ -180,7 +174,7 @@ export default function AuthButton() {
         </div>
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu with Logout Button */}
       {menuOpen && (
         <div className="absolute right-0 top-11 z-50 w-64 rounded-2xl border border-white/15 bg-[#141418] p-4 shadow-2xl shadow-black backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
           <div className="border-b border-white/10 pb-3">
@@ -217,17 +211,8 @@ export default function AuthButton() {
             </div>
           </div>
 
-          {/* Links */}
+          {/* Navigation Links & Logout */}
           <div className="space-y-1 text-xs font-heading">
-            <Link
-              href="/leaderboard"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-white/90 hover:bg-accent/10 hover:text-accent transition-colors"
-            >
-              <Trophy size={14} className="text-accent" />
-              <span>Weekly Leaderboard</span>
-            </Link>
-
             <Link
               href="/dashboard"
               onClick={() => setMenuOpen(false)}
@@ -235,6 +220,15 @@ export default function AuthButton() {
             >
               <UserIcon size={14} className="text-accent" />
               <span>Student Dashboard</span>
+            </Link>
+
+            <Link
+              href="/leaderboard"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-white/90 hover:bg-accent/10 hover:text-accent transition-colors"
+            >
+              <Trophy size={14} className="text-accent" />
+              <span>Weekly Leaderboard</span>
             </Link>
 
             <button

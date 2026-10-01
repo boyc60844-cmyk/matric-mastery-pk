@@ -1,17 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  db,
-  auth,
-  collection,
-  query,
-  orderBy,
-  limit,
-  getDocs,
-  onAuthStateChanged,
-  User,
-} from "@/src/firebase";
+import { auth } from "@/src/firebase";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { Trophy, Medal, Flame, Zap, Shield, Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import Link from "next/link";
 import AuthButton from "./AuthButton";
@@ -49,41 +40,24 @@ export default function Leaderboard() {
   const fetchLeaderboard = async () => {
     try {
       setRefreshing(true);
-      const q = query(
-        collection(db, "leaderboard/weekly"),
-        orderBy("xp", "desc"),
-        limit(50)
-      );
-      const snap = await getDocs(q);
-
-      const fetched: LeaderboardUser[] = [];
-      snap.forEach((docSnap) => {
-        const data = docSnap.data();
-        fetched.push({
-          id: docSnap.id,
-          displayName: data.displayName || "Anonymous Student",
-          xp: data.xp || 0,
-          photoURL: data.photoURL || "",
-          board: data.board || "Punjab Board",
+      const combined = [...DEFAULT_BOARD_TOPPERS];
+      if (currentUser) {
+        const studentXP = parseInt(
+          localStorage.getItem("totalXP") || localStorage.getItem("xp") || "120",
+          10
+        );
+        combined.push({
+          id: currentUser.uid,
+          displayName: currentUser.displayName || "You",
+          xp: studentXP,
+          photoURL: currentUser.photoURL || "",
+          board: "Your Board",
         });
-      });
-
-      // Merge with default board high-scorers if empty or small
-      if (fetched.length === 0) {
-        setLeaders(DEFAULT_BOARD_TOPPERS);
-      } else {
-        // Dedup and sort descending
-        const combined = [...fetched];
-        DEFAULT_BOARD_TOPPERS.forEach((t) => {
-          if (!combined.some((item) => item.id === t.id)) {
-            combined.push(t);
-          }
-        });
-        combined.sort((a, b) => b.xp - a.xp);
-        setLeaders(combined.slice(0, 50));
       }
+      combined.sort((a, b) => b.xp - a.xp);
+      setLeaders(combined.slice(0, 50));
     } catch (err) {
-      console.warn("Could not fetch remote leaderboard, loading board defaults:", err);
+      console.warn("Could not calculate leaderboard:", err);
       setLeaders(DEFAULT_BOARD_TOPPERS);
     } finally {
       setLoading(false);

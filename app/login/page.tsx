@@ -1,26 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { auth, googleProvider } from "@/src/firebase";
 import {
-  auth,
-  googleProvider,
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-  db,
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-  User,
-} from "@/src/firebase";
+  type User,
+} from "firebase/auth";
+import { useRouter } from "@/src/context/RouterContext";
 import {
-  Zap,
-  Flame,
-  Heart,
-  Trophy,
-  ShieldCheck,
-  CheckCircle,
   ArrowRight,
   LogOut,
   Loader2,
@@ -29,6 +18,7 @@ import {
 import Link from "next/link";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
@@ -37,6 +27,17 @@ export default function LoginPage() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            uid: currentUser.uid,
+            displayName: currentUser.displayName,
+            email: currentUser.email,
+            photoURL: currentUser.photoURL,
+          })
+        );
+      }
       setLoading(false);
     });
     return () => unsub();
@@ -50,49 +51,27 @@ export default function LoginPage() {
       const loggedUser = result.user;
 
       if (loggedUser) {
-        const userRef = doc(db, "users", loggedUser.uid);
-        const snap = await getDoc(userRef);
+        // Save user to localStorage
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            uid: loggedUser.uid,
+            displayName: loggedUser.displayName,
+            email: loggedUser.email,
+            photoURL: loggedUser.photoURL,
+          })
+        );
 
-        if (!snap.exists()) {
-          const initialXP = parseInt(
-            localStorage.getItem("totalXP") || localStorage.getItem("xp") || "0",
-            10
-          );
-          const initialStreak = parseInt(
-            localStorage.getItem("matric_streak") || localStorage.getItem("streak") || "1",
-            10
-          );
-
-          await setDoc(userRef, {
-            displayName: loggedUser.displayName || "Student",
-            email: loggedUser.email || "",
-            xp: initialXP,
-            streak: initialStreak,
-            hearts: 5,
-            league: "Bronze",
-            totalQuestions: 0,
-            accuracy: 0,
-            createdAt: serverTimestamp(),
-            lastLogin: serverTimestamp(),
-          });
-
-          // Sync to leaderboard
-          const leaderRef = doc(db, "leaderboard/weekly", loggedUser.uid);
-          await setDoc(leaderRef, {
-            xp: initialXP,
-            displayName: loggedUser.displayName || "Student",
-            photoURL: loggedUser.photoURL || "",
-            updatedAt: serverTimestamp(),
-          });
-        }
+        // Redirect to dashboard
+        router.push("/dashboard");
       }
     } catch (err: any) {
       console.error("Login failed:", err);
       if (err.code === "auth/popup-closed-by-user") {
-        setErrorMsg("Sign-in popup was closed before completion. Please try again.");
+        setErrorMsg("Sign-in popup was closed before completion. Please click the button to try again.");
       } else if (err.code === "auth/unauthorized-domain") {
         setErrorMsg(
-          "This domain is not authorized in Firebase Console yet. Please add your domain to Firebase Console -> Authentication -> Settings -> Authorized domains."
+          "This domain is not yet in Firebase Authorized Domains. Add your domain in Firebase Console -> Authentication -> Settings -> Authorized domains."
         );
       } else {
         setErrorMsg(err.message || "Failed to sign in. Please try again.");
@@ -104,7 +83,9 @@ export default function LoginPage() {
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem("user");
       await signOut(auth);
+      setUser(null);
     } catch (err) {
       console.error("Sign out error:", err);
     }
@@ -149,8 +130,7 @@ export default function LoginPage() {
           <p className="mt-1 font-mono text-xs text-muted">{user.email}</p>
 
           <p className="mt-4 text-xs text-muted leading-relaxed">
-            Your XP, study streak, mistake bookmarks, and Punjab Board leaderboard ranks are
-            synced securely to Firebase Firestore.
+            Your progress, past papers history, and leaderboard score are secured.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -166,7 +146,6 @@ export default function LoginPage() {
               href="/leaderboard"
               className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 font-heading text-xs font-bold text-white hover:bg-white/10 transition-colors"
             >
-              <Trophy size={14} className="text-accent" />
               <span>Weekly Leaderboard</span>
             </Link>
           </div>
@@ -184,49 +163,53 @@ export default function LoginPage() {
         /* Sign-in Form Card */
         <div className="rounded-3xl border border-white/15 bg-[#121216] p-7 sm:p-10 shadow-2xl">
           <div className="text-center">
+            {/* Badge */}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3.5 py-1 text-xs font-heading font-black text-accent uppercase tracking-wider mb-4">
-              <Sparkles size={13} /> Duolingo-Style Cloud Sync
+              <Sparkles size={13} /> MATRIC MASTERY CLOUD
             </span>
+
+            {/* Headline */}
             <h1 className="font-heading text-2xl sm:text-3xl font-black text-white">
               Student Cloud Login
             </h1>
-            <p className="mt-2 text-xs sm:text-sm text-muted">
-              Connect with your Google account to save your study streaks, unlock hearts, and rank
-              on the Punjab Board weekly leaderboard.
+
+            {/* Subheadline */}
+            <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
+              Login with Google to save your progress, secure your preparation, and compete on the Punjab Board leaderboard.
             </p>
           </div>
 
-          {/* Benefits List */}
-          <div className="my-8 space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <div className="flex items-center gap-3 text-xs text-white/90">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/20 text-accent font-bold">
-                <Flame size={15} />
-              </div>
-              <span>Keep your study streak safe when switching mobile or laptop</span>
+          {/* Features */}
+          <div className="my-8 space-y-3.5 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+            <div className="flex items-start gap-3 text-xs sm:text-sm text-white/90">
+              <span className="text-base select-none shrink-0">🔥</span>
+              <span className="leading-snug">
+                Keep your study streak safe - switch between mobile and laptop anytime
+              </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-white/90">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/20 text-red-400 font-bold">
-                <Heart size={15} />
-              </div>
-              <span>24-Hour Spaced Repetition reviews for wrong mock test questions</span>
+            <div className="flex items-start gap-3 text-xs sm:text-sm text-white/90">
+              <span className="text-base select-none shrink-0">❤️</span>
+              <span className="leading-snug">
+                Smart Revision for wrong answers - we remind you after 24 hours
+              </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-white/90">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400 font-bold">
-                <Trophy size={15} />
-              </div>
-              <span>Compete with Lahore, Multan, and FBISE toppers on the live leaderboard</span>
+            <div className="flex items-start gap-3 text-xs sm:text-sm text-white/90">
+              <span className="text-base select-none shrink-0">🏆</span>
+              <span className="leading-snug">
+                Live Leaderboard - Compete with Lahore, Multan &amp; FBISE toppers
+              </span>
             </div>
           </div>
 
           {errorMsg && (
-            <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300">
+            <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 p-3.5 text-xs text-red-300 leading-relaxed">
               {errorMsg}
             </div>
           )}
 
-          {/* Primary Google Login Button */}
+          {/* Button: Continue with Google */}
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -248,8 +231,9 @@ export default function LoginPage() {
             )}
           </button>
 
+          {/* Footer */}
           <p className="mt-4 text-center font-mono text-[11px] text-muted">
-            100% Free &bull; No password required &bull; Strictly for students
+            100% Free for Matric Students • No password needed
           </p>
         </div>
       )}
