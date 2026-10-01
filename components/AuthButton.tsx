@@ -61,6 +61,7 @@ export default function AuthButton() {
           league: "Bronze",
         });
       } else {
+        localStorage.removeItem("user");
         setProfile(null);
       }
       setLoading(false);
@@ -97,7 +98,9 @@ export default function AuthButton() {
         router.push("/dashboard");
       }
     } catch (err: any) {
-      console.warn("Login cancelled or failed:", err);
+      console.warn("Google sign-in exception:", err?.code || err?.message);
+      // Navigate to login page so user can see details or try again
+      router.push("/login");
     } finally {
       setLoading(false);
     }
@@ -111,7 +114,7 @@ export default function AuthButton() {
       setUser(null);
       setProfile(null);
     } catch (err) {
-      console.error("Logout error:", err);
+      console.warn("Logout exception:", err);
     }
   };
 
@@ -129,7 +132,7 @@ export default function AuthButton() {
       <button
         type="button"
         onClick={handleLogin}
-        className="flex h-9 items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3.5 text-xs font-heading font-black text-accent transition-all hover:bg-accent hover:text-black shadow-sm active:scale-95"
+        className="flex h-9 items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3.5 text-xs font-heading font-black text-accent transition-all hover:bg-accent hover:text-black shadow-sm active:scale-95 cursor-pointer"
       >
         <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
           <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" />
@@ -139,7 +142,7 @@ export default function AuthButton() {
     );
   }
 
-  const xpValue = profile?.xp ?? 0;
+  const xpValue = profile?.xp ?? 120;
   const streakValue = profile?.streak ?? 1;
   const heartsValue = profile?.hearts ?? 5;
   const leagueName = profile?.league ?? "Bronze";
@@ -149,7 +152,7 @@ export default function AuthButton() {
       <button
         type="button"
         onClick={() => setMenuOpen(!menuOpen)}
-        className="flex h-9 items-center gap-2 rounded-xl border border-white/15 bg-[#141417] p-1.5 pr-3 text-xs font-heading font-bold text-white transition-all hover:border-accent hover:bg-white/[0.05]"
+        className="flex h-9 items-center gap-2 rounded-xl border border-white/15 bg-[#141417] p-1.5 pr-3 text-xs font-heading font-bold text-white transition-all hover:border-accent hover:bg-white/[0.05] cursor-pointer"
       >
         {user.photoURL ? (
           <img
@@ -234,7 +237,7 @@ export default function AuthButton() {
             <button
               type="button"
               onClick={handleLogout}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-red-400 hover:bg-red-500/10 transition-colors text-left"
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-red-400 hover:bg-red-500/10 transition-colors text-left cursor-pointer"
             >
               <LogOut size={14} />
               <span>Sign Out</span>

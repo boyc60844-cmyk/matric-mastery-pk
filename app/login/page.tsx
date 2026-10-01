@@ -9,6 +9,7 @@ import {
   type User,
 } from "firebase/auth";
 import { useRouter } from "@/src/context/RouterContext";
+import { useLanguage } from "@/src/context/LanguageContext";
 import {
   ArrowRight,
   LogOut,
@@ -19,6 +20,7 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
@@ -37,6 +39,8 @@ export default function LoginPage() {
             photoURL: currentUser.photoURL,
           })
         );
+      } else {
+        localStorage.removeItem("user");
       }
       setLoading(false);
     });
@@ -47,11 +51,11 @@ export default function LoginPage() {
     try {
       setSigningIn(true);
       setErrorMsg("");
+
       const result = await signInWithPopup(auth, googleProvider);
       const loggedUser = result.user;
 
       if (loggedUser) {
-        // Save user to localStorage
         localStorage.setItem(
           "user",
           JSON.stringify({
@@ -61,20 +65,22 @@ export default function LoginPage() {
             photoURL: loggedUser.photoURL,
           })
         );
-
-        // Redirect to dashboard
         router.push("/dashboard");
       }
     } catch (err: any) {
-      console.error("Login failed:", err);
-      if (err.code === "auth/popup-closed-by-user") {
-        setErrorMsg("Sign-in popup was closed before completion. Please click the button to try again.");
-      } else if (err.code === "auth/unauthorized-domain") {
+      console.warn("Google sign-in exception:", err?.code || err?.message);
+
+      if (err?.code === "auth/popup-closed-by-user") {
+        setErrorMsg("Sign-in popup was closed before completion. Please try again.");
+      } else if (err?.code === "auth/unauthorized-domain") {
+        const currentHost = typeof window !== "undefined" ? window.location.hostname : "";
         setErrorMsg(
-          "This domain is not yet in Firebase Authorized Domains. Add your domain in Firebase Console -> Authentication -> Settings -> Authorized domains."
+          `Domain (${currentHost}) is not authorized in Firebase. Add it to Firebase Console -> Authentication -> Settings -> Authorized domains.`
         );
+      } else if (err?.code === "auth/popup-blocked") {
+        setErrorMsg("Sign-in popup was blocked by the browser. Please allow popups for this site and try again.");
       } else {
-        setErrorMsg(err.message || "Failed to sign in. Please try again.");
+        setErrorMsg(err?.message || "Failed to sign in with Google. Please try again.");
       }
     } finally {
       setSigningIn(false);
@@ -87,7 +93,7 @@ export default function LoginPage() {
       await signOut(auth);
       setUser(null);
     } catch (err) {
-      console.error("Sign out error:", err);
+      console.warn("Sign out exception:", err);
     }
   };
 
@@ -120,17 +126,17 @@ export default function LoginPage() {
 
           <div className="mt-4">
             <span className="rounded-full bg-emerald-500/20 px-3 py-1 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30">
-              ● Cloud Synced &amp; Active
+              ● {t("auth.active", "Cloud Synced & Active")}
             </span>
           </div>
 
           <h1 className="mt-3 font-heading text-2xl font-black text-white">
-            Welcome back, {user.displayName || "Student"}!
+            {t("auth.welcome", "Welcome back")}, {user.displayName || "Student"}!
           </h1>
           <p className="mt-1 font-mono text-xs text-muted">{user.email}</p>
 
           <p className="mt-4 text-xs text-muted leading-relaxed">
-            Your progress, past papers history, and leaderboard score are secured.
+            {t("auth.synced", "Your progress, past papers history, and leaderboard score are secured.")}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -138,7 +144,7 @@ export default function LoginPage() {
               href="/dashboard"
               className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 font-heading text-xs font-black text-black hover:bg-accent/90 transition-transform active:scale-95 shadow-glow"
             >
-              <span>Go to Student Dashboard</span>
+              <span>{t("auth.dashboardBtn", "Go to Student Dashboard")}</span>
               <ArrowRight size={14} />
             </Link>
 
@@ -146,17 +152,17 @@ export default function LoginPage() {
               href="/leaderboard"
               className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 font-heading text-xs font-bold text-white hover:bg-white/10 transition-colors"
             >
-              <span>Weekly Leaderboard</span>
+              <span>{t("auth.leaderboardBtn", "Weekly Leaderboard")}</span>
             </Link>
           </div>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-6 inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 font-medium"
+            className="mt-6 inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 font-medium cursor-pointer"
           >
             <LogOut size={13} />
-            <span>Sign out from this device</span>
+            <span>{t("auth.logout", "Sign out from this device")}</span>
           </button>
         </div>
       ) : (
@@ -165,17 +171,20 @@ export default function LoginPage() {
           <div className="text-center">
             {/* Badge */}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3.5 py-1 text-xs font-heading font-black text-accent uppercase tracking-wider mb-4">
-              <Sparkles size={13} /> MATRIC MASTERY CLOUD
+              <Sparkles size={13} /> {t("auth.badge", "MATRIC MASTERY CLOUD")}
             </span>
 
             {/* Headline */}
             <h1 className="font-heading text-2xl sm:text-3xl font-black text-white">
-              Student Cloud Login
+              {t("auth.headline", "Student Cloud Login")}
             </h1>
 
             {/* Subheadline */}
             <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
-              Login with Google to save your progress, secure your preparation, and compete on the Punjab Board leaderboard.
+              {t(
+                "auth.subheadline",
+                "Login with Google to save your progress, secure your preparation, and compete on the Punjab Board leaderboard."
+              )}
             </p>
           </div>
 
@@ -184,21 +193,30 @@ export default function LoginPage() {
             <div className="flex items-start gap-3 text-xs sm:text-sm text-white/90">
               <span className="text-base select-none shrink-0">🔥</span>
               <span className="leading-snug">
-                Keep your study streak safe - switch between mobile and laptop anytime
+                {t(
+                  "auth.f1",
+                  "Keep your study streak safe - switch between mobile and laptop anytime"
+                )}
               </span>
             </div>
 
             <div className="flex items-start gap-3 text-xs sm:text-sm text-white/90">
               <span className="text-base select-none shrink-0">❤️</span>
               <span className="leading-snug">
-                Smart Revision for wrong answers - we remind you after 24 hours
+                {t(
+                  "auth.f2",
+                  "Smart Revision for wrong answers - we remind you after 24 hours"
+                )}
               </span>
             </div>
 
             <div className="flex items-start gap-3 text-xs sm:text-sm text-white/90">
               <span className="text-base select-none shrink-0">🏆</span>
               <span className="leading-snug">
-                Live Leaderboard - Compete with Lahore, Multan &amp; FBISE toppers
+                {t(
+                  "auth.f3",
+                  "Live Leaderboard - Compete with Lahore, Multan & FBISE toppers"
+                )}
               </span>
             </div>
           </div>
@@ -214,26 +232,26 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={signingIn}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-accent bg-accent py-3.5 font-heading text-sm font-black text-black transition-transform hover:scale-[1.01] active:scale-95 shadow-glow disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-accent bg-accent py-3.5 font-heading text-sm font-black text-black transition-transform hover:scale-[1.01] active:scale-95 shadow-glow disabled:opacity-50 cursor-pointer"
           >
             {signingIn ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                <span>Connecting to Google...</span>
+                <span>{t("auth.connecting", "Connecting to Google...")}</span>
               </>
             ) : (
               <>
                 <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                   <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" />
                 </svg>
-                <span>Continue with Google</span>
+                <span>{t("auth.button", "Continue with Google")}</span>
               </>
             )}
           </button>
 
           {/* Footer */}
           <p className="mt-4 text-center font-mono text-[11px] text-muted">
-            100% Free for Matric Students • No password needed
+            {t("auth.footer", "100% Free for Matric Students • No password needed")}
           </p>
         </div>
       )}

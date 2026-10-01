@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, BookOpen, Eye, MapPin, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
 import Button from "@/components/Button";
@@ -13,6 +15,7 @@ import Subject3DCards from "@/components/Subject3DCards";
 import Features3DParticles from "@/components/Features3DParticles";
 import { strategyArticles, paperHacks } from "@/lib/content";
 import { whatsappLink } from "@/lib/utils";
+import { useLanguage } from "@/src/context/LanguageContext";
 
 const homeGridSlugs = [
   "math-mcq-elimination",
@@ -24,6 +27,7 @@ const homeGridSlugs = [
 ];
 
 export default function HomePage() {
+  const { t, isRTL } = useLanguage();
   const gridArticles = homeGridSlugs.map(
     (slug) => strategyArticles.find((a) => a.slug === slug)!
   );
@@ -50,37 +54,60 @@ export default function HomePage() {
               <Reveal>
                 <div className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-4 py-1.5 text-xs font-heading font-black tracking-wider text-accent shadow-sm">
                   <span className="h-2 w-2 rounded-full bg-accent animate-pulse shadow-glow" />
-                  FREE FOR ALL PUNJAB BOARD STUDENTS
+                  {isRTL ? "تمام پنجاب بورڈ طلباء کے لیے 100٪ مفت" : "FREE FOR ALL PUNJAB BOARD STUDENTS"}
                 </div>
               </Reveal>
 
               <Reveal delay={80}>
-                <h1 className="mt-6 font-heading type-display text-white">
-                  Your Paper Presentation Matters{" "}
-                  <span className="relative inline-block text-accent underline decoration-accent/40 decoration-wavy [text-shadow:0_0_40px_rgba(255,214,10,0.45)]">
-                    More Than Your Preparation.
-                  </span>
-                </h1>
+                {isRTL ? (
+                  <h1 className="mt-6 font-heading type-display text-white">
+                    پنجاب بورڈ میں{" "}
+                    <span className="relative inline-block text-accent underline decoration-accent/40 decoration-wavy [text-shadow:0_0_40px_rgba(255,214,10,0.45)]">
+                      1050+ نمبر حاصل کریں
+                    </span>
+                    ، ٹاپرز کی آزمودہ حکمت عملی سے۔
+                  </h1>
+                ) : (
+                  <h1 className="mt-6 font-heading type-display text-white">
+                    Your Paper Presentation Matters{" "}
+                    <span className="relative inline-block text-accent underline decoration-accent/40 decoration-wavy [text-shadow:0_0_40px_rgba(255,214,10,0.45)]">
+                      More Than Your Preparation.
+                    </span>
+                  </h1>
+                )}
               </Reveal>
 
               <Reveal delay={160}>
-                <p className="mt-6 max-w-lg text-base leading-relaxed text-muted md:text-lg">
-                  I am a 10th grader from Multan. I am not a teacher, and this is
-                  not an academy. I just figured out how board checking really works &mdash;
-                  and I am sharing every single game plan for free.
-                </p>
-                <p className="mt-3 text-sm font-semibold text-white/80 font-mono">
-                  Built for Matric, useful for all &mdash; 8th to 12th.
-                </p>
+                {isRTL ? (
+                  <>
+                    <p className="mt-6 max-w-lg text-base leading-relaxed text-muted md:text-lg">
+                      میں ملتان سے دسویں جماعت کا طالب علم ہوں۔ میں کوئی استاد نہیں ہوں اور نہ یہ کوئی اکیڈمی ہے۔ میں نے بورڈ پیپر چیکنگ کے خفیہ اصول سمجھے ہیں اور ہر حکمت عملی مفت فراہم کر رہا ہوں۔
+                    </p>
+                    <p className="mt-3 text-sm font-semibold text-white/80 font-mono">
+                      نویں اور دسویں کے لیے خاص، 8ویں سے 12ویں تک سب کے لیے مفید۔
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-6 max-w-lg text-base leading-relaxed text-muted md:text-lg">
+                      I am a 10th grader from Multan. I am not a teacher, and this is
+                      not an academy. I just figured out how board checking really works &mdash;
+                      and I am sharing every single game plan for free.
+                    </p>
+                    <p className="mt-3 text-sm font-semibold text-white/80 font-mono">
+                      Built for Matric, useful for all &mdash; 8th to 12th.
+                    </p>
+                  </>
+                )}
               </Reveal>
 
               <Reveal delay={240}>
                 <div className="mt-9 flex flex-wrap items-center gap-4">
                   <Button href="/strategies" variant="primary">
-                    Explore Strategies <ArrowRight size={16} />
+                    {isRTL ? "حکمت عملیاں دیکھیں" : "Explore Strategies"} <ArrowRight size={16} />
                   </Button>
-                  <Button href="/my-story" variant="secondary">
-                    Read My Story
+                  <Button href="/mock-tests" variant="secondary">
+                    {isRTL ? "ماک ٹیسٹ شروع کریں" : "Start Mock Test"}
                   </Button>
                 </div>
               </Reveal>
@@ -106,8 +133,8 @@ export default function HomePage() {
               <AnimatedCounter
                 value={500}
                 suffix="+"
-                label="Students in Group"
-                sublabel="Weekly Sunday breakdown"
+                label={isRTL ? "واٹس ایپ گروپ کے طلباء" : "Students in Group"}
+                sublabel={isRTL ? "ہفتہ وار اتوار گائیڈ" : "Weekly Sunday breakdown"}
               />
             </div>
           </Reveal>
@@ -115,8 +142,8 @@ export default function HomePage() {
             <div className="card-surface rounded-2xl p-6 border border-white/10 shadow-soft transition-all duration-300 hover:border-accent/40 hover:shadow-brutalist-yellow">
               <AnimatedCounter
                 value={strategyArticles.length}
-                label="Game Plan Strategies"
-                sublabel="Subject-specific formulas"
+                label={isRTL ? "امتحانی حکمت عملیاں" : "Game Plan Strategies"}
+                sublabel={isRTL ? "ہر مضمون کے خاص فارمولے" : "Subject-specific formulas"}
               />
             </div>
           </Reveal>
@@ -124,8 +151,8 @@ export default function HomePage() {
             <div className="card-surface rounded-2xl p-6 border border-white/10 shadow-soft transition-all duration-300 hover:border-accent/40 hover:shadow-brutalist-yellow">
               <AnimatedCounter
                 value={paperHacks.length}
-                label="Paper Presentation Hacks"
-                sublabel="Tested on Multan Board"
+                label={isRTL ? "پیپر پریزنٹیشن ہیکس" : "Paper Presentation Hacks"}
+                sublabel={isRTL ? "ملتان اور پنجاب بورڈز پر آزمودہ" : "Tested on Punjab Boards"}
               />
             </div>
           </Reveal>
@@ -133,9 +160,9 @@ export default function HomePage() {
             <div className="card-surface rounded-2xl p-6 border border-white/10 shadow-soft transition-all duration-300 hover:border-accent/40 hover:shadow-brutalist-yellow">
               <AnimatedCounter
                 value={0}
-                prefix="Rs. "
-                label="Tuition Fees"
-                sublabel="100% Free Forever"
+                prefix={isRTL ? "روپے " : "Rs. "}
+                label={isRTL ? "اکیڈمی اور ٹیوشن فیس" : "Tuition Fees"}
+                sublabel={isRTL ? "ہمیشہ 100٪ مفت" : "100% Free Forever"}
               />
             </div>
           </Reveal>
@@ -149,17 +176,19 @@ export default function HomePage() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-heading font-black text-accent uppercase tracking-wider">
-              <Zap size={13} /> Interactive Study Platform
+              <Zap size={13} /> {isRTL ? "انٹرایکٹو اسٹڈی پلیٹ فارم" : "Interactive Study Platform"}
             </span>
             <h2 className="mt-3 font-heading text-2xl sm:text-3xl font-black text-white">
-              Your Matric Toolkit
+              {isRTL ? "بورڈ ٹاپرز کا امتحانی ٹول کٹ" : "Your Matric Toolkit"}
             </h2>
             <p className="mt-2 text-sm text-muted">
-              Built directly for Punjab Boards &amp; Federal Board: solve doubts, drill timed mock tests, generate past paper templates, and monitor syllabus retention.
+              {isRTL
+                ? "نویں اور دسویں جماعت پنجاب اور فیڈرل بورڈ کے طلباء کے لیے انٹرایکٹو تیاری، ماضی کے پرچے اور ماک ٹیسٹ۔"
+                : "Built directly for Punjab Boards & Federal Board: solve doubts, drill timed mock tests, generate past paper templates, and monitor syllabus retention."}
             </p>
           </div>
           <Button href="/mock-tests" variant="secondary" className="text-xs">
-            Open All Tools <ArrowRight size={14} />
+            {isRTL ? "تمام ٹولز کھولیں" : "Open All Tools"} <ArrowRight size={14} />
           </Button>
         </div>
 

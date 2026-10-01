@@ -1,12 +1,9 @@
 {
-  "projectId": "concrete-robot-2smzh",
-  "appId": "1:495567507545:web:6ed3298c35caec46ab2148",
-  "apiKey": "AIzaSyBIDP9JWMXWcU0GtB5HNbjXUtzOFiAyx6o",
-  "authDomain": "concrete-robot-2smzh.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-matricmastery-5a0cdc7f-3c90-48ac-9323-7f0f63d51e72",
-  "storageBucket": "concrete-robot-2smzh.firebasestorage.app",
-  "messagingSenderId": "495567507545",
-  "measurementId": "",
-  "oAuthClientId": "495567507545-fp8b8bg3do144327u78g9n5m0ldpgkeu.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "projectId": "matric-mastery-pk",
+  "appId": "1:263336490573:web:3450f62d62a7c01f168e04",
+  "apiKey": "AIzaSyC4lBI1F3OUS2c-O67hstiSs-6QAApayyc",
+  "authDomain": "matric-mastery-pk.firebaseapp.com",
+  "storageBucket": "matric-mastery-pk.firebasestorage.app",
+  "messagingSenderId": "263336490573",
+  "measurementId": "G-WFW2NN13E7"
 }

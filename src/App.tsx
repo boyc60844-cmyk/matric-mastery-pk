@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { usePathname, RouterProvider } from "@/src/context/RouterContext";
+import { LanguageProvider } from "@/src/context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import MotionProvider from "@/components/MotionProvider";
 import Background from "@/components/Background";
@@ -128,20 +129,22 @@ function PageRenderer() {
 export default function App() {
   return (
     <RouterProvider>
-      <MotionProvider>
-        <div className="relative min-h-screen bg-[#0A0A0A] text-white selection:bg-[#FFD60A] selection:text-black antialiased font-sans flex flex-col justify-between">
-          <ScrollProgress />
-          <CursorGlow />
-          <Cursor3D />
-          <Background />
-          <Header />
-          <main className="flex-1">
-            <PageRenderer />
-          </main>
-          <FloatingDoubtButton />
-          <Footer />
-        </div>
-      </MotionProvider>
+      <LanguageProvider>
+        <MotionProvider>
+          <div className="relative min-h-screen bg-[#0A0A0A] text-white selection:bg-[#FFD60A] selection:text-black antialiased font-sans flex flex-col justify-between">
+            <ScrollProgress />
+            <CursorGlow />
+            <Cursor3D />
+            <Background />
+            <Header />
+            <main className="flex-1">
+              <PageRenderer />
+            </main>
+            <FloatingDoubtButton />
+            <Footer />
+          </div>
+        </MotionProvider>
+      </LanguageProvider>
     </RouterProvider>
   );
 }

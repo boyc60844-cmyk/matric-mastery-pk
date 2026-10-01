@@ -3,37 +3,39 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "@/src/context/RouterContext";
+import { useLanguage } from "@/src/context/LanguageContext";
 import { ArrowUpRight, BookOpen, Sparkles, MessageCircle, Tag, Search } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { whatsappLink } from "@/lib/utils";
 import Button from "./Button";
 import Logo from "./Logo";
 import AuthButton from "./AuthButton";
-
-const navLinks = [
-  { href: "/my-story", label: "Start Here" },
-  { href: "/strategies", label: "Strategies", badge: "30+" },
-  { href: "/mock-tests", label: "Mock Tests", badge: "New" },
-  { href: "/past-papers", label: "Past Papers" },
-  { href: "/leaderboard", label: "Leaderboard", badge: "Live" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/login", label: "Login / Account", badge: "Sync" },
-  { href: "/resources", label: "Resources" },
-  { href: "/about", label: "About" },
-];
-
-const mobileQuickTags = [
-  "Math",
-  "Presentation",
-  "Diagrams",
-  "Numericals",
-  "Exam Hacks",
-];
+import LanguageToggle from "./LanguageToggle";
 
 export default function Header() {
   const pathname = usePathname();
+  const { t, isRTL } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navLinks = [
+    { href: "/my-story", label: t("nav.myStory", "Start Here") },
+    { href: "/strategies", label: t("nav.strategies", "Strategies"), badge: "30+" },
+    { href: "/mock-tests", label: t("nav.mockTests", "Mock Tests"), badge: "New" },
+    { href: "/past-papers", label: t("nav.pastPapers", "Past Papers") },
+    { href: "/leaderboard", label: t("nav.leaderboard", "Leaderboard"), badge: "Live" },
+    { href: "/dashboard", label: t("nav.dashboard", "Dashboard") },
+    { href: "/login", label: t("nav.login", "Cloud Login"), badge: "Sync" },
+    { href: "/resources", label: t("nav.resources", "Resources") },
+  ];
+
+  const mobileQuickTags = [
+    "Math",
+    "Presentation",
+    "Diagrams",
+    "Numericals",
+    "Exam Hacks",
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -123,53 +125,50 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Desktop Right CTA */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* Desktop Right CTA: Language Toggle + AuthButton + WhatsApp */}
+          <div className="hidden lg:flex items-center gap-2.5">
+            <LanguageToggle variant="header" />
             <AuthButton />
             <Button
               href={whatsappLink()}
               variant="whatsapp"
-              className="text-xs !py-2 !px-4"
+              className="text-xs !py-2 !px-3.5"
             >
               <MessageCircle size={14} className="text-emerald-400" />
-              <span>Join WhatsApp</span>
+              <span>WhatsApp</span>
             </Button>
           </div>
 
-          {/* Mobile Actions: Fast Search + Auth + Hamburger */}
-          <div className="flex items-center gap-2 lg:hidden">
+          {/* Mobile Actions: Language + Auth + Hamburger */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+            <LanguageToggle variant="compact" />
             <AuthButton />
-            <Link
-              href="/strategies"
-              className="flex h-10 items-center gap-1.5 rounded-xl border border-white/10 bg-[#141416] px-3 text-xs font-heading font-bold text-muted hover:text-accent hover:border-accent/40 transition-colors"
-              title="Search Playbooks"
-            >
-              <Search size={14} className="text-accent" />
-              <span className="hidden xs:inline">Search</span>
-            </Link>
 
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
-              className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#141416] text-white transition-all hover:border-accent active:scale-95 cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#141416] text-white transition-all hover:border-accent active:scale-95 cursor-pointer"
             >
-              <span
-                className={`h-0.5 w-5 bg-white transition-all duration-300 ${
-                  mobileMenuOpen ? "translate-y-2 rotate-45 bg-accent" : ""
-                }`}
-              />
-              <span
-                className={`h-0.5 w-5 bg-white transition-all duration-300 ${
-                  mobileMenuOpen ? "opacity-0" : ""
-                }`}
-              />
-              <span
-                className={`h-0.5 w-5 bg-white transition-all duration-300 ${
-                  mobileMenuOpen ? "-translate-y-2 -rotate-45 bg-accent" : ""
-                }`}
-              />
+              <span className="sr-only">Toggle Menu</span>
+              <div className="flex flex-col items-center justify-center gap-1">
+                <span
+                  className={`h-0.5 w-4 bg-white transition-all duration-300 ${
+                    mobileMenuOpen ? "translate-y-1.5 rotate-45 bg-accent" : ""
+                  }`}
+                />
+                <span
+                  className={`h-0.5 w-4 bg-white transition-all duration-300 ${
+                    mobileMenuOpen ? "opacity-0" : ""
+                  }`}
+                />
+                <span
+                  className={`h-0.5 w-4 bg-white transition-all duration-300 ${
+                    mobileMenuOpen ? "-translate-y-1.5 -rotate-45 bg-accent" : ""
+                  }`}
+                />
+              </div>
             </button>
           </div>
         </div>
@@ -187,11 +186,20 @@ export default function Header() {
           >
             <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-lg flex-col justify-between px-5">
               <div>
+                {/* Language Switcher in Drawer */}
+                <div className="mb-3">
+                  <LanguageToggle variant="drawer" />
+                </div>
+
                 {/* Mobile Auth & Cloud Sync Card */}
                 <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/15 bg-[#141418] p-3.5 shadow-md">
                   <div>
-                    <p className="text-xs font-heading font-black text-white">Student Cloud Sync</p>
-                    <p className="text-[11px] text-muted">Save XP, Streaks &amp; Mistakes</p>
+                    <p className="text-xs font-heading font-black text-white">
+                      {t("auth.badge", "Student Cloud Sync")}
+                    </p>
+                    <p className="text-[11px] text-muted">
+                      {isRTL ? "ایکس پی اور اسٹریکس محفوظ کریں" : "Save XP, Streaks & Mistakes"}
+                    </p>
                   </div>
                   <AuthButton />
                 </div>
@@ -200,14 +208,16 @@ export default function Header() {
                 <div className="mb-5 rounded-2xl border border-accent/30 bg-[#121214] p-4 shadow-brutalist-yellow">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1.5 font-heading font-black text-accent uppercase tracking-wider">
-                      <Sparkles size={13} /> EXAM STRATEGY PLAYBOOK
+                      <Sparkles size={13} /> {t("nav.strategies", "EXAM STRATEGY PLAYBOOK")}
                     </span>
                     <span className="rounded bg-accent px-2 py-0.5 text-[10px] font-heading font-black text-black">
                       30+ GUIDES
                     </span>
                   </div>
                   <p className="mt-2 text-xs text-muted leading-relaxed">
-                    Proven Punjab Board techniques for Math, Science, and English papers.
+                    {isRTL
+                      ? "ریاضی، سائنس اور انگلش پرچوں کے لیے پنجاب بورڈ ٹاپرز کی آزمودہ تکنیکس۔"
+                      : "Proven Punjab Board techniques for Math, Science, and English papers."}
                   </p>
                   <Link
                     href="/strategies"
@@ -216,102 +226,87 @@ export default function Header() {
                   >
                     <span className="flex items-center gap-2">
                       <BookOpen size={14} className="text-accent" />
-                      Browse All 30+ Guides
+                      {isRTL ? "تمام 30+ رہنما اصول دیکھیں" : "Browse All 30+ Guides"}
                     </span>
-                    <ArrowUpRight size={14} />
+                    <ArrowUpRight size={14} className="text-muted" />
                   </Link>
                 </div>
 
-                {/* Mobile Quick Tag Filter Strip */}
-                <div className="mb-5 rounded-xl border border-white/10 bg-[#121214] p-3">
-                  <div className="flex items-center gap-1.5 text-[11px] font-heading font-black uppercase tracking-wider text-muted/70 mb-2">
-                    <Tag size={12} className="text-accent" /> Quick Tag Filters:
-                  </div>
+                {/* Navigation Links Grid */}
+                <nav className="space-y-1.5">
+                  {navLinks.map((link) => {
+                    const isActive =
+                      link.href === "/"
+                        ? pathname === "/"
+                        : pathname.startsWith(link.href);
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-heading font-bold transition-all ${
+                          isActive
+                            ? "bg-accent text-black shadow-glow"
+                            : "bg-[#141416] text-white hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          {isActive && (
+                            <span className="h-2 w-2 rounded-full bg-black shrink-0" />
+                          )}
+                          <span>{link.label}</span>
+                        </div>
+                        {link.badge && (
+                          <span
+                            className={`rounded px-2 py-0.5 text-[10px] font-mono font-black ${
+                              isActive
+                                ? "bg-black text-accent"
+                                : "bg-accent/20 text-accent"
+                            }`}
+                          >
+                            {link.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                {/* Quick Topic Chips */}
+                <div className="mt-5 border-t border-white/10 pt-4">
+                  <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
+                    <Tag size={12} className="text-accent" />
+                    <span>{isRTL ? "مقبول مضامین" : "Popular Topics"}</span>
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {mobileQuickTags.map((tag) => (
                       <Link
                         key={tag}
-                        href={`/strategies?tag=${encodeURIComponent(tag)}`}
+                        href={`/strategies?q=${encodeURIComponent(tag.toLowerCase())}`}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="rounded-lg border border-white/10 bg-[#161619] px-2.5 py-1 text-xs font-heading font-bold text-white/90 hover:border-accent hover:text-accent transition-colors"
+                        className="rounded-lg border border-white/10 bg-[#16161a] px-2.5 py-1 text-[11px] font-heading font-medium text-white/80 hover:border-accent hover:text-accent transition-colors"
                       >
                         #{tag}
                       </Link>
                     ))}
                   </div>
                 </div>
-
-                {/* Navigation Items */}
-                <nav aria-label="Mobile Navigation" className="flex flex-col space-y-1">
-                  {navLinks.map((link, index) => {
-                    const isActive =
-                      link.href === "/"
-                        ? pathname === "/"
-                        : pathname.startsWith(link.href);
-                    return (
-                      <motion.div
-                        key={link.href}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                          delay: 0.02 + index * 0.03,
-                          duration: 0.2,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                      >
-                        <Link
-                          href={link.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center justify-between rounded-xl px-4 py-3 font-heading text-base font-bold tracking-tight transition-all ${
-                            isActive
-                              ? "border-l-4 border-l-accent bg-accent/10 text-accent shadow-sm pl-3.5"
-                              : "text-white/90 hover:bg-white/5 hover:text-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span>{link.label}</span>
-                            {link.badge && (
-                              <span
-                                className={`rounded px-1.5 py-0.5 text-[10px] font-mono ${
-                                  isActive
-                                    ? "bg-accent text-black font-black"
-                                    : "bg-accent/20 border border-accent/30 text-accent font-bold"
-                                }`}
-                              >
-                                {link.badge}
-                              </span>
-                            )}
-                          </div>
-                          <ArrowUpRight
-                            size={16}
-                            className={isActive ? "text-accent" : "text-muted/60"}
-                          />
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
-                </nav>
               </div>
 
-              {/* Bottom Actions */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.22 }}
-                className="mt-6 border-t border-white/10 pt-5 space-y-3"
-              >
+              {/* Mobile Footer CTAs */}
+              <div className="mt-8 border-t border-white/10 pt-4 space-y-2.5">
                 <Button
                   href={whatsappLink()}
                   variant="whatsapp"
-                  className="w-full !py-3.5 text-base justify-center shadow-glow"
+                  className="w-full !py-3 text-sm font-heading font-black shadow-md justify-center"
                 >
-                  <MessageCircle size={18} className="text-white" />
-                  <span>Join Student WhatsApp Group</span>
+                  <MessageCircle size={16} className="text-emerald-400" />
+                  <span>{isRTL ? "واٹس ایپ گروپ میں شامل ہوں" : "Join Free WhatsApp Group"}</span>
                 </Button>
-                <p className="text-center text-xs text-muted font-mono">
-                  Built by a 10th Grader from Multan &bull; 100% Free
+                <p className="text-center font-mono text-[10px] text-muted">
+                  {t("common.boardNotice")}
                 </p>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         )}
