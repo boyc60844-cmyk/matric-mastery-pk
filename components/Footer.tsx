@@ -3,25 +3,14 @@
 import Link from "next/link";
 import { whatsappLink } from "@/lib/utils";
 import { useLanguage } from "@/src/context/LanguageContext";
+import { MAIN_NAV_ITEMS } from "@/lib/navigation";
 
 export default function Footer() {
   const { t, isRTL } = useLanguage();
 
-  const links = [
-    { href: "/", label: t("nav.home", "Home") },
-    { href: "/my-story", label: t("nav.myStory", "Start Here") },
-    { href: "/strategies", label: t("nav.strategies", "Strategies") },
-    { href: "/mock-tests", label: t("nav.mockTests", "Mock Tests") },
-    { href: "/past-papers", label: t("nav.pastPapers", "Past Papers") },
-    { href: "/dashboard", label: t("nav.dashboard", "Dashboard") },
-    { href: "/leaderboard", label: t("nav.leaderboard", "Leaderboard") },
-    { href: "/paper-hacks", label: t("nav.paperHacks", "Paper Hacks") },
-    { href: "/resources", label: t("nav.resources", "Resources") },
-  ];
-
   return (
     <footer className="relative border-t border-white/10 bg-[#09090A]">
-      <div className="mx-auto grid max-w-site gap-12 px-5 py-16 md:grid-cols-[1.3fr_1fr_1fr] md:py-20">
+      <div className="mx-auto grid max-w-site gap-10 px-5 py-14 sm:py-16 md:grid-cols-[1.2fr_1.4fr_1fr] md:py-20">
         <div>
           <div className="flex items-center gap-1.5 font-heading text-xl font-extrabold tracking-tight text-white">
             Matric Mastery
@@ -34,18 +23,24 @@ export default function Footer() {
           </p>
         </div>
 
+        {/* Synchronized 11-page Navigation */}
         <div>
           <p className="font-heading text-xs font-black uppercase tracking-wider text-muted">
-            {isRTL ? "فہرست صفحات" : "Navigation"}
+            {isRTL ? "فہرست صفحات (11)" : "Navigation (11 Pages)"}
           </p>
-          <ul className="mt-4 space-y-3 text-sm">
-            {links.map((l) => (
+          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
+            {MAIN_NAV_ITEMS.map((l) => (
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  className="text-muted transition-colors hover:text-white hover:underline underline-offset-4"
+                  className="text-muted transition-colors hover:text-white hover:underline underline-offset-4 flex items-center gap-1.5"
                 >
-                  {l.label}
+                  <span>{t(l.labelKey, l.defaultLabel)}</span>
+                  {l.badge && (
+                    <span className="rounded px-1.5 py-0.2 text-[9px] font-mono font-bold bg-accent/15 text-accent border border-accent/25">
+                      {l.badge}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
@@ -61,9 +56,9 @@ export default function Footer() {
             <li>
               <a
                 href={whatsappLink()}
-                className="text-muted transition-colors hover:text-accent font-semibold"
+                className="text-muted transition-colors hover:text-accent font-semibold flex items-center gap-1"
               >
-                {isRTL ? "واٹس ایپ پر رابطہ کریں ←" : "Message on WhatsApp →"}
+                <span>{isRTL ? "واٹس ایپ پر رابطہ کریں ←" : "Message on WhatsApp →"}</span>
               </a>
             </li>
           </ul>

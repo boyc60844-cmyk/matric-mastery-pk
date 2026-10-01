@@ -24,6 +24,8 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.login": "Cloud Login",
     "nav.signOut": "Sign Out",
     "nav.resources": "Resources",
+    "nav.about": "About",
+    "nav.legal": "Legal",
 
     // Hero
     "hero.badge": "MATRIC MASTERY PAKISTAN",
@@ -102,6 +104,8 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.login": "کلاؤڈ لاگ ان",
     "nav.signOut": "لاگ آؤٹ",
     "nav.resources": "امدادی مواد",
+    "nav.about": "ہمارے بارے میں",
+    "nav.legal": "قانونی معلومات",
 
     // Hero
     "hero.badge": "میٹرک ماسٹری پاکستان",
