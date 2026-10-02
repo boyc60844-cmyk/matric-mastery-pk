@@ -24,6 +24,7 @@ import PastPapersPage from "@/app/past-papers/page";
 import DashboardPage from "@/app/dashboard/page";
 import LeaderboardPage from "@/app/leaderboard/page";
 import LoginPage from "@/app/login/page";
+import ExamDayGuidebookPage from "@/app/exam-day-guidebook/page";
 import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
@@ -50,6 +51,8 @@ function PageRenderer() {
       document.title = "Matric Mastery Leaderboard | Top Punjab Board Performers";
     } else if (cleanPath === "/login" || cleanPath === "/signin") {
       document.title = "Student Cloud Login | Matric Mastery PK";
+    } else if (cleanPath === "/exam-day-guidebook" || cleanPath === "/guidebook" || cleanPath === "/exam-rules") {
+      document.title = "BISE Exam Hall Rules Guidebook 2026 | Punjab Boards Survival Guide";
     } else if (cleanPath === "/strategies" || cleanPath.startsWith("/strategies/")) {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
@@ -80,6 +83,8 @@ function PageRenderer() {
     pageContent = <LeaderboardPage />;
   } else if (cleanPath === "/login" || cleanPath === "/signin" || cleanPath === "/auth") {
     pageContent = <LoginPage />;
+  } else if (cleanPath === "/exam-day-guidebook" || cleanPath === "/guidebook" || cleanPath === "/exam-rules") {
+    pageContent = <ExamDayGuidebookPage />;
   } else if (cleanPath === "/paper-hacks") {
     pageContent = <PaperHacksPage />;
   } else if (cleanPath === "/resources") {
