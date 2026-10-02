@@ -34,9 +34,11 @@ import {
   Calendar,
   Shield,
   HelpCircle,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/src/context/LanguageContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 type GradeTab = "all" | "9th" | "10th" | "11th" | "12th";
 
@@ -241,6 +243,27 @@ export default function ExamDayGuidebookPage() {
   // Panic button modal state
   const [panicModalOpen, setPanicModalOpen] = useState(false);
   const [activePanicTab, setActivePanicTab] = useState(0);
+
+  // Lock body scroll and listen for Escape key when Panic Modal is open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && panicModalOpen) {
+        setPanicModalOpen(false);
+      }
+    };
+
+    if (panicModalOpen) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [panicModalOpen]);
 
   // Initialize checklist and dynamic date
   useEffect(() => {
@@ -1143,83 +1166,127 @@ export default function ExamDayGuidebookPage() {
         </main>
 
         {/* ============================================================
-            LAST-MINUTE EMERGENCY PANIC MODAL
+            LAST-MINUTE EMERGENCY PANIC MODAL (WITH FRAMER-MOTION)
             ============================================================ */}
-        {panicModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="relative w-full max-w-2xl rounded-3xl border border-red-500/40 bg-[#121216] p-6 sm:p-8 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between border-b border-red-500/20 pb-4 mb-4">
-                <div className="flex items-center gap-2 text-red-400">
-                  <AlertTriangle size={20} />
-                  <h3 className="font-heading text-lg font-black text-white">
-                    Emergency Exam Day Crisis Desk
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPanicModalOpen(false)}
-                  className="rounded-xl border border-white/10 bg-white/5 p-1.5 text-muted hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
+        <AnimatePresence>
+          {panicModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+              {/* Animated Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                onClick={() => setPanicModalOpen(false)}
+                className="fixed inset-0 bg-black/85 backdrop-blur-md"
+                aria-hidden="true"
+              />
 
-              {/* Scenario Selector Pills */}
-              <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 scrollbar-none">
-                {panicScenarios.map((sc, i) => (
+              {/* Modal Card - Slides up from the bottom on mobile to improve UX during emergencies */}
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="panic-modal-title"
+                initial={{ y: "100%", opacity: 0.5, scale: 0.98 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: "100%", opacity: 0, scale: 0.98 }}
+                transition={{
+                  type: "spring",
+                  damping: 28,
+                  stiffness: 320,
+                  mass: 0.85,
+                }}
+                className="relative z-10 w-full max-w-2xl rounded-t-[32px] sm:rounded-3xl border border-red-500/40 bg-[#121216] p-5 sm:p-8 shadow-[0_-12px_45px_rgba(239,68,68,0.28)] sm:shadow-2xl overflow-hidden max-h-[88vh] sm:max-h-[90vh] flex flex-col"
+              >
+                {/* Mobile Pull Bar Indicator */}
+                <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/20 sm:hidden" />
+
+                <div className="flex items-center justify-between border-b border-red-500/20 pb-4 mb-4">
+                  <div className="flex items-center gap-2 text-red-400">
+                    <AlertTriangle size={20} />
+                    <h3 id="panic-modal-title" className="font-heading text-lg font-black text-white">
+                      Emergency Exam Day Crisis Desk
+                    </h3>
+                  </div>
                   <button
-                    key={i}
                     type="button"
-                    onClick={() => setActivePanicTab(i)}
-                    className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-heading font-bold transition-colors cursor-pointer ${
-                      activePanicTab === i
-                        ? "bg-red-500 text-white font-black"
-                        : "border border-white/10 bg-white/5 text-muted hover:text-white"
-                    }`}
+                    onClick={() => setPanicModalOpen(false)}
+                    aria-label="Close emergency desk"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-muted hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                   >
-                    Scenario {i + 1}
+                    <X size={16} />
                   </button>
-                ))}
-              </div>
-
-              {/* Active Scenario Details */}
-              <div className="overflow-y-auto space-y-4 pr-1 flex-1">
-                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
-                  <span className="font-mono text-[10px] font-bold text-red-400 uppercase">
-                    Immediate Action Required
-                  </span>
-                  <h4 className="font-heading text-base font-black text-white mt-1">
-                    {panicScenarios[activePanicTab].title}
-                  </h4>
                 </div>
 
-                <div className="space-y-2.5">
-                  {panicScenarios[activePanicTab].steps.map((st, sIdx) => (
-                    <div
-                      key={sIdx}
-                      className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs text-white/90 leading-relaxed"
+                {/* Scenario Selector Pills */}
+                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 scrollbar-none">
+                  {panicScenarios.map((sc, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActivePanicTab(i)}
+                      className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-heading font-bold transition-colors cursor-pointer ${
+                        activePanicTab === i
+                          ? "bg-red-500 text-white font-black shadow-md shadow-red-500/20"
+                          : "border border-white/10 bg-white/5 text-muted hover:text-white"
+                      }`}
                     >
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-red-400 font-mono font-bold text-[10px]">
-                        {sIdx + 1}
-                      </span>
-                      <span>{st}</span>
-                    </div>
+                      Scenario {i + 1}
+                    </button>
                   ))}
                 </div>
-              </div>
 
-              <div className="mt-5 pt-4 border-t border-white/10 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setPanicModalOpen(false)}
-                  className="rounded-xl bg-accent px-5 py-2 font-heading text-xs font-black text-black hover:bg-accent/90 transition-colors"
-                >
-                  I Understand My Rights
-                </button>
-              </div>
+                {/* Active Scenario Details with Tab Switching Animation */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activePanicTab}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.18 }}
+                    className="overflow-y-auto space-y-4 pr-1 flex-1"
+                  >
+                    <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
+                      <span className="font-mono text-[10px] font-bold text-red-400 uppercase tracking-wider">
+                        Immediate Action Required · {panicScenarios[activePanicTab].severity}
+                      </span>
+                      <h4 className="font-heading text-base font-black text-white mt-1">
+                        {panicScenarios[activePanicTab].title}
+                      </h4>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {panicScenarios[activePanicTab].steps.map((st, sIdx) => (
+                        <div
+                          key={sIdx}
+                          className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs text-white/90 leading-relaxed"
+                        >
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-red-400 font-mono font-bold text-[10px]">
+                            {sIdx + 1}
+                          </span>
+                          <span>{st}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+                <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-mono text-muted hidden sm:inline">
+                    Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-semibold text-[10px]">ESC</kbd> to exit
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPanicModalOpen(false)}
+                    className="w-full sm:w-auto rounded-xl bg-accent px-5 py-2.5 font-heading text-xs font-black text-black hover:bg-accent/90 transition-all active:scale-95 shadow-glow cursor-pointer"
+                  >
+                    I Understand My Rights · Close Desk
+                  </button>
+                </div>
+              </motion.div>
             </div>
-          </div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </>
   );
