@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { usePathname, RouterProvider } from "@/src/context/RouterContext";
-import { LanguageProvider } from "@/src/context/LanguageContext";
+import { LanguageProvider, useLanguage } from "@/src/context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import MotionProvider from "@/components/MotionProvider";
 import Background from "@/components/Background";
@@ -30,6 +30,7 @@ import Button from "@/components/Button";
 
 function PageRenderer() {
   const pathname = usePathname();
+  const { language, isRTL } = useLanguage();
 
   // Normalize path
   let cleanPath = pathname.split("?")[0].split("#")[0];
@@ -113,11 +114,11 @@ function PageRenderer() {
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={cleanPath}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        key={`${cleanPath}-${language}`}
+        initial={{ opacity: 0, x: isRTL ? 16 : -16 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: isRTL ? -16 : 16 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className="min-h-[calc(100vh-72px-260px)]"
       >
         {pageContent}

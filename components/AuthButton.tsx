@@ -1,3 +1,8 @@
+/* ==========================================================================
+   PROTECTED AUTHENTICATION COMPONENT - DO NOT OVERWRITE OR DELETE
+   Critical Feature: Firebase Google Authentication & User XP / Avatar Header Bar
+   ========================================================================== */
+
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -8,7 +13,7 @@ import {
   onAuthStateChanged,
   type User,
 } from "firebase/auth";
-import { Zap, Heart, Flame, Trophy, LogOut, User as UserIcon, Loader2 } from "lucide-react";
+import { Zap, Heart, Flame, Trophy, LogOut, User as UserIcon, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "@/src/context/RouterContext";
 
@@ -127,32 +132,35 @@ export default function AuthButton() {
     );
   }
 
+  // Not Logged In: Prominent "Cloud Login" / "Login" Button with Google Icon
   if (!user) {
     return (
-      <button
-        type="button"
-        onClick={handleLogin}
-        className="flex h-9 items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3.5 text-xs font-heading font-black text-accent transition-all hover:bg-accent hover:text-black shadow-sm active:scale-95 cursor-pointer"
+      <Link
+        href="/login"
+        aria-label="Cloud Login with Google"
+        className="flex h-9 items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3 sm:px-3.5 text-xs font-heading font-black text-accent transition-all hover:bg-accent hover:text-black shadow-sm active:scale-95 cursor-pointer select-none shrink-0"
       >
-        <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+        <svg className="h-3.5 w-3.5 fill-current shrink-0" viewBox="0 0 24 24">
           <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" />
         </svg>
-        <span>Sign in with Google</span>
-      </button>
+        <span className="hidden sm:inline font-bold">Cloud Login</span>
+        <span className="sm:hidden font-bold">Login</span>
+      </Link>
     );
   }
 
+  // Logged In: User Avatar + XP Badge + Dropdown Menu
   const xpValue = profile?.xp ?? 120;
   const streakValue = profile?.streak ?? 1;
   const heartsValue = profile?.hearts ?? 5;
   const leagueName = profile?.league ?? "Bronze";
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative shrink-0" ref={menuRef}>
       <button
         type="button"
         onClick={() => setMenuOpen(!menuOpen)}
-        className="flex h-9 items-center gap-2 rounded-xl border border-white/15 bg-[#141417] p-1.5 pr-3 text-xs font-heading font-bold text-white transition-all hover:border-accent hover:bg-white/[0.05] cursor-pointer"
+        className="flex h-9 items-center gap-2 rounded-xl border border-white/15 bg-[#141417] p-1.5 pr-2.5 sm:pr-3 text-xs font-heading font-bold text-white transition-all hover:border-accent hover:bg-white/[0.05] cursor-pointer select-none"
       >
         {user.photoURL ? (
           <img
@@ -167,7 +175,7 @@ export default function AuthButton() {
         )}
 
         <div className="flex items-center gap-1.5">
-          <span className="max-w-[80px] truncate text-[11px] hidden sm:inline">
+          <span className="max-w-[70px] sm:max-w-[85px] truncate text-[11px] hidden sm:inline">
             {user.displayName?.split(" ")[0] || "Student"}
           </span>
           <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-mono font-black text-accent">
@@ -216,6 +224,15 @@ export default function AuthButton() {
 
           {/* Navigation Links & Logout */}
           <div className="space-y-1 text-xs font-heading">
+            <Link
+              href="/login"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-white/90 hover:bg-accent/10 hover:text-accent transition-colors"
+            >
+              <Sparkles size={14} className="text-accent" />
+              <span>Cloud Login Page</span>
+            </Link>
+
             <Link
               href="/dashboard"
               onClick={() => setMenuOpen(false)}

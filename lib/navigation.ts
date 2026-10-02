@@ -13,6 +13,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { href: "/past-papers", labelKey: "nav.pastPapers", defaultLabel: "Past Papers" },
   { href: "/dashboard", labelKey: "nav.dashboard", defaultLabel: "Dashboard" },
   { href: "/leaderboard", labelKey: "nav.leaderboard", defaultLabel: "Leaderboard", badge: "Live" },
+  { href: "/login", labelKey: "nav.login", defaultLabel: "Cloud Login", badge: "Sync" },
   { href: "/paper-hacks", labelKey: "nav.paperHacks", defaultLabel: "Paper Hacks" },
   { href: "/resources", labelKey: "nav.resources", defaultLabel: "Resources" },
   { href: "/about", labelKey: "nav.about", defaultLabel: "About" },

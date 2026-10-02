@@ -3,13 +3,14 @@
 import React from "react";
 import { useLanguage } from "@/src/context/LanguageContext";
 import { Languages } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface LanguageToggleProps {
   variant?: "header" | "compact" | "drawer";
 }
 
 export default function LanguageToggle({ variant = "header" }: LanguageToggleProps) {
-  const { language, setLanguage, toggleLanguage } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
   if (variant === "drawer") {
     return (
@@ -26,66 +27,86 @@ export default function LanguageToggle({ variant = "header" }: LanguageTogglePro
           </div>
         </div>
 
-        <div className="flex items-center rounded-xl border border-white/15 bg-black/40 p-1">
+        <div className="relative flex items-center rounded-xl border border-white/15 bg-black/50 p-1">
           <button
             type="button"
             onClick={() => setLanguage("en")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-heading font-black transition-all ${
-              language === "en"
-                ? "bg-accent text-black shadow-sm"
-                : "text-muted hover:text-white"
+            className={`relative z-10 rounded-lg px-3 py-1 text-xs font-heading font-black transition-colors ${
+              language === "en" ? "text-black" : "text-muted hover:text-white"
             }`}
           >
-            ENG
+            {language === "en" && (
+              <motion.span
+                layoutId="drawerLangPill"
+                className="absolute inset-0 rounded-lg bg-accent shadow-sm"
+                transition={{ type: "spring", stiffness: 450, damping: 32 }}
+              />
+            )}
+            <span className="relative z-10">ENG</span>
           </button>
+
           <button
             type="button"
             onClick={() => setLanguage("ur")}
-            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
-              language === "ur"
-                ? "bg-accent text-black shadow-sm font-black"
-                : "text-muted hover:text-white"
+            className={`relative z-10 rounded-lg px-3 py-1 text-xs font-bold transition-colors ${
+              language === "ur" ? "text-black font-black" : "text-muted hover:text-white"
             }`}
           >
-            اردو
+            {language === "ur" && (
+              <motion.span
+                layoutId="drawerLangPill"
+                className="absolute inset-0 rounded-lg bg-accent shadow-sm"
+                transition={{ type: "spring", stiffness: 450, damping: 32 }}
+              />
+            )}
+            <span className="relative z-10">اردو</span>
           </button>
         </div>
       </div>
     );
   }
 
+  // Header / Compact Pill
   return (
     <div
       role="group"
       aria-label="Language selection"
-      className="inline-flex items-center rounded-xl border border-white/15 bg-[#141417]/80 p-0.5 backdrop-blur-md transition-colors hover:border-accent/40"
+      className="relative inline-flex items-center rounded-xl border border-white/15 bg-[#141417]/90 p-0.5 backdrop-blur-md shadow-sm transition-colors hover:border-accent/40"
     >
       <button
         type="button"
         onClick={() => setLanguage("en")}
         title="Switch to English"
-        className={`relative flex items-center justify-center rounded-lg px-2 py-1 text-[11px] font-heading font-black transition-all ${
-          language === "en"
-            ? "bg-accent text-black shadow-sm"
-            : "text-muted hover:text-white"
+        className={`relative z-10 flex items-center justify-center rounded-lg px-2.5 py-1 text-[11px] font-heading font-black transition-colors ${
+          language === "en" ? "text-black" : "text-muted hover:text-white"
         }`}
       >
-        ENG
+        {language === "en" && (
+          <motion.span
+            layoutId="headerLangPill"
+            className="absolute inset-0 rounded-lg bg-accent shadow-sm"
+            transition={{ type: "spring", stiffness: 450, damping: 32 }}
+          />
+        )}
+        <span className="relative z-10">ENG</span>
       </button>
-
-      <span className="h-3 w-px bg-white/10" />
 
       <button
         type="button"
         onClick={() => setLanguage("ur")}
         title="اردو میں دیکھیں"
-        className={`relative flex items-center justify-center rounded-lg px-2.5 py-1 text-[11px] transition-all ${
-          language === "ur"
-            ? "bg-accent text-black shadow-sm font-bold"
-            : "text-muted hover:text-white"
+        className={`relative z-10 flex items-center justify-center rounded-lg px-2.5 py-1 text-[11px] transition-colors ${
+          language === "ur" ? "text-black font-bold" : "text-muted hover:text-white"
         }`}
       >
-        اردو
+        {language === "ur" && (
+          <motion.span
+            layoutId="headerLangPill"
+            className="absolute inset-0 rounded-lg bg-accent shadow-sm"
+            transition={{ type: "spring", stiffness: 450, damping: 32 }}
+          />
+        )}
+        <span className="relative z-10">اردو</span>
       </button>
     </div>
   );

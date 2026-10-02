@@ -1,10 +1,19 @@
+/* ==========================================================================
+   PROTECTED HEADER COMPONENT - DO NOT OVERWRITE OR REMOVE
+   Requirements:
+   1. Logo (left)
+   2. ENG/اردو Language toggle
+   3. User XP Login / Avatar button (Firebase Auth)
+   4. Hamburger menu toggle (ALWAYS visible)
+   ========================================================================== */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "@/src/context/RouterContext";
 import { useLanguage } from "@/src/context/LanguageContext";
-import { ArrowUpRight, BookOpen, Sparkles, MessageCircle, Tag } from "lucide-react";
+import { ArrowUpRight, BookOpen, Sparkles, MessageCircle, Tag, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { whatsappLink } from "@/lib/utils";
 import { MAIN_NAV_ITEMS } from "@/lib/navigation";
@@ -36,7 +45,7 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lock <html> and <body> overflow while mobile menu is open
+  // Lock <html> and <body> overflow while mobile/drawer menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.documentElement.style.overflow = "hidden";
@@ -51,7 +60,7 @@ export default function Header() {
     };
   }, [mobileMenuOpen]);
 
-  // Close mobile menu on page navigation
+  // Close menu on page navigation
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
@@ -65,8 +74,8 @@ export default function Header() {
             : "bg-transparent border-b border-transparent py-2.5"
         }`}
       >
-        <div className="mx-auto flex h-[62px] sm:h-[66px] max-w-site items-center justify-between px-3 sm:px-6">
-          {/* 3D Isometric Block Logo */}
+        <div className="mx-auto flex h-[62px] sm:h-[66px] max-w-site items-center justify-between px-3 sm:px-6 gap-2">
+          {/* 1. 3D Isometric Block Logo */}
           <Link
             href="/"
             className="flex items-center transition-transform hover:scale-[1.02] select-none group focus:outline-none shrink-0"
@@ -75,10 +84,10 @@ export default function Header() {
             <Logo size="nav" />
           </Link>
 
-          {/* Desktop Nav - Synchronized 11-page Navigation */}
+          {/* Desktop Nav - Synchronized 11-page Navigation (visible on large screens) */}
           <nav
             aria-label="Desktop Navigation"
-            className="hidden items-center gap-0.5 xl:gap-1 rounded-full border border-white/10 bg-[#121214]/90 px-2 py-1 backdrop-blur-md lg:flex shadow-soft"
+            className="hidden xl:flex items-center gap-0.5 2xl:gap-1 rounded-full border border-white/10 bg-[#121214]/90 px-2 py-1 backdrop-blur-md shadow-soft"
           >
             {MAIN_NAV_ITEMS.map((link) => {
               const isActive =
@@ -90,7 +99,7 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative flex items-center gap-1 rounded-full px-2 xl:px-2.5 py-1 text-[11px] xl:text-xs font-heading font-bold transition-all duration-150 select-none whitespace-nowrap ${
+                  className={`relative flex items-center gap-1 rounded-full px-2 2xl:px-2.5 py-1 text-[11px] 2xl:text-xs font-heading font-bold transition-all duration-150 select-none whitespace-nowrap ${
                     isActive
                       ? "bg-accent/15 text-accent border border-accent/40 shadow-[0_0_12px_rgba(255,214,10,0.18)]"
                       : "text-muted hover:text-white hover:bg-white/[0.05] border border-transparent"
@@ -102,7 +111,7 @@ export default function Header() {
                   <span>{label}</span>
                   {link.badge && (
                     <span
-                      className={`rounded px-1 py-0.2 text-[8px] xl:text-[9px] font-mono font-black ${
+                      className={`rounded px-1 py-0.2 text-[8px] 2xl:text-[9px] font-mono font-black ${
                         isActive
                           ? "bg-accent text-black"
                           : "bg-accent/20 text-accent border border-accent/30"
@@ -116,31 +125,33 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Desktop Right CTA: Language Toggle + AuthButton + WhatsApp */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-2.5 shrink-0">
-            <LanguageToggle variant="header" />
-            <AuthButton />
-            <Button
-              href={whatsappLink()}
-              variant="whatsapp"
-              className="text-xs !py-1.5 !px-3"
-            >
-              <MessageCircle size={14} className="text-emerald-400" />
-              <span>WhatsApp</span>
-            </Button>
-          </div>
-
-          {/* Mobile Actions: Language + Auth + Hamburger Toggle */}
-          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+          {/* Right Header Controls: Always has ENG/اردو toggle, User XP Login/Avatar, and Hamburger Menu */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* 2. ENG/اردو Language Toggle */}
             <LanguageToggle variant="compact" />
+
+            {/* 3. User XP Login / Avatar Button (Google Firebase Auth) */}
             <AuthButton />
 
+            {/* WhatsApp Community Button (on medium+ screens) */}
+            <div className="hidden md:flex">
+              <Button
+                href={whatsappLink()}
+                variant="whatsapp"
+                className="text-xs !py-1.5 !px-2.5"
+              >
+                <MessageCircle size={13} className="text-emerald-400" />
+                <span className="hidden xl:inline">WhatsApp</span>
+              </Button>
+            </div>
+
+            {/* 4. Hamburger Menu Button (ALWAYS PRESENT) */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#141416] text-white transition-all hover:border-accent active:scale-95 cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#141416] text-white transition-all hover:border-accent hover:text-accent active:scale-95 cursor-pointer shrink-0"
             >
               <span className="sr-only">Toggle Menu</span>
               <div className="flex flex-col items-center justify-center gap-1">
@@ -165,7 +176,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Drawer Menu - Synchronized 11-page Hamburger Drawer */}
+      {/* Synchronized 11-page Hamburger Drawer Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -173,7 +184,7 @@ export default function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-40 overflow-y-auto bg-[#0A0A0A]/98 backdrop-blur-xl pt-[76px] pb-10 lg:hidden"
+            className="fixed inset-0 z-40 overflow-y-auto bg-[#0A0A0A]/98 backdrop-blur-xl pt-[76px] pb-10"
           >
             <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-lg flex-col justify-between px-5">
               <div>
@@ -182,7 +193,7 @@ export default function Header() {
                   <LanguageToggle variant="drawer" />
                 </div>
 
-                {/* Mobile Auth & Cloud Sync Card */}
+                {/* Cloud Sync & Auth Banner */}
                 <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/15 bg-[#141418] p-3.5 shadow-md">
                   <div>
                     <p className="text-xs font-heading font-black text-white">
@@ -223,7 +234,7 @@ export default function Header() {
                   </Link>
                 </div>
 
-                {/* Mobile Navigation Links - ALL 11 Pages Identical to Footer */}
+                {/* Navigation Links - ALL 11 Pages Identical to Footer */}
                 <div className="mb-2 flex items-center justify-between px-1">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted">
                     {isRTL ? "تمام صفحات" : "All Pages (11)"}
@@ -290,7 +301,7 @@ export default function Header() {
                 </div>
               </div>
 
-              {/* Mobile Footer CTAs */}
+              {/* Drawer Footer CTAs */}
               <div className="mt-6 border-t border-white/10 pt-3.5 space-y-2">
                 <Button
                   href={whatsappLink()}
