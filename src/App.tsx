@@ -53,7 +53,7 @@ function PageRenderer() {
       document.title = "Student Cloud Login | Matric Mastery PK";
     } else if (cleanPath === "/exam-day-guidebook" || cleanPath === "/guidebook" || cleanPath === "/exam-rules") {
       document.title = "Matric Mastery Exam Day Guidebook | Rules & Survival Tips";
-    } else if (cleanPath === "/strategies" || cleanPath.startsWith("/strategies/")) {
+    } else if (cleanPath === "/strategies" || cleanPath === "/strategy" || cleanPath.startsWith("/strategies/") || cleanPath.startsWith("/strategy/")) {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
       document.title = "My Story & Verification | Matric Mastery PK";
@@ -70,8 +70,10 @@ function PageRenderer() {
     pageContent = <MyStoryPage />;
   } else if (cleanPath === "/strategies" || cleanPath === "/method") {
     pageContent = <StrategiesPage />;
-  } else if (cleanPath.startsWith("/strategies/")) {
-    const slug = cleanPath.replace("/strategies/", "");
+  } else if (cleanPath === "/strategy") {
+    pageContent = <StrategyDetailPage slug="" />;
+  } else if (cleanPath.startsWith("/strategies/") || cleanPath.startsWith("/strategy/")) {
+    const slug = cleanPath.replace("/strategies/", "").replace("/strategy/", "");
     pageContent = <StrategyDetailPage slug={slug} />;
   } else if (cleanPath === "/mock-tests" || cleanPath === "/test" || cleanPath === "/tests") {
     pageContent = <MockTestsPage />;
