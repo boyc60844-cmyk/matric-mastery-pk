@@ -1,22 +1,16 @@
 /* ==========================================================================
-   BISE EXAM HALL RULES & SURVIVAL GUIDEBOOK 2026 (/exam-day-guidebook)
-   World-Class Editorial Notion-Style Guidebook for 9th, 10th, 11th, 12th.
-   Features:
-   - Sticky Reading Progress Bar
-   - Interactive What-to-Bring Checklist with LocalStorage persistence
-   - Simulated Examination Center Finder with map preview
-   - Live Session Time Calculator & Countdown
-   - Forbidden Items Visual Scanner Grid
-   - Last-Minute Panic Button with Emergency Protocols
-   - Grade Tabs (All, 9th, 10th, 11th, 12th)
-   - Table of Contents + Quick Navigation
-   - Print / Save as PDF button
-   - FAQ Schema JSON-LD for rich search results
+   BISE EXAM DAY GUIDEBOOK (UNOFFICIAL) - RULES & TIPS (/exam-day-guidebook)
+   Educational Reference Guide for 9th, 10th, 11th, and 12th Class Students.
+   - Comprehensive JSON-LD FAQPage (10+ SEO questions & answers)
+   - BreadcrumbList Schema (Home > Guidebook)
+   - Legal Disclaimers (Not affiliated with BISE boards, educational guidance only)
+   - Dynamic Last Updated date and public notification sources
+   - Interactive carry checklist, time calculator, center simulator, forbidden items scanner
    ========================================================================== */
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Search,
   CheckSquare,
@@ -24,16 +18,11 @@ import {
   AlertTriangle,
   Clock,
   MapPin,
-  ShieldAlert,
   FileText,
   Printer,
-  Compass,
-  HelpCircle,
   ChevronDown,
-  ChevronUp,
   XCircle,
   CheckCircle2,
-  ExternalLink,
   BookOpen,
   ArrowRight,
   Flame,
@@ -41,9 +30,10 @@ import {
   Info,
   Smartphone,
   Watch,
-  FileCheck,
-  Eye,
-  Share2,
+  GraduationCap,
+  Calendar,
+  Shield,
+  HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/src/context/LanguageContext";
@@ -61,7 +51,7 @@ interface ChecklistItem {
 const DEFAULT_CHECKLIST: ChecklistItem[] = [
   {
     id: "roll-slip",
-    name: "Original BISE Roll Number Slip",
+    name: "Roll Number Slip Printout",
     desc: "Printed copy on clear A4 paper with visible barcode and candidate photo.",
     mandatory: true,
     grades: ["all", "9th", "10th", "11th", "12th"],
@@ -69,7 +59,7 @@ const DEFAULT_CHECKLIST: ChecklistItem[] = [
   {
     id: "smart-card",
     name: "NADRA Smart Card / B-Form / School ID Card",
-    desc: "Mandatory photo identity for verification at the main entrance gate.",
+    desc: "Mandatory photo identity for verification at the entrance gate.",
     mandatory: true,
     grades: ["all", "9th", "10th", "11th", "12th"],
   },
@@ -111,7 +101,7 @@ const DEFAULT_CHECKLIST: ChecklistItem[] = [
   {
     id: "water-bottle",
     name: "Clear Transparent Water Bottle (Label Removed)",
-    desc: "Must be completely clear without brand labels to prevent cheat suspicion.",
+    desc: "Must be completely clear without brand labels to prevent suspicion.",
     mandatory: false,
     grades: ["all", "9th", "10th", "11th", "12th"],
   },
@@ -170,6 +160,50 @@ const FORBIDDEN_ITEMS: ForbiddenItem[] = [
   },
 ];
 
+// 10 Detailed SEO Questions and Answers matching JSON-LD Schema
+const FAQ_ITEMS = [
+  {
+    q: "What time should I reach BISE exam center?",
+    a: "For morning sessions across BISE Lahore, Gujranwala, and Faisalabad, candidates should arrive by 7:45 AM. Center gates strictly close at 8:15 AM before papers unseal at 8:30 AM for 9th, 10th, 11th, and 12th class students. Evening sessions require arrival by 12:45 PM with gates closing at 1:15 PM.",
+  },
+  {
+    q: "What to bring to BISE 9th 10th exam?",
+    a: "Students appearing in 9th and 10th class exams under BISE Lahore, Gujranwala, or Faisalabad must carry their printed Roll Number Slip, NADRA B-Form/Smart Card or School ID, 2-3 black/blue ballpoint pens, transparent 30cm ruler, and 605 cut marker in a clear transparent pouch.",
+  },
+  {
+    q: "Can I bring calculator to exam hall?",
+    a: "Non-programmable scientific calculators (such as Casio fx-82MS, fx-350MS, fx-991EX) are permitted exclusively in Physics, Chemistry, Mathematics, and Statistics papers for 9th, 10th, 11th, and 12th grades. Programmable graphing calculators with text memory are strictly banned across all Punjab boards.",
+  },
+  {
+    q: "What if I forget my roll number slip?",
+    a: "If you forget your roll number slip, report immediately to the Resident Superintendent Control Room at your exam center with your B-Form or CNIC. Authorities in BISE Lahore, Gujranwala, and Faisalabad can verify your record on the central portal and issue a temporary duplicate slip on-site.",
+  },
+  {
+    q: "What are BISE exam hall rules 2026?",
+    a: "General 2026 guidelines for 9th, 10th, 11th, and 12th exams require sitting only at your allocated roll number desk, filling OMR bubbles with ballpoint only, matching question paper codes with the answer booklet, and avoiding any loose sheets or unapproved stationery in the hall.",
+  },
+  {
+    q: "Mobile phone allowed in BISE exams?",
+    a: "Mobile phones, smartwatches, Bluetooth earbuds, and electronic storage devices are strictly prohibited inside examination centers of BISE Lahore, Gujranwala, Faisalabad, and all Punjab boards. Carrying a mobile phone triggers an immediate Unfair Means Case (UMC) and a potential 3-year exam ban.",
+  },
+  {
+    q: "What is dress code for BISE exams?",
+    a: "Regular students of 9th, 10th, 11th, and 12th grades must wear their official school or college uniform with their student identity badge. Private candidates are instructed to wear modest, clean, casual attire without excessive pockets, heavy jackets, or prohibited wrist accessories.",
+  },
+  {
+    q: "Difference between 9th and 10th exam rules?",
+    a: "9th class papers feature 20-minute OMR objective bubble sheets without practical exams, serving as the foundation matric enrollment. 10th class candidates sit for final matriculation where their roll number links to their 9th record, followed by mandatory science practical examinations.",
+  },
+  {
+    q: "What happens if late to exam center?",
+    a: "Candidates arriving between 8:15 AM and 8:30 AM may be granted conditional entry by the Resident Superintendent under emergency delay recording. However, once paper envelopes are opened at 8:30 AM (or 1:30 PM for evening shifts), gates close completely and no candidate is admitted under Punjab Board regulations.",
+  },
+  {
+    q: "Can I leave exam hall early?",
+    a: "Under Punjab board guidelines across BISE Lahore, Gujranwala, and Faisalabad, students cannot leave the examination hall until at least half of the total paper duration has elapsed (1 hour 15 minutes). Question papers cannot be removed from the premises until the final bell rings.",
+  },
+];
+
 export default function ExamDayGuidebookPage() {
   const { isRTL } = useLanguage();
 
@@ -182,6 +216,9 @@ export default function ExamDayGuidebookPage() {
 
   // Checklist state saved in localStorage
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  // Dynamic last updated date
+  const [lastUpdatedDate, setLastUpdatedDate] = useState<string>("October 2026");
 
   // Center finder mock state
   const [rollInput, setRollInput] = useState("");
@@ -205,7 +242,7 @@ export default function ExamDayGuidebookPage() {
   const [panicModalOpen, setPanicModalOpen] = useState(false);
   const [activePanicTab, setActivePanicTab] = useState(0);
 
-  // Initialize checklist from localStorage
+  // Initialize checklist and dynamic date
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
@@ -213,7 +250,6 @@ export default function ExamDayGuidebookPage() {
         if (saved) {
           setCheckedItems(JSON.parse(saved));
         } else {
-          // Default mandatory checked
           const init: Record<string, boolean> = {};
           DEFAULT_CHECKLIST.forEach((it) => {
             if (it.mandatory) init[it.id] = true;
@@ -223,6 +259,11 @@ export default function ExamDayGuidebookPage() {
       } catch (e) {
         console.warn(e);
       }
+
+      const now = new Date();
+      setLastUpdatedDate(
+        now.toLocaleDateString("en-US", { month: "long", year: "numeric", day: "numeric" })
+      );
     }
   }, []);
 
@@ -280,34 +321,33 @@ export default function ExamDayGuidebookPage() {
     const clean = rollInput.trim();
     if (!clean) return;
 
-    // Deterministic simulation based on roll number
     const centers = [
       {
         name: "Govt. Islamia College Hall A",
         code: "LHR-042-M",
         hall: "Ground Floor Main Auditorium",
-        superintendent: "Prof. Muhammad Tariq (Mob: 0300-412XXXX)",
+        superintendent: "Prof. Muhammad Tariq (Control Desk)",
         address: "Railway Road, Near Civil Lines, Lahore",
       },
       {
         name: "Govt. Pilot Higher Secondary School",
         code: "MTN-108-E",
         hall: "Science Block Block B Hall 2",
-        superintendent: "Rana Shakeel Ahmed (Mob: 0321-789XXXX)",
+        superintendent: "Rana Shakeel Ahmed (Control Desk)",
         address: "Nawa Shehr Chowk, Multan",
       },
       {
         name: "Govt. Post Graduate College for Boys",
         code: "RWP-019-M",
         hall: "Examination Hall No. 3",
-        superintendent: "Dr. Khalid Mahmood (Mob: 0333-512XXXX)",
+        superintendent: "Dr. Khalid Mahmood (Control Desk)",
         address: "6th Road, Satellite Town, Rawalpindi",
       },
       {
         name: "Govt. Comprehensive High School",
         code: "FSD-067-M",
         hall: "Centenary Hall Wing 1",
-        superintendent: "Chaudhry Akhtar Ali (Mob: 0301-654XXXX)",
+        superintendent: "Chaudhry Akhtar Ali (Control Desk)",
         address: "Sargodha Road, Faisalabad",
       },
     ];
@@ -351,8 +391,8 @@ export default function ExamDayGuidebookPage() {
       steps: [
         "DO NOT panic and do not return home if travel time exceeds 20 minutes.",
         "Head straight to the Examination Center Control Room (resident Superintendent office).",
-        "Show your original B-Form / CNIC / Smart Card and school identity card.",
-        "The Deputy Superintendent has official access to the BISE Central Gazette/Portal and can issue an Emergency Verified Duplicate Slip on-spot.",
+        "Show your B-Form / CNIC / Smart Card or school identity card.",
+        "The Deputy Superintendent can verify your record on the central portal and issue an emergency verified duplicate slip on-site.",
         "Alternatively, have a family member WhatsApp/Email the roll slip PDF to a nearby photocopier shop right outside the center.",
       ],
     },
@@ -362,7 +402,7 @@ export default function ExamDayGuidebookPage() {
       steps: [
         "STRICT RULE: Never use whitener, correction fluid, or nail scratches. The optical OMR scanner reads white-out as invalid data and awards 0 marks.",
         "Immediately raise your hand and notify the invigilator.",
-        "The invigilator will cross the erroneous bubble with a single neat line and write the correct roll number/paper code in the supervisor margin with their official signature and center stamp.",
+        "The invigilator will cross the erroneous bubble with a single neat line and write the correct roll number/paper code in the supervisor margin with their signature and center stamp.",
         "Ensure your Question Paper Code (e.g. 7041) matches the printed code on your subjective booklet.",
       ],
     },
@@ -371,7 +411,7 @@ export default function ExamDayGuidebookPage() {
       severity: "High",
       steps: [
         "Punjab Board rules state gates close at 8:15 AM (Morning) / 1:15 PM (Evening).",
-        "If you arrive between 8:15 AM and 8:30 AM, you are still permitted entry by the Resident Superintendent under 'Emergency Delay Protocol' with gate log entry.",
+        "If you arrive between 8:15 AM and 8:30 AM, you may still be admitted by the Resident Superintendent under the emergency delay log protocol.",
         "No candidate is admitted into the exam hall after the question paper envelope is unsealed (strictly 8:30 AM / 1:30 PM).",
         "Keep your roll number slip in hand before reaching the gate to breeze through outer frisking.",
       ],
@@ -380,7 +420,7 @@ export default function ExamDayGuidebookPage() {
       title: "Invigilator didn't sign my Roll Slip or Answer Sheet!",
       severity: "Important",
       steps: [
-        "The invigilator must sign both: (1) Your Answer Sheet Cover Page, and (2) The corresponding subject box on your original Roll Number Slip.",
+        "The invigilator must sign both: (1) Your Answer Sheet Cover Page, and (2) The corresponding subject box on your Roll Number Slip.",
         "If they missed it during attendance round, call them before submitting your paper.",
         "Unsigned answer booklets require special board tribunal clearance during marking.",
       ],
@@ -389,9 +429,9 @@ export default function ExamDayGuidebookPage() {
       title: "Sudden nausea, severe headache, or panic attack in the hall!",
       severity: "Medical",
       steps: [
-        "Raise your hand quietly. You are allowed 5-10 minutes dispensary access accompanied by a designated peon/hall attendant.",
-        "Every registered BISE exam center is legally equipped with a first-aid kit, ORS, pain relief, and water.",
-        "If illness persists, the Superintendent can submit an official medical emergency report to the Board Chairman for special assessment consideration.",
+        "Raise your hand quietly. You are allowed 5-10 minutes dispensary access accompanied by a designated hall attendant.",
+        "Registered exam centers are equipped with a basic first-aid kit, ORS, pain relief, and water.",
+        "If illness persists, the Superintendent can submit an emergency medical report to the board for special consideration.",
       ],
     },
   ];
@@ -402,7 +442,7 @@ export default function ExamDayGuidebookPage() {
       tag: "First-Time Board Takers (Part 1)",
       timings: "Morning Session: 8:30 AM - 11:00 AM | Objective: 20 min | Subjective: 2 hr 10 min",
       keyRule:
-        "OMR Bubble Sheet practice is critical. 9th class students frequently lose 5-10 marks simply by filling roll number bubbles out of order. No practical exams in 9th grade.",
+        "OMR Bubble Sheet practice is critical. 9th class students frequently lose marks simply by filling roll number bubbles out of order. No practical exams in 9th grade.",
     },
     "10th": {
       tag: "Final Matriculation (Part 2)",
@@ -420,7 +460,7 @@ export default function ExamDayGuidebookPage() {
       tag: "Intermediate HSSC Part 2 & Merit Lock",
       timings: "Morning Session: 8:30 AM - 11:30 AM | Practical exams carry 30 marks per science subject",
       keyRule:
-        "Marks from this exam directly dictate your MDCAT / ECAT / University merit aggregate. Any UMC case permanently cancels admission eligibility across all public universities.",
+        "Marks from this exam directly dictate your MDCAT / ECAT / University merit aggregate. Any UMC case permanently cancels admission eligibility across public universities.",
     },
   };
 
@@ -430,47 +470,55 @@ export default function ExamDayGuidebookPage() {
     }
   };
 
+  // Filter FAQs based on search
+  const visibleFaqs = useMemo(() => {
+    if (!searchQuery.trim()) return FAQ_ITEMS;
+    const q = searchQuery.toLowerCase();
+    return FAQ_ITEMS.filter(
+      (item) => item.q.toLowerCase().includes(q) || item.a.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
   return (
     <>
-      {/* FAQ Schema JSON-LD for rich SEO */}
+      {/* 1. FAQ Schema JSON-LD for rich SEO (10+ Questions) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            mainEntity: [
+            mainEntity: FAQ_ITEMS.map((item) => ({
+              "@type": "Question",
+              name: item.q,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: item.a,
+              },
+            })),
+          }),
+        }}
+      />
+
+      {/* 2. BreadcrumbList Schema JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
               {
-                "@type": "Question",
-                name: "What time does the BISE examination center gate close in Punjab?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "For the morning session, gates open at 7:30 AM and strictly close at 8:15 AM (paper begins at 8:30 AM). For the evening session, gates open at 12:30 PM and close at 1:15 PM (paper begins at 1:30 PM, or 2:00 PM on Fridays).",
-                },
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://ais-dev-yyxbdyhre76vxmkqknxreb-961795151722.asia-east1.run.app/",
               },
               {
-                "@type": "Question",
-                name: "What happens if a student forgets their BISE Roll Number Slip on exam day?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Students can visit the Resident Superintendent Control Room with their NADRA Smart Card / B-Form. The administration can verify the candidate on the centralized board portal and issue an emergency duplicate slip on the spot.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "Are scientific calculators allowed in BISE Matric and Intermediate board exams?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Non-programmable scientific calculators (such as Casio fx-82MS, fx-350MS, fx-991EX) are permitted exclusively in Physics, Chemistry, Mathematics, and Statistics exams. Programmable or text-storage calculators are strictly prohibited.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "Can correction fluid or whitener be used on the BISE OMR bubble sheet?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "No. Correction fluid, whiteners, and scratching are strictly forbidden on OMR objective sheets. Optical bubble readers automatically reject altered bubbles, resulting in 0 marks for that question.",
-                },
+                "@type": "ListItem",
+                position: 2,
+                name: "BISE Exam Day Guidebook",
+                item: "https://ais-dev-yyxbdyhre76vxmkqknxreb-961795151722.asia-east1.run.app/exam-day-guidebook",
               },
             ],
           }),
@@ -491,23 +539,27 @@ export default function ExamDayGuidebookPage() {
         <div className="absolute top-96 right-10 h-96 w-96 rounded-full bg-emerald-500/[0.03] blur-[180px] pointer-events-none" />
 
         {/* HERO HEADER */}
-        <header className="relative border-b border-white/10 pt-16 pb-12 sm:pt-20 sm:pb-16 px-4 sm:px-6 lg:px-8">
+        <header className="relative border-b border-white/10 pt-16 pb-10 sm:pt-20 sm:pb-12 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl text-center">
-            {/* Top Badge */}
+            {/* Top Badge: Generic Education Icon Only */}
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 text-xs font-mono font-bold text-accent uppercase tracking-wider mb-5">
-              <ShieldAlert size={14} />
-              <span>Official Protocol · Punjab & Federal Boards 2026</span>
+              <GraduationCap size={15} />
+              <span>Student Reference Guide · Punjab & Federal Boards 2026</span>
             </div>
 
+            {/* H1 Title */}
             <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-              BISE Exam Hall{" "}
+              Matric Mastery Exam Day{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD600] via-amber-300 to-emerald-400">
-                Survival Guidebook
+                Guidebook
+              </span>{" "}
+              <span className="block text-xl sm:text-3xl text-white/90 font-bold mt-1">
+                Rules & Survival Tips
               </span>
             </h1>
 
-            <p className="mt-4 text-sm sm:text-base text-muted max-w-2xl mx-auto leading-relaxed">
-              Complete, verified exam hall regulations for 9th, 10th, 11th, and 12th class students across Lahore, Multan, Faisalabad, Rawalpindi, and Federal Boards. Everything from gate closure protocols to bubble sheet mechanics.
+            <p className="mt-4 text-xs sm:text-sm text-muted max-w-2xl mx-auto leading-relaxed">
+              Essential student survival guide for 9th, 10th, 11th, and 12th class exam days across BISE Lahore, Gujranwala, Faisalabad, Multan, Rawalpindi, and Federal Boards. Covers entry timing, bubble sheets, carry items, and crisis protocols.
             </p>
 
             {/* Quick Action Buttons: Panic Button & PDF Download */}
@@ -518,7 +570,7 @@ export default function ExamDayGuidebookPage() {
                 className="flex items-center gap-2 rounded-2xl border border-red-500/60 bg-red-500/15 px-5 py-3 text-xs sm:text-sm font-heading font-black text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-[0_0_25px_rgba(239,68,68,0.25)] hover:scale-[1.02] cursor-pointer"
               >
                 <AlertTriangle size={16} />
-                <span>Last-Minute Emergency Panic Desk</span>
+                <span>Last-Minute Emergency Desk</span>
               </button>
 
               <button
@@ -539,7 +591,7 @@ export default function ExamDayGuidebookPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search rules, items, e.g. calculator, whitener, roll slip..."
+                  placeholder="Search rules, e.g. calculator, whitener, roll slip, dress code..."
                   className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-muted focus:outline-none font-medium"
                 />
                 {searchQuery && (
@@ -577,7 +629,7 @@ export default function ExamDayGuidebookPage() {
 
         {/* GRADE SPECIFIC HIGHLIGHT CALLOUT */}
         {selectedGrade !== "all" && (
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 mt-6">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 mt-4">
             <div className="rounded-2xl border border-accent/40 bg-[#FFD600]/10 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-soft">
               <div>
                 <span className="font-mono text-[11px] font-bold text-accent uppercase">
@@ -591,7 +643,7 @@ export default function ExamDayGuidebookPage() {
                 </p>
               </div>
               <span className="shrink-0 rounded-xl bg-accent px-3 py-1 font-heading text-xs font-black text-black">
-                {selectedGrade.toUpperCase()} BOARD RULES ACTIVE
+                {selectedGrade.toUpperCase()} BOARD ADVISORY
               </span>
             </div>
           </div>
@@ -770,7 +822,7 @@ export default function ExamDayGuidebookPage() {
                 </div>
 
                 <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-200 leading-relaxed">
-                  ⚠️ <strong>Official Rule:</strong> Once paper question envelopes are unsealed at 8:30 AM / 1:30 PM, the gate security is legally required to deny entry to all candidates.
+                  ⚠️ <strong>Board Rule:</strong> Once paper question envelopes are unsealed at 8:30 AM / 1:30 PM, gate security denies entry to all candidates.
                 </div>
               </div>
 
@@ -837,7 +889,7 @@ export default function ExamDayGuidebookPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-500/20 pb-4 mb-6">
               <div>
                 <span className="font-mono text-[11px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <XCircle size={14} /> Zero-Tolerance Policy · BISE Section 144
+                  <XCircle size={14} /> Zero-Tolerance Policy · Examination Regulations
                 </span>
                 <h2 className="font-heading text-xl sm:text-2xl font-black text-white mt-1">
                   Forbidden Items Scanner
@@ -875,7 +927,7 @@ export default function ExamDayGuidebookPage() {
           </section>
 
           {/* ============================================================
-              EDITORIAL STYLE: COMPLETE BISE EXAM DAY PROTOCOL (5 PHASES)
+              EDITORIAL STYLE: COMPLETE EXAM DAY PHASES (1 TO 5)
               ============================================================ */}
           <article className="rounded-3xl border border-white/10 bg-[#121216]/95 p-6 sm:p-10 backdrop-blur-xl shadow-2xl space-y-10">
             <div>
@@ -886,7 +938,7 @@ export default function ExamDayGuidebookPage() {
                 The 5 Phases of Exam Day Survival
               </h2>
               <p className="text-xs sm:text-sm text-muted mt-1">
-                Follow this chronology to eliminate 100% of procedural errors, anxiety, and disqualification risks.
+                Follow this chronology to eliminate procedural errors, anxiety, and disqualification risks.
               </p>
             </div>
 
@@ -903,10 +955,10 @@ export default function ExamDayGuidebookPage() {
                   <strong>Center Route Reconnaissance:</strong> Check your center on Google Maps the previous evening. Identify the exact gate number (e.g. Science Block Gate vs Main Gate).
                 </li>
                 <li>
-                  <strong>Slip Lamination Warning:</strong> <mark className="bg-[#FFD600]/20 text-[#FFD600] px-1 rounded font-semibold">DO NOT laminate your Roll Number Slip.</mark> Invigilators MUST stamp and ink-sign directly on the paper slip for each subject.
+                  <strong>Slip Lamination Warning:</strong> <mark className="bg-[#FFD600]/20 text-[#FFD600] px-1 rounded font-semibold">DO NOT laminate your Roll Number Slip.</mark> Invigilators must stamp and ink-sign directly on the paper slip for each subject.
                 </li>
                 <li>
-                  <strong>Nutritional Blueprint:</strong> Avoid high-oil parathas or sugary energy drinks that cause hypoglycemic crash 60 minutes into the subjective paper. Prefer boiled eggs, bananas, and room-temperature water.
+                  <strong>Nutritional Blueprint:</strong> Avoid high-oil parathas or sugary energy drinks that cause hypoglycemic crashes 60 minutes into the subjective paper. Prefer boiled eggs, bananas, and room-temperature water.
                 </li>
               </ul>
             </div>
@@ -917,17 +969,17 @@ export default function ExamDayGuidebookPage() {
                 Phase 02 · 07:30 AM to 08:15 AM
               </span>
               <h3 className="font-heading text-xl font-bold text-white">
-                Outer Security Barrier & Seating Chart Search
+                Outer Security Barrier & Seating Notice Board
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-sm text-white/90 leading-relaxed list-disc list-inside">
                 <li>
-                  <strong>Physical Frisking by Police Personnel:</strong> Keep hands empty with your transparent pouch and roll slip in plain sight to bypass long frisking queues.
+                  <strong>Physical Frisking by Security Personnel:</strong> Keep hands empty with your transparent pouch and roll slip in plain sight to bypass long frisking queues.
                 </li>
                 <li>
-                  <strong>Locating Your Hall via Seating Notice Board:</strong> The master notice board at the entrance groups roll numbers into ranges (e.g., Roll No. 248100 – 248140 $\rightarrow$ Hall 3, Row 4). Walk directly to your allocated hall without roaming.
+                  <strong>Locating Your Hall via Seating Notice Board:</strong> The master notice board at the entrance groups roll numbers into ranges (e.g., Roll No. 248100 – 248140 $\rightarrow$ Hall 3, Row 4). Walk directly to your allocated hall.
                 </li>
                 <li>
-                  <strong>Desk Desk Sticker Check:</strong> Match the sticker pasted on the desk top with your roll number. Never sit at an adjacent empty desk even if your desk appears unstable (call the peon to fix the desk leg).
+                  <strong>Desk Sticker Check:</strong> Match the sticker pasted on the desk top with your roll number. Never sit at an adjacent empty desk even if your desk appears unstable.
                 </li>
               </ul>
             </div>
@@ -941,10 +993,10 @@ export default function ExamDayGuidebookPage() {
                 The Answer Booklet & OMR Bubble Sheet Protocol
               </h3>
               <p className="text-xs sm:text-sm text-white/90 leading-relaxed">
-                The official Punjab Board answer booklet consists of 24 to 32 pages with a machine-readable optical header sheet.
+                The answer booklet consists of 24 to 32 pages with a machine-readable optical header sheet.
               </p>
               <div className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-3 text-xs">
-                <p className="font-mono font-bold text-accent">CRITICAL STEP-BY-STEP BUBBLE PROCEDURE:</p>
+                <p className="font-mono font-bold text-accent">STEP-BY-STEP BUBBLE PROCEDURE:</p>
                 <ol className="list-decimal list-inside space-y-1.5 text-white/90 leading-relaxed">
                   <li>Write your 6-digit Roll Number in the top numeric boxes.</li>
                   <li>Darken the corresponding circular bubble directly beneath each digit using a dark Black or Blue ballpoint pen.</li>
@@ -967,7 +1019,7 @@ export default function ExamDayGuidebookPage() {
                   <strong>MCQ Collection Strict Timer:</strong> In Matric, the Objective MCQ sheet is collected strictly after 15 to 20 minutes. Solve answers directly on the bubble sheet rather than marking on the question paper first.
                 </li>
                 <li>
-                  <strong>No Additional Loose Sheets (B-Sheet):</strong> Under modern BISE regulations, <mark className="bg-[#FFD600]/20 text-[#FFD600] px-1 rounded font-semibold">no extra B-sheets or continuation sheets are provided.</mark> Plan your writing so all short and long questions fit within the bound booklet.
+                  <strong>No Additional Loose Sheets (B-Sheet):</strong> Under modern board regulations, <mark className="bg-[#FFD600]/20 text-[#FFD600] px-1 rounded font-semibold">no extra B-sheets or continuation sheets are provided.</mark> Plan your writing so all short and long questions fit within the bound booklet.
                 </li>
                 <li>
                   <strong>Rough Work Rule:</strong> Perform all calculations on the very last page of the booklet, heading it "ROUGH WORK" with a single diagonal cross line when done.
@@ -985,7 +1037,7 @@ export default function ExamDayGuidebookPage() {
               </h3>
               <ul className="space-y-2.5 text-xs sm:text-sm text-white/90 leading-relaxed list-disc list-inside">
                 <li>
-                  <strong>Attendance Signature Sheet:</strong> Ensure you have signed the official roving attendance register next to your photograph.
+                  <strong>Attendance Signature Sheet:</strong> Ensure you have signed the roving attendance register next to your photograph.
                 </li>
                 <li>
                   <strong>Handing Over Paper:</strong> NEVER leave your answer booklet on your desk and walk out. Hand it directly to the invigilator and witness them place it into the collection tray.
@@ -998,48 +1050,39 @@ export default function ExamDayGuidebookPage() {
           </article>
 
           {/* ============================================================
-              FREQUENTLY ASKED QUESTIONS ACCORDION
+              FREQUENTLY ASKED QUESTIONS ACCORDION (10 QUESTIONS MATCHING JSON-LD)
               ============================================================ */}
           <section className="rounded-3xl border border-white/10 bg-[#121216]/95 p-6 sm:p-9 backdrop-blur-xl shadow-2xl">
-            <div className="mb-6">
-              <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider">
-                Official Knowledgebase
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+              <div>
+                <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
+                  <HelpCircle size={14} /> Student Knowledgebase
+                </span>
+                <h2 className="font-heading text-xl sm:text-2xl font-black text-white mt-1">
+                  Frequently Asked Questions (BISE Exam Hall Rules)
+                </h2>
+              </div>
+              <span className="text-xs font-mono text-muted">
+                Showing {visibleFaqs.length} of {FAQ_ITEMS.length} Questions
               </span>
-              <h2 className="font-heading text-xl sm:text-2xl font-black text-white mt-1">
-                Board Exam Day FAQs
-              </h2>
             </div>
 
             <div className="space-y-3">
-              {[
-                {
-                  q: "What should I do if my Roll Number Slip has a typo in my name or father's name?",
-                  a: "Appear for the exam normally. Minor typographical errors on the roll slip do NOT invalidate your exam day entry. After exams conclude, submit an online correction application on your respective BISE portal with a certified copy of your NADRA B-Form.",
-                },
-                {
-                  q: "Is transparent water bottle strictly required, or can I bring a branded bottle?",
-                  a: "Examiners and board mobile inspection teams immediately confiscate branded bottles or opaque metal flasks because students occasionally write cheat notes beneath commercial labels. Use a plain transparent plastic bottle with all labels stripped off.",
-                },
-                {
-                  q: "Can I leave the examination hall early if I finish before time?",
-                  a: "Under BISE regulations, no student is allowed to leave the examination hall before half of the paper time has elapsed (e.g. 1 hour 15 minutes). Furthermore, question papers cannot be taken outside the center before the final bell rings.",
-                },
-                {
-                  q: "What happens if an invigilator refuses to give me a replacement for a defective booklet?",
-                  a: "Ask immediately for the Deputy Superintendent or Resident Superintendent. Under Section 8-B of Board Examination Guidelines, a candidate has the absolute legal right to a replacement booklet within the first 10 minutes if pages are missing, torn, or misprinted.",
-                },
-              ].map((faq, index) => (
+              {visibleFaqs.map((faq, index) => (
                 <details
                   key={index}
                   className="group rounded-2xl border border-white/10 bg-white/[0.02] p-4 [&_summary::-webkit-details-marker]:hidden"
                 >
-                  <summary className="flex items-center justify-between font-heading font-bold text-sm text-white cursor-pointer select-none">
-                    <span>{faq.q}</span>
+                  <summary className="flex items-center justify-between font-heading font-bold text-xs sm:text-sm text-white cursor-pointer select-none">
+                    <span className="flex items-center gap-2">
+                      <span className="text-accent font-mono text-xs">Q{index + 1}.</span>
+                      <span>{faq.q}</span>
+                    </span>
                     <span className="text-muted transition group-open:rotate-180">
                       <ChevronDown size={16} />
                     </span>
                   </summary>
-                  <p className="mt-3 text-xs sm:text-sm text-muted leading-relaxed border-t border-white/5 pt-3">
+                  <p className="mt-3 text-xs sm:text-sm text-white/80 leading-relaxed border-t border-white/5 pt-3 pl-6">
                     {faq.a}
                   </p>
                 </details>
@@ -1072,6 +1115,31 @@ export default function ExamDayGuidebookPage() {
               </Link>
             </div>
           </div>
+
+          {/* ============================================================
+              LEGAL SAFETY: SOURCES & COMPREHENSIVE DISCLAIMER FOOTER
+              ============================================================ */}
+          <footer className="rounded-3xl border border-white/10 bg-[#0e0e12] p-6 sm:p-8 text-xs text-muted space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2 text-white font-heading font-bold text-sm">
+                <Shield size={16} className="text-accent" />
+                <span>Information Sources & Editorial Policy</span>
+              </div>
+              <span className="font-mono text-[11px] text-muted flex items-center gap-1.5">
+                <Calendar size={13} className="text-accent" />
+                Last updated: {lastUpdatedDate}
+              </span>
+            </div>
+
+            <div className="space-y-2 text-[11px] leading-relaxed">
+              <p>
+                <strong>Sources:</strong> Information compiled from BISE public examination notifications 2025–26, candidate instructions printed on standard roll number slips, and Punjab Board examination conduct regulations (applicable to BISE Lahore, BISE Gujranwala, BISE Faisalabad, BISE Rawalpindi, BISE Multan, BISE Bahawalpur, BISE Sargodha, BISE Sahiwal, BISE D.G. Khan, and Federal Board FBISE).
+              </p>
+              <p>
+                <strong>Disclaimer (Unofficial):</strong> This is an educational guide by Cow Boy Platform for students help. We are not BISE or affiliated with any government education department. For official rules, datesheets, and authoritative notifications, always visit the official board web portals at <code className="text-[#FFD600]">bise.edu.pk</code> domains. Center-specific regulations and hall layouts may change per center administration.
+              </p>
+            </div>
+          </footer>
         </main>
 
         {/* ============================================================

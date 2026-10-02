@@ -52,7 +52,7 @@ function PageRenderer() {
     } else if (cleanPath === "/login" || cleanPath === "/signin") {
       document.title = "Student Cloud Login | Matric Mastery PK";
     } else if (cleanPath === "/exam-day-guidebook" || cleanPath === "/guidebook" || cleanPath === "/exam-rules") {
-      document.title = "BISE Exam Hall Rules Guidebook 2026 | Punjab Boards Survival Guide";
+      document.title = "Matric Mastery Exam Day Guidebook | Rules & Survival Tips";
     } else if (cleanPath === "/strategies" || cleanPath.startsWith("/strategies/")) {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
