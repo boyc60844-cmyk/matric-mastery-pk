@@ -23,7 +23,7 @@ const sections = [
 
 export default function MyStoryPage() {
   return (
-    <section className="mx-auto max-w-site px-5 py-16 md:py-24">
+    <section className="mx-auto max-w-site px-5 py-8 sm:py-16 md:py-24">
       <Reveal>
         <p className="font-heading text-xs font-black uppercase tracking-[0.15em] text-accent">
           My Story
@@ -33,8 +33,8 @@ export default function MyStoryPage() {
         </h1>
       </Reveal>
 
-      <div className="mt-14 grid gap-14 md:grid-cols-[1fr_340px]">
-        <div className="max-w-prose space-y-12">
+      <div className="mt-8 sm:mt-14 grid gap-8 sm:gap-14 md:grid-cols-[1fr_340px]">
+        <div className="max-w-prose space-y-6 sm:space-y-10">
           {sections.map((s, i) => (
             <Reveal key={s.heading} delay={i * 60}>
               <div className="border-l-2 border-accent/60 pl-5">

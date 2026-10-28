@@ -284,7 +284,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-80px)] overflow-hidden py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-[#0a0a0a] text-white">
+    <div className="relative min-h-[calc(100dvh-80px)] overflow-hidden py-6 sm:py-12 px-4 sm:px-6 lg:px-8 bg-[#0a0a0a] text-white">
       {/* Background Ambient Glows & Subtle Gradient Mesh */}
       <div className="absolute top-10 left-10 h-[480px] w-[480px] rounded-full bg-[#FFD600]/[0.05] blur-[160px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 h-[520px] w-[520px] rounded-full bg-amber-500/[0.04] blur-[170px] pointer-events-none" />
@@ -303,7 +303,7 @@ export default function LoginPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                className="relative rounded-[24px] border border-white/10 bg-[#121216]/90 p-6 sm:p-9 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.08)] hover:border-white/15 transition-all overflow-hidden"
+                className="relative rounded-[24px] border border-white/10 bg-[#121216]/90 p-4 sm:p-7 md:p-9 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.08)] hover:border-white/15 transition-all overflow-hidden"
               >
                 {/* Top Ambient Glow Stripe */}
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#FFD600] to-transparent" />

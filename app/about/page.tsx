@@ -66,11 +66,11 @@ const colorSwatches = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-site px-4 sm:px-6 py-12 md:py-20">
+    <div className="mx-auto max-w-site px-4 sm:px-6 py-8 sm:py-16 md:py-20">
       {/* =========================================================================
           PART 2: BRAND IDENTITY KIT (At Top of About Page)
           ========================================================================= */}
-      <section className="mb-24">
+      <section className="mb-12 sm:mb-20">
         <header className="mx-auto max-w-3xl text-center sm:text-left">
           <Reveal>
             <div className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-4 py-1.5 font-heading text-xs font-black tracking-widest text-accent uppercase shadow-[0_0_15px_rgba(255,214,10,0.2)]">
@@ -473,8 +473,8 @@ export default function AboutPage() {
       {/* =========================================================================
           FOUNDER STORY: HEY, I AM HAMZA
           ========================================================================= */}
-      <div className="border-t border-white/10 pt-16 md:pt-24">
-        <div className="grid items-center gap-12 md:grid-cols-2">
+      <div className="border-t border-white/10 pt-10 sm:pt-16 md:pt-24">
+        <div className="grid items-center gap-8 sm:gap-12 md:grid-cols-2">
           <Reveal>
             <p className="font-heading text-xs font-black uppercase tracking-[0.15em] text-accent">
               THE CREATOR
@@ -501,7 +501,7 @@ export default function AboutPage() {
             </p>
           </Reveal>
           <Reveal delay={120}>
-            <div className="overflow-hidden rounded-3xl border border-white/10 shadow-soft">
+            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 shadow-soft">
               <Image
                 src="https://picsum.photos/seed/matric-about/700/800"
                 alt="A student at a classroom desk in Multan"
@@ -515,7 +515,7 @@ export default function AboutPage() {
 
         {/* Have a Doubt Contact Form */}
         <Reveal delay={80}>
-          <Card shimmer tilt={false} depth="yellow" className="mt-20 p-7 md:p-12 border-accent/40 bg-[#121214] shadow-brutalist-yellow">
+          <Card shimmer tilt={false} depth="yellow" className="mt-10 sm:mt-16 md:mt-20 p-5 sm:p-8 md:p-12 border-accent/40 bg-[#121214] shadow-brutalist-yellow">
             <h3 className="font-heading text-2xl font-extrabold text-white md:text-3xl">Have a Doubt?</h3>
             <p className="mt-2 max-w-md text-muted">
               Send it across and it goes straight to my official WhatsApp (+92 308 4703973). I read
@@ -527,7 +527,7 @@ export default function AboutPage() {
 
         {/* WhatsApp Direct CTA */}
         <Reveal>
-          <div className="mt-16 rounded-3xl border border-white/10 card-surface p-10 text-center shadow-soft">
+          <div className="mt-10 sm:mt-16 rounded-2xl sm:rounded-3xl border border-white/10 card-surface p-6 sm:p-10 text-center shadow-soft">
             <p className="font-heading text-xl font-bold text-white md:text-2xl">
               Still stuck on something? Just message me directly.
             </p>

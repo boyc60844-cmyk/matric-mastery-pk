@@ -111,7 +111,7 @@ export default function ProblemFinder() {
   const whatsappUrl = `https://wa.me/923084703973?text=${encodeURIComponent(selectedProblem.whatsappParam)}`;
 
   return (
-    <div className="mb-14 rounded-2xl border-2 border-white/10 bg-[#0E0E10] p-5 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.8)]">
+    <div className="mb-8 sm:mb-14 rounded-2xl border-2 border-white/10 bg-[#0E0E10] p-4 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.8)]">
       {/* Header section with Badge, Title, and Subtitle */}
       <div className="text-center sm:text-left">
         <div className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/15 px-2.5 py-1 text-[11px] font-heading font-black tracking-widest text-accent uppercase shadow-[0_0_12px_rgba(255,214,10,0.2)]">
@@ -129,7 +129,7 @@ export default function ProblemFinder() {
       </div>
 
       {/* 8 Big Interactive Buttons in Grid */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="mt-5 sm:mt-6 grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {problemOptions.map((problem) => {
           const isSelected = selectedId === problem.id;
 
@@ -141,16 +141,16 @@ export default function ProblemFinder() {
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 450, damping: 25 }}
               aria-pressed={isSelected}
-              className={`group relative flex min-h-[80px] w-full items-center gap-3.5 rounded-[16px] border-2 p-4 text-left transition-colors duration-150 cursor-pointer select-none ${
+              className={`group relative flex min-h-[64px] sm:min-h-[80px] w-full items-center gap-2 sm:gap-3.5 rounded-[14px] sm:rounded-[16px] border-2 p-2.5 sm:p-4 text-left transition-colors duration-150 cursor-pointer select-none ${
                 isSelected
                   ? "border-[#FFD60A] bg-[#FFD60A] text-black shadow-brutalist-yellow -translate-y-0.5"
                   : "border-white/15 bg-[#0A0A0A] text-white hover:border-[#FFD60A]/50 hover:bg-[#141416] shadow-soft"
               }`}
             >
-              <span className="text-2xl sm:text-3xl shrink-0 transition-transform group-hover:scale-110">
+              <span className="text-xl sm:text-2xl shrink-0 transition-transform group-hover:scale-110">
                 {problem.emoji}
               </span>
-              <span className={`font-heading text-sm sm:text-[15px] font-bold leading-tight ${
+              <span className={`font-heading text-xs sm:text-[15px] font-bold leading-tight ${
                 isSelected ? "text-black font-extrabold" : "text-white/95 group-hover:text-white"
               }`}>
                 {problem.label}
@@ -169,7 +169,7 @@ export default function ProblemFinder() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.99 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-6 rounded-[16px] border-2 border-black bg-[#FFD60A] p-5 sm:p-7 text-black shadow-[6px_6px_0_#000000]"
+            className="mt-5 sm:mt-6 rounded-[14px] sm:rounded-[16px] border-2 border-black bg-[#FFD60A] p-4 sm:p-7 text-black shadow-[4px_4px_0_#000000] sm:shadow-[6px_6px_0_#000000]"
           >
             <div className="flex items-center gap-2 text-xs font-mono font-black uppercase tracking-wider text-black/80">
               <CheckCircle2 size={15} className="text-black" />

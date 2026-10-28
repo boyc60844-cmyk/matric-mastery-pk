@@ -25,6 +25,7 @@ import DashboardPage from "@/app/dashboard/page";
 import LeaderboardPage from "@/app/leaderboard/page";
 import LoginPage from "@/app/login/page";
 import ExamDayGuidebookPage from "@/app/exam-day-guidebook/page";
+import BoardWatchPage from "@/app/board-watch/page";
 import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
@@ -53,6 +54,8 @@ function PageRenderer() {
       document.title = "Student Cloud Login | Matric Mastery PK";
     } else if (cleanPath === "/exam-day-guidebook" || cleanPath === "/guidebook" || cleanPath === "/exam-rules") {
       document.title = "Matric Mastery Exam Day Guidebook | Rules & Survival Tips";
+    } else if (cleanPath === "/board-watch" || cleanPath === "/boardwatch" || cleanPath === "/bise-watch" || cleanPath === "/date-sheet") {
+      document.title = "Board Watch — Punjab Exams | Official Notifications & Date Sheet Tracker";
     } else if (cleanPath === "/strategies" || cleanPath === "/strategy" || cleanPath.startsWith("/strategies/") || cleanPath.startsWith("/strategy/")) {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
@@ -87,6 +90,8 @@ function PageRenderer() {
     pageContent = <LoginPage />;
   } else if (cleanPath === "/exam-day-guidebook" || cleanPath === "/guidebook" || cleanPath === "/exam-rules") {
     pageContent = <ExamDayGuidebookPage />;
+  } else if (cleanPath === "/board-watch" || cleanPath === "/boardwatch" || cleanPath === "/bise-watch" || cleanPath === "/date-sheet") {
+    pageContent = <BoardWatchPage />;
   } else if (cleanPath === "/paper-hacks") {
     pageContent = <PaperHacksPage />;
   } else if (cleanPath === "/resources") {

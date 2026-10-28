@@ -643,7 +643,7 @@ export default function StrategyDetailPage({ slug }: StrategyDetailPageProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: 0.1 }}
-                className="relative h-[280px] sm:h-[380px] w-full overflow-hidden rounded-[26px] border border-white/10 shadow-2xl"
+                className="relative h-[200px] sm:h-[300px] md:h-[380px] w-full overflow-hidden rounded-2xl sm:rounded-[26px] border border-white/10 shadow-2xl"
               >
                 <Image
                   src={article.image}

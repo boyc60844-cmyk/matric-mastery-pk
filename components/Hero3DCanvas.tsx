@@ -18,9 +18,10 @@ export default function Hero3DCanvas() {
     const scene = new THREE.Scene();
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || 700;
+    const isMobile = width < 768;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 0, 14);
+    camera.position.set(0, 0, isMobile ? 16 : 14);
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -90,8 +91,9 @@ export default function Hero3DCanvas() {
     bookGroup.add(ribbonMesh);
 
     // Place book in upper-left/center area
-    bookGroup.position.set(-3.8, 1.2, 0);
+    bookGroup.position.set(isMobile ? -2.0 : -3.8, isMobile ? 1.6 : 1.2, isMobile ? -1.0 : 0);
     bookGroup.rotation.set(0.4, 0.6, -0.2);
+    if (isMobile) bookGroup.scale.set(0.85, 0.85, 0.85);
     scene.add(bookGroup);
 
     // -------------------------------------------------------------
@@ -143,8 +145,9 @@ export default function Hero3DCanvas() {
     const electron3 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), electronMat);
     atomGroup.add(electron1, electron2, electron3);
 
-    // Position atom in center-right background
-    atomGroup.position.set(4.2, 0.8, -1.5);
+    // Position atom in center-right background, contained within mobile bounds
+    atomGroup.position.set(isMobile ? 2.2 : 4.2, isMobile ? 1.4 : 0.8, isMobile ? -2.0 : -1.5);
+    if (isMobile) atomGroup.scale.set(0.85, 0.85, 0.85);
     scene.add(atomGroup);
 
     // -------------------------------------------------------------
@@ -298,9 +301,17 @@ export default function Hero3DCanvas() {
       if (!container) return;
       const newWidth = container.clientWidth || window.innerWidth;
       const newHeight = container.clientHeight || 700;
+      const mobile = newWidth < 768;
       camera.aspect = newWidth / newHeight;
+      camera.position.z = mobile ? 16 : 14;
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
+
+      atomGroup.position.set(mobile ? 2.2 : 4.2, mobile ? 1.4 : 0.8, mobile ? -2.0 : -1.5);
+      bookGroup.position.set(mobile ? -2.0 : -3.8, mobile ? 1.6 : 1.2, mobile ? -1.0 : 0);
+      const s = mobile ? 0.85 : 1.0;
+      atomGroup.scale.set(s, s, s);
+      bookGroup.scale.set(s, s, s);
     };
 
     window.addEventListener("resize", handleResize);

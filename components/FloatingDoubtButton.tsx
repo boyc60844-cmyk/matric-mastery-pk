@@ -1,17 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import DoubtSolverModal from "./DoubtSolverModal";
 
 export default function FloatingDoubtButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHiddenByOverlay, setIsHiddenByOverlay] = useState(false);
+
+  useEffect(() => {
+    const checkOverlay = () => {
+      const isLocked = document.body.style.overflow === "hidden";
+      setIsHiddenByOverlay(isLocked);
+    };
+
+    // Check periodically or via mutation observer
+    const observer = new MutationObserver(checkOverlay);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["style"] });
+    checkOverlay();
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
       <aside
         aria-label="Student AI Study Assistant"
-        className="fixed bottom-5 right-5 z-40 flex items-center"
+        className={`fixed bottom-5 right-5 z-40 flex items-center transition-opacity duration-200 ${
+          isHiddenByOverlay ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
       >
         <button
           type="button"

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Eye, MapPin, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Eye, MapPin, CheckCircle2, ShieldCheck, Zap, ShieldAlert, Building2 } from "lucide-react";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import Reveal from "@/components/Reveal";
@@ -281,6 +281,50 @@ export default function HomePage() {
             </Link>
           </Reveal>
         </div>
+      </section>
+
+      {/* =========================================================================
+          BOARD WATCH — PUNJAB EXAMS FEATURE EXPANSION SPOTLIGHT
+          ========================================================================= */}
+      <section className="relative mx-auto max-w-site px-5 py-6">
+        <Reveal>
+          <div className="rounded-3xl border border-accent/40 bg-gradient-to-r from-[#141418] via-[#121214] to-[#16161a] p-6 sm:p-8 shadow-brutalist-yellow">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="max-w-2xl">
+                <div className="flex items-center gap-2 text-xs font-mono font-bold text-accent uppercase tracking-wider mb-2">
+                  <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse shadow-glow" />
+                  <span>NEW MAJOR EXPANSION · BOARD WATCH</span>
+                </div>
+                <h2 className="font-heading text-xl sm:text-2xl font-black text-white">
+                  Board Watch — Punjab Examination Intelligence
+                </h2>
+                <p className="mt-2 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  Real official announcements, verified date sheets, and 2027 examination expectations across all 9 Punjab BISE boards (Lahore, Multan, Rawalpindi, Gujranwala, Faisalabad, Sargodha, Bahawalpur, DG Khan, Sahiwal) and PBCC. Includes rumor clarifications and subject SLO patterns.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted font-mono">
+                  <span>✓ 40% Passing Marks Standard</span>
+                  <span aria-hidden="true">·</span>
+                  <span>✓ 2027 Annual Timeline</span>
+                  <span aria-hidden="true">·</span>
+                  <span>✓ 9 Official Board Portals</span>
+                </div>
+              </div>
+
+              <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-2.5">
+                <Button href="/board-watch" variant="primary" className="!py-3 !px-6 text-xs sm:text-sm">
+                  <span>Explore Board Watch</span>
+                  <ArrowRight size={15} />
+                </Button>
+                <Link
+                  href="/board-watch#boards"
+                  className="text-center text-xs font-heading font-medium text-muted hover:text-white transition-colors py-1"
+                >
+                  Direct 9-Board Directory →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Reveal>
       </section>
 
       {/* =========================================================================

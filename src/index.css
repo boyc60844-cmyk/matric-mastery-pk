@@ -60,6 +60,15 @@
   }
 }
 
+/* Scrollbar hiding utilities for mobile carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Site constraints */
 .max-w-site {
   max-width: 1200px;

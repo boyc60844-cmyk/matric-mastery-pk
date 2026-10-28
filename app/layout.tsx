@@ -23,12 +23,12 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       </head>
-      <body className="bg-[#0A0A0A] text-white selection:bg-[#FFD60A] selection:text-black min-h-screen flex flex-col font-sans antialiased">
+      <body className="bg-[#050507] text-white selection:bg-[#FFD60A] selection:text-black min-h-screen flex flex-col font-sans antialiased w-full max-w-full overflow-x-hidden">
         <ScrollProgress />
         <CursorGlow />
         <Background />
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="w-full max-w-full min-w-0 flex-1">{children}</main>
         <Footer />
       </body>
     </html>

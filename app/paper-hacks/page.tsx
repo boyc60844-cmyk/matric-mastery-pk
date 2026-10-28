@@ -5,7 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 
 export default function PaperHacksPage() {
   return (
-    <section className="mx-auto max-w-site px-5 py-16 md:py-24">
+    <section className="mx-auto max-w-site px-5 py-8 sm:py-16 md:py-24">
       <header className="max-w-2xl">
         <Reveal>
           <span className="font-heading text-xs font-black uppercase tracking-[0.15em] text-accent">
@@ -22,13 +22,13 @@ export default function PaperHacksPage() {
         </Reveal>
       </header>
 
-      <div className="mt-16 space-y-12">
+      <div className="mt-8 sm:mt-14 space-y-6 sm:space-y-10">
         {paperHacks.map((hack, index) => (
           <Reveal key={hack.number} delay={index * 40}>
             <Card
               tilt={true}
               depth="hover-yellow"
-              className="p-6 md:p-10 transition-all duration-300"
+              className="p-4 sm:p-7 md:p-10 transition-all duration-300"
             >
               <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                 {/* Content */}

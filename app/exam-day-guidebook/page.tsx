@@ -539,7 +539,7 @@ export default function ExamDayGuidebookPage() {
         <div className="absolute top-96 right-10 h-96 w-96 rounded-full bg-emerald-500/[0.03] blur-[180px] pointer-events-none" />
 
         {/* HERO HEADER */}
-        <header className="relative border-b border-white/10 pt-16 pb-10 sm:pt-20 sm:pb-12 px-4 sm:px-6 lg:px-8">
+        <header className="relative border-b border-white/10 pt-8 pb-8 sm:pt-20 sm:pb-12 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl text-center">
             {/* Top Badge: Generic Education Icon Only */}
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 text-xs font-mono font-bold text-accent uppercase tracking-wider mb-5">

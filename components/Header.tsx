@@ -237,7 +237,7 @@ export default function Header() {
                 {/* Navigation Links - ALL 11 Pages Identical to Footer */}
                 <div className="mb-2 flex items-center justify-between px-1">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted">
-                    {isRTL ? "تمام صفحات" : "All Pages (11)"}
+                    {isRTL ? "تمام صفحات" : `All Pages (${MAIN_NAV_ITEMS.length})`}
                   </span>
                 </div>
                 <nav className="space-y-1">

@@ -48,7 +48,7 @@ export default function PastPapersPage() {
   const longs = (fallback.filter((q) => q.type === "long")).slice(0, 2);
 
   return (
-    <div className="mx-auto max-w-site px-4 sm:px-6 py-12 md:py-16">
+    <div className="mx-auto max-w-site px-4 sm:px-6 py-8 sm:py-12 md:py-16">
       {/* Page Header */}
       <div className="max-w-2xl">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-heading font-black text-accent uppercase tracking-wider">
@@ -177,11 +177,11 @@ export default function PastPapersPage() {
           {selectedYear})
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-heading font-bold text-white hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 sm:px-4 py-2 text-xs font-heading font-bold text-white hover:bg-white/10 transition-colors"
           >
             <Printer size={15} />
             <span>Print Paper</span>
@@ -190,7 +190,7 @@ export default function PastPapersPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-heading font-bold text-white hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 sm:px-4 py-2 text-xs font-heading font-bold text-white hover:bg-white/10 transition-colors"
           >
             <Download size={15} />
             <span>Download</span>
@@ -198,7 +198,7 @@ export default function PastPapersPage() {
 
           <Link
             href="/mock-tests"
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 font-heading text-xs font-black text-black hover:bg-accent/90 transition-transform active:scale-95 shadow-glow"
+            className="flex items-center gap-1.5 rounded-xl bg-accent px-3.5 sm:px-4 py-2 font-heading text-xs font-black text-black hover:bg-accent/90 transition-transform active:scale-95 shadow-glow"
           >
             <Play size={14} className="fill-black" />
             <span>Start Timed Practice</span>
@@ -207,7 +207,7 @@ export default function PastPapersPage() {
       </div>
 
       {/* Printable Board Paper Sheet Layout */}
-      <div className="relative mt-8 overflow-hidden rounded-2xl border border-white/15 bg-[#121215] p-6 sm:p-12 shadow-2xl text-white">
+      <div className="relative mt-8 overflow-hidden rounded-2xl border border-white/15 bg-[#121215] p-4 sm:p-8 md:p-12 shadow-2xl text-white">
         {/* Subtle Diagonal Watermark */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.03] select-none">
           <span className="font-heading text-5xl sm:text-7xl font-black uppercase tracking-widest -rotate-12 text-white">

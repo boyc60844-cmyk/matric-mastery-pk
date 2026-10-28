@@ -112,17 +112,17 @@ export default function Logo({
       {/* Brand Typography Beside Icon */}
       {!hideText && !is200 && (
         <div
-          className="flex items-baseline gap-1.5 font-heading tracking-tight"
+          className="flex items-baseline gap-1 sm:gap-1.5 font-heading tracking-tight"
           style={{
             transform: "translateZ(10px)",
             transformStyle: "preserve-3d",
           }}
         >
-          <span className="text-[15px] sm:text-[18px] font-medium text-white tracking-tight">
+          <span className="hidden sm:inline text-[15px] sm:text-[18px] font-medium text-white tracking-tight">
             Matric
           </span>
           <span
-            className="text-[18px] sm:text-[22px] font-extrabold text-[#FFD60A] tracking-tight uppercase"
+            className="text-[16px] sm:text-[22px] font-extrabold text-[#FFD60A] tracking-tight uppercase"
             style={{
               textShadow: "2px 2px 0px #000000",
             }}

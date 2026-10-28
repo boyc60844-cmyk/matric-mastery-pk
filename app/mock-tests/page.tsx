@@ -218,7 +218,7 @@ export default function MockTestsPage() {
   // -------------------------------------------------------------
   if (stage === "setup") {
     return (
-      <div className="mx-auto max-w-site px-4 sm:px-6 py-12 md:py-16">
+      <div className="mx-auto max-w-site px-4 sm:px-6 py-8 sm:py-12 md:py-16">
         {/* Header */}
         <div className="max-w-2xl">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-heading font-black text-accent uppercase tracking-wider">
@@ -235,7 +235,7 @@ export default function MockTestsPage() {
 
         {/* Setup Card */}
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-          <div className="rounded-2xl border border-white/10 bg-[#121215] p-6 sm:p-8 shadow-soft">
+          <div className="rounded-2xl border border-white/10 bg-[#121215] p-5 sm:p-8 shadow-soft">
             <h2 className="font-heading text-lg font-bold text-white mb-6 flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-black text-xs font-black">
                 1
@@ -337,7 +337,7 @@ export default function MockTestsPage() {
                 <label className="block text-xs font-heading font-bold uppercase tracking-wider text-muted mb-2">
                   Paper Marks & Duration
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   {[
                     { marks: 25 as const, duration: 30, desc: "Quick Drill" },
                     { marks: 50 as const, duration: 60, desc: "Mid-Term" },
@@ -347,14 +347,14 @@ export default function MockTestsPage() {
                       key={preset.marks}
                       type="button"
                       onClick={() => handleMarksChange(preset.marks)}
-                      className={`rounded-xl border p-3 text-center transition-all ${
+                      className={`rounded-xl border p-2 sm:p-3 text-center transition-all ${
                         targetMarks === preset.marks
                           ? "border-accent bg-accent/15 text-accent shadow-sm"
                           : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20"
                       }`}
                     >
-                      <div className="font-heading font-black text-lg">{preset.marks} Marks</div>
-                      <div className="text-[11px] text-muted font-mono">{preset.duration} mins &middot; {preset.desc}</div>
+                      <div className="font-heading font-black text-sm sm:text-lg">{preset.marks} Marks</div>
+                      <div className="text-[10px] sm:text-[11px] text-muted font-mono whitespace-nowrap overflow-hidden text-ellipsis">{preset.duration}m &middot; {preset.desc}</div>
                     </button>
                   ))}
                 </div>

@@ -176,7 +176,7 @@ function TiltCard({ subject, index }: { subject: SubjectItem; index: number }) {
 
 export default function Subject3DCards() {
   return (
-    <section className="relative mx-auto max-w-site px-5 py-16 md:py-24">
+    <section className="relative mx-auto w-full max-w-site px-4 sm:px-5 py-16 md:py-24 overflow-hidden min-w-0">
       <div className="flex flex-wrap items-end justify-between gap-6 mb-10">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-heading font-black text-accent uppercase tracking-wider">

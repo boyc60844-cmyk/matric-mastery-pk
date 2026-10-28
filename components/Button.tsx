@@ -82,6 +82,9 @@ export default function Button({
     </motion.div>
   );
 
+  const isFullWidth = className?.includes("w-full");
+  const wrapperClass = cn(isFullWidth ? "block w-full" : "inline-block", "preserve-3d");
+
   if (href) {
     const isExternal =
       href.startsWith("http://") ||
@@ -95,7 +98,7 @@ export default function Button({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block preserve-3d"
+          className={wrapperClass}
         >
           {content}
         </a>
@@ -103,7 +106,7 @@ export default function Button({
     }
 
     return (
-      <Link href={href} className="inline-block preserve-3d">
+      <Link href={href} className={wrapperClass}>
         {content}
       </Link>
     );
@@ -114,7 +117,7 @@ export default function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="inline-block border-none bg-transparent p-0 outline-none focus:outline-none preserve-3d"
+      className={cn(isFullWidth ? "block w-full" : "inline-block", "border-none bg-transparent p-0 outline-none focus:outline-none preserve-3d")}
     >
       {content}
     </button>

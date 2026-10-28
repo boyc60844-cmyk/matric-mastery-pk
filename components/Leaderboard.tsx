@@ -99,7 +99,7 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:py-16">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-16">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-white/10 pb-8">
         <div>
@@ -151,7 +151,7 @@ export default function Leaderboard() {
           </div>
 
           {/* #1 Rank (Highlighted) */}
-          <div className="order-1 sm:order-2 rounded-2xl border-2 border-accent bg-[#16161c] p-6 text-center relative overflow-hidden shadow-[0_0_30px_rgba(255,214,10,0.15)] flex flex-col justify-between -translate-y-2">
+          <div className="order-1 sm:order-2 rounded-2xl border-2 border-accent bg-[#16161c] p-6 text-center relative overflow-hidden shadow-[0_0_30px_rgba(255,214,10,0.15)] flex flex-col justify-between sm:-translate-y-2">
             <div className="absolute top-2 right-2 text-3xl">🥇</div>
             <div>
               <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-heading font-black text-black uppercase tracking-wider">

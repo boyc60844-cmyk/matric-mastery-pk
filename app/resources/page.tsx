@@ -29,7 +29,7 @@ const stationery = [
 
 export default function ResourcesPage() {
   return (
-    <section className="mx-auto max-w-site px-5 py-16 md:py-24">
+    <section className="mx-auto max-w-site px-5 py-8 sm:py-16 md:py-24">
       <Reveal>
         <p className="font-heading text-xs font-black uppercase tracking-[0.15em] text-accent">
           Resources
@@ -40,7 +40,7 @@ export default function ResourcesPage() {
       </Reveal>
 
       {/* Past papers */}
-      <div className="mt-16 grid gap-10 md:grid-cols-2 md:items-center">
+      <div className="mt-10 sm:mt-16 grid gap-8 sm:gap-10 md:grid-cols-2 md:items-center">
         <Reveal>
           <h2 className="font-heading text-2xl font-extrabold text-white">Past Papers</h2>
           <p className="mt-3 leading-relaxed text-muted">
@@ -78,7 +78,7 @@ export default function ResourcesPage() {
       </div>
 
       {/* Timetable templates */}
-      <div className="mt-24">
+      <div className="mt-12 sm:mt-20">
         <SectionHeading title="Timetable Templates" />
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {timetables.map((t, i) => (
@@ -112,7 +112,7 @@ export default function ResourcesPage() {
       </div>
 
       {/* YouTube channels */}
-      <div className="mt-24">
+      <div className="mt-12 sm:mt-20">
         <SectionHeading title="YouTube Channels I Actually Watch" />
         <div className="mt-8 grid gap-6 sm:grid-cols-3">
           {youtubeChannels.map((ch, i) => (
@@ -130,7 +130,7 @@ export default function ResourcesPage() {
       </div>
 
       {/* Stationery kit */}
-      <div className="mt-24">
+      <div className="mt-12 sm:mt-20">
         <SectionHeading
           title="My Stationery Kit"
           description="Nothing expensive here. Just the stuff that actually keeps a paper looking neat for three hours straight."

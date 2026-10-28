@@ -26,7 +26,7 @@ export default function Footer() {
         {/* Synchronized 11-page Navigation */}
         <div>
           <p className="font-heading text-xs font-black uppercase tracking-wider text-muted">
-            {isRTL ? "فہرست صفحات (11)" : "Navigation (11 Pages)"}
+            {isRTL ? "فہرست صفحات" : "Navigation"}
           </p>
           <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
             {MAIN_NAV_ITEMS.map((l) => (

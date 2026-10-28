@@ -161,10 +161,10 @@ export default function Hero3DStack() {
         {/* Layer 2: Floating 3D "Pattern Analysis" Card (Foreground Z = 45px) */}
         <div
           style={{ transform: "translateZ(45px)" }}
-          className="absolute -top-6 -right-4 sm:-right-8 w-60 sm:w-68 rounded-2xl border-2 border-accent/40 bg-[#121214]/95 p-4 shadow-brutalist-yellow backdrop-blur-xl preserve-3d"
+          className="absolute -top-4 right-0 sm:-top-6 sm:-right-8 w-52 sm:w-68 rounded-2xl border-2 border-accent/40 bg-[#121214]/95 p-3 sm:p-4 shadow-brutalist-yellow backdrop-blur-xl preserve-3d"
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="rounded-md bg-accent px-2 py-0.5 text-[10px] font-heading font-black tracking-wider text-black uppercase shadow-sm">
+            <span className="rounded-md bg-accent px-2 py-0.5 text-[9px] sm:text-[10px] font-heading font-black tracking-wider text-black uppercase shadow-sm">
               PATTERN FOUND
             </span>
             <span className="flex items-center gap-1 text-[10px] font-semibold text-accent font-heading">
@@ -172,14 +172,14 @@ export default function Hero3DStack() {
             </span>
           </div>
 
-          <h3 className="mt-2.5 font-heading text-sm font-extrabold text-white">
+          <h3 className="mt-2 font-heading text-xs sm:text-sm font-extrabold text-white">
             Pattern Analysis
           </h3>
-          <p className="mt-1 text-xs text-muted leading-relaxed">
+          <p className="mt-1 text-[11px] sm:text-xs text-muted leading-relaxed">
             Repeated concepts: <strong className="text-white/90">2024 &rarr; 2025 &rarr; 2026</strong>
           </p>
 
-          <div className="mt-3 flex items-center justify-between rounded-lg bg-black/60 border border-white/10 px-2.5 py-1.5 text-[11px]">
+          <div className="mt-2.5 flex items-center justify-between rounded-lg bg-black/60 border border-white/10 px-2 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-[11px]">
             <span className="text-muted">Formula steps:</span>
             <span className="font-bold text-accent font-mono">+3 Free Marks</span>
           </div>
@@ -188,10 +188,10 @@ export default function Hero3DStack() {
         {/* Layer 3: Floating 3D "Neatness" Badge (Foreground Z = 60px) */}
         <div
           style={{ transform: "translateZ(60px)" }}
-          className="absolute -bottom-5 -left-4 sm:-left-8 rounded-xl border border-accent/50 bg-[#141416]/95 px-4 py-2.5 shadow-brutalist-yellow backdrop-blur-xl preserve-3d"
+          className="absolute -bottom-3 left-0 sm:-bottom-5 sm:-left-8 rounded-xl border border-accent/50 bg-[#141416]/95 px-3 py-1.5 sm:px-4 sm:py-2.5 shadow-brutalist-yellow backdrop-blur-xl preserve-3d"
         >
-          <div className="flex items-center gap-2 text-xs font-heading font-bold text-white">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-black font-black text-[11px]">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-heading font-bold text-white">
+            <span className="flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-accent text-black font-black text-[10px] sm:text-[11px]">
               ✓
             </span>
             <span>
