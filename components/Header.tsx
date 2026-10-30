@@ -78,13 +78,19 @@ export default function Header() {
     if (mobileMenuOpen) {
       document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
+      document.body.setAttribute("data-mobile-menu", "open");
+      window.dispatchEvent(new CustomEvent("mm:menu-toggle", { detail: { open: true } }));
     } else {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
+      document.body.removeAttribute("data-mobile-menu");
+      window.dispatchEvent(new CustomEvent("mm:menu-toggle", { detail: { open: false } }));
     }
     return () => {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
+      document.body.removeAttribute("data-mobile-menu");
+      window.dispatchEvent(new CustomEvent("mm:menu-toggle", { detail: { open: false } }));
     };
   }, [mobileMenuOpen]);
 
@@ -106,14 +112,14 @@ export default function Header() {
   return (
     <>
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled && !mobileMenuOpen
-            ? "bg-[#0A0A0A]/90 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.6)] border-b border-white/10 py-1.5"
-            : "bg-transparent border-b border-transparent py-2.5"
+        className={`sticky top-0 z-50 transition-colors duration-200 border-b ${
+          scrolled || mobileMenuOpen
+            ? "bg-[#0A0A0A]/95 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.6)] border-white/10"
+            : "bg-[#0A0A0A]/85 backdrop-blur-sm border-white/5"
         }`}
       >
-        <div className="mx-auto flex h-[62px] sm:h-[66px] max-w-site items-center justify-between px-3 sm:px-6 gap-2">
-          {/* 1. 3D Isometric Block Logo */}
+        <div className="mx-auto flex h-[58px] sm:h-[66px] max-w-site items-center justify-between px-4 sm:px-6">
+          {/* 1. 3D Isometric Block Logo with full text on all screen sizes */}
           <Link
             href="/"
             className="flex items-center transition-transform hover:scale-[1.02] select-none group focus:outline-none shrink-0"
@@ -163,33 +169,36 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Right Header Controls: Always has ENG/اردو toggle, User XP Login/Avatar, and Hamburger Menu */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* 2. ENG/اردو Language Toggle */}
-            <LanguageToggle variant="compact" />
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Desktop & Tablet items: Language toggle, User XP Login, WhatsApp (hidden on mobile phones to keep header clean) */}
+            <div className="hidden sm:flex items-center gap-2 sm:gap-2.5">
+              {/* 2. ENG/اردو Language Toggle */}
+              <LanguageToggle variant="compact" />
 
-            {/* 3. User XP Login / Avatar Button (Google Firebase Auth) */}
-            <AuthButton />
+              {/* 3. User XP Login / Avatar Button (Google Firebase Auth) */}
+              <AuthButton />
 
-            {/* WhatsApp Community Button (on medium+ screens) */}
-            <div className="hidden md:flex">
-              <Button
-                href={whatsappLink()}
-                variant="whatsapp"
-                className="text-xs !py-1.5 !px-2.5"
-              >
-                <MessageCircle size={13} className="text-emerald-400" />
-                <span className="hidden xl:inline">WhatsApp</span>
-              </Button>
+              {/* WhatsApp Community Button (on medium+ screens) */}
+              <div className="hidden md:flex">
+                <Button
+                  href={whatsappLink()}
+                  variant="whatsapp"
+                  className="text-xs !py-1.5 !px-2.5"
+                >
+                  <MessageCircle size={13} className="text-emerald-400" />
+                  <span className="hidden xl:inline">WhatsApp</span>
+                </Button>
+              </div>
             </div>
 
-            {/* 4. Layer 5 — Hamburger Menu Button with Multi-Line Spring Morph into X */}
+            {/* 4. Hamburger Menu Button with Multi-Line Spring Morph into X (Comfortable 44px tap target on mobile) */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#141416] text-white transition-colors hover:border-accent hover:text-accent active:scale-95 cursor-pointer shrink-0"
+              className="flex h-11 w-11 min-h-[44px] min-w-[44px] sm:h-9 sm:w-9 sm:min-h-0 sm:min-w-0 items-center justify-center rounded-xl border border-white/10 bg-[#141416] text-white transition-colors hover:border-accent hover:text-accent active:scale-95 cursor-pointer shrink-0"
             >
               <span className="sr-only">Toggle Menu</span>
               <div className="relative flex h-4 w-4 items-center justify-center pointer-events-none">
@@ -267,6 +276,33 @@ export default function Header() {
         </div>
       </header>
 
+      {/* Slim Mobile Utility Strip (Phones only, non-sticky, scrolls away with page) */}
+      <div
+        className="sm:hidden w-full border-b border-white/10 bg-[#0C0C0E]/95 py-1.5 px-4"
+        aria-label="Mobile Quick Utilities"
+      >
+        <div className="mx-auto flex items-center justify-between gap-2 max-w-site">
+          {/* Language Toggle: ENG / اردو */}
+          <div className="shrink-0">
+            <LanguageToggle variant="compact" />
+          </div>
+
+          {/* User XP Login & WhatsApp */}
+          <div className="flex items-center gap-2 shrink-0">
+            <AuthButton />
+            <a
+              href={whatsappLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp Community"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#141416] text-emerald-400 hover:border-emerald-500/40 hover:bg-emerald-500/10 transition-colors shrink-0"
+            >
+              <MessageCircle size={16} />
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* Synchronized Multi-Layer Drawer Menu with Coordinated Staged Sequence */}
       <AnimatePresence>
         {mobileMenuOpen && (
@@ -337,7 +373,7 @@ export default function Header() {
                     },
               }}
               style={{ transformOrigin: "top center" }}
-              className="relative z-10 h-full w-full overflow-y-auto pt-[76px] pb-10 pointer-events-auto"
+              className="relative z-10 h-full w-full overflow-y-auto pt-[64px] sm:pt-[76px] pb-[calc(env(safe-area-inset-bottom,24px)+100px)] pointer-events-auto overscroll-contain"
             >
               <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-lg flex-col justify-between px-5">
                 <div>
@@ -531,7 +567,7 @@ export default function Header() {
                 </div>
 
                 {/* Drawer Footer CTAs */}
-                <div className="mt-6 border-t border-white/10 pt-3.5 space-y-2">
+                <div className="mt-8 border-t border-white/10 pt-4 pb-10 space-y-2.5">
                   <Button
                     href={whatsappLink()}
                     variant="whatsapp"
