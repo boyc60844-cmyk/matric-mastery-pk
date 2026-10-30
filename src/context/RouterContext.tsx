@@ -44,7 +44,8 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
     }
     window.history.pushState(null, "", url);
     setCurrentUrl(url);
-    window.scrollTo({ top: 0, behavior: "instant" });
+    // Note: scroll reset is coordinated precisely in PageRenderer onExitComplete
+    // to prevent any visible flash or scroll snap of the outgoing page.
   }, []);
 
   const replace = useCallback((url: string) => {

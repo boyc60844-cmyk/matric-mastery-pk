@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, RouterProvider } from "@/src/context/RouterContext";
 import { LanguageProvider, useLanguage } from "@/src/context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,9 +30,22 @@ import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
 
+const SOFT_EASE = [0.22, 1, 0.36, 1] as const;
+
 function PageRenderer() {
   const pathname = usePathname();
   const { language, isRTL } = useLanguage();
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Check prefers-reduced-motion for page transitions
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // Normalize path
   let cleanPath = pathname.split("?")[0].split("#")[0];
@@ -124,14 +137,39 @@ function PageRenderer() {
   }
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence
+      mode="wait"
+      onExitComplete={() => {
+        // Reset scroll position to top precisely when the old page finishes exiting
+        // so the user never sees the old scroll position flash or snap
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        }
+      }}
+    >
       <motion.div
         key={`${cleanPath}-${language}`}
-        initial={{ opacity: 0, x: isRTL ? 16 : -16 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: isRTL ? -16 : 16 }}
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-[calc(100vh-72px-260px)]"
+        initial={{
+          opacity: 0,
+          y: prefersReducedMotion ? 0 : 16,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          transition: {
+            duration: prefersReducedMotion ? 0.15 : 0.45,
+            ease: SOFT_EASE,
+          },
+        }}
+        exit={{
+          opacity: 0,
+          y: prefersReducedMotion ? 0 : -10,
+          transition: {
+            duration: prefersReducedMotion ? 0.15 : 0.25,
+            ease: SOFT_EASE,
+          },
+        }}
+        className="min-h-[calc(100vh-66px-260px)] page-transition-content pointer-events-auto"
       >
         {pageContent}
       </motion.div>

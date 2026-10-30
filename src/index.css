@@ -413,6 +413,95 @@
   }
 }
 
+/* ==========================================================================
+   Advanced Page Transitions — Staggered Section Entrance (Approach A)
+   ========================================================================== */
+@keyframes page-section-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger sequential direct children / major sections of the newly mounted page */
+.page-transition-content > * > section,
+.page-transition-content > * > article,
+.page-transition-content > * > main,
+.page-transition-content > * > .page-section,
+.page-transition-content > * > div[class*="py-"],
+.page-transition-content > * > div[class*="pt-"],
+.page-transition-content > section,
+.page-transition-content > article,
+.page-transition-content > main {
+  animation: page-section-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+.page-transition-content > * > :nth-child(1),
+.page-transition-content > :nth-child(1) {
+  animation-delay: 0.04s;
+}
+
+.page-transition-content > * > :nth-child(2),
+.page-transition-content > :nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.page-transition-content > * > :nth-child(3),
+.page-transition-content > :nth-child(3) {
+  animation-delay: 0.20s;
+}
+
+.page-transition-content > * > :nth-child(4),
+.page-transition-content > :nth-child(4) {
+  animation-delay: 0.28s;
+}
+
+.page-transition-content > * > :nth-child(5),
+.page-transition-content > :nth-child(5) {
+  animation-delay: 0.36s;
+}
+
+.page-transition-content > * > :nth-child(n+6),
+.page-transition-content > :nth-child(n+6) {
+  animation-delay: 0.44s;
+}
+
+/* Native View Transitions API customization */
+::view-transition-old(root) {
+  animation: 250ms cubic-bezier(0.22, 1, 0.36, 1) both page-view-exit;
+}
+
+::view-transition-new(root) {
+  animation: 450ms cubic-bezier(0.22, 1, 0.36, 1) both page-view-enter;
+}
+
+@keyframes page-view-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes page-view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
