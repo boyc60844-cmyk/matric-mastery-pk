@@ -19,5 +19,5 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { href: "/paper-hacks", labelKey: "nav.paperHacks", defaultLabel: "Paper Hacks" },
   { href: "/resources", labelKey: "nav.resources", defaultLabel: "Resources" },
   { href: "/about", labelKey: "nav.about", defaultLabel: "About" },
-  { href: "/legal", labelKey: "nav.legal", defaultLabel: "Legal" },
+  { href: "/legal", labelKey: "nav.legal", defaultLabel: "Legal & Policies" },
 ];

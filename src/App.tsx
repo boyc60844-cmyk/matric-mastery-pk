@@ -73,6 +73,8 @@ function PageRenderer() {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
       document.title = "My Story & Verification | Matric Mastery PK";
+    } else if (cleanPath === "/legal" || cleanPath === "/terms" || cleanPath === "/privacy" || cleanPath === "/policies") {
+      document.title = "Legal & Policies Center | Matric Mastery PK";
     } else {
       document.title = "Matric Mastery | Punjab Board Strategies & Exam Platform";
     }
@@ -111,7 +113,7 @@ function PageRenderer() {
     pageContent = <ResourcesPage />;
   } else if (cleanPath === "/about" || cleanPath === "/contact") {
     pageContent = <AboutPage />;
-  } else if (cleanPath === "/legal" || cleanPath === "/terms" || cleanPath === "/privacy") {
+  } else if (cleanPath === "/legal" || cleanPath === "/terms" || cleanPath === "/privacy" || cleanPath === "/policies") {
     pageContent = <LegalPage />;
   } else {
     // 404 Fallback
