@@ -442,10 +442,10 @@ export default function Header() {
                           : pathname.startsWith(link.href);
                       const label = t(link.labelKey, link.defaultLabel);
 
-                      // Open: starts ~150ms after panel begins (0.05 + 0.15 = 0.20s), staggered by ~75ms
-                      const linkOpenDelay = 0.20 + index * 0.075;
-                      // Underline draws right as each link finishes animating in (~0.30s later)
-                      const underlineOpenDelay = linkOpenDelay + 0.28;
+                      // Snappy open cascade: starts ~80ms after panel begins, staggered by ~28ms for fast perceived performance
+                      const linkOpenDelay = 0.08 + index * 0.028;
+                      // Underline draws right as each link settles (~0.16s later)
+                      const underlineOpenDelay = linkOpenDelay + 0.16;
 
                       return (
                         <motion.div

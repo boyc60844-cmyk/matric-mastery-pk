@@ -47,15 +47,17 @@ export default function Card({
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
 
-  // Maximum rotation: 5deg as requested
+  // Critically damped harmonic spring: m=0.4, k=240, c=24 (no resonant flutter, clean settle)
   const rotateXSpring = useSpring(
-    useTransform(mouseY, [0, 1], [4, -4]),
-    { stiffness: 180, damping: 24, mass: 0.5 }
+    useTransform(mouseY, [0, 1], [4.5, -4.5]),
+    { stiffness: 240, damping: 24, mass: 0.4 }
   );
   const rotateYSpring = useSpring(
-    useTransform(mouseX, [0, 1], [-4, 4]),
-    { stiffness: 180, damping: 24, mass: 0.5 }
+    useTransform(mouseX, [0, 1], [-4.5, 4.5]),
+    { stiffness: 240, damping: 24, mass: 0.4 }
   );
+
+  const [isHovered, setIsHovered] = useState(false);
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!tilt || !canHover || !cardRef.current) return;
@@ -64,10 +66,18 @@ export default function Card({
     const yPct = (e.clientY - rect.top) / rect.height;
     mouseX.set(xPct);
     mouseY.set(yPct);
+    cardRef.current.style.setProperty("--glare-x", `${(xPct * 100).toFixed(1)}%`);
+    cardRef.current.style.setProperty("--glare-y", `${(yPct * 100).toFixed(1)}%`);
+  }
+
+  function handleMouseEnter() {
+    if (!tilt || !canHover) return;
+    setIsHovered(true);
   }
 
   function handleMouseLeave() {
     if (!tilt || !canHover) return;
+    setIsHovered(false);
     mouseX.set(0.5);
     mouseY.set(0.5);
   }
@@ -83,6 +93,7 @@ export default function Card({
     <motion.div
       ref={cardRef}
       onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
       style={{
@@ -91,14 +102,29 @@ export default function Card({
         rotateX: tilt && canHover ? rotateXSpring : 0,
         rotateY: tilt && canHover ? rotateYSpring : 0,
       }}
-      whileTap={{ scale: 0.99 }}
+      whileTap={{
+        scale: 0.985,
+        transition: { type: "spring", stiffness: 480, damping: 28 },
+      }}
       className={cn(
-        "card-surface rounded-2xl p-6 shadow-soft transition-all duration-300 preserve-3d hover:border-border-hover relative group",
+        "card-surface rounded-2xl p-6 shadow-soft transition-all duration-300 preserve-3d hover:border-border-hover relative group overflow-hidden will-change-transform",
         depthStyles[depth],
         shimmer && "shimmer-sweep",
         className
       )}
     >
+      {/* Specular glare reflection highlight (Fresnel effect via CSS custom properties) */}
+      {canHover && tilt && (
+        <div
+          className="pointer-events-none absolute -inset-px rounded-2xl transition-opacity duration-300"
+          style={{
+            opacity: isHovered ? 1 : 0,
+            background: "radial-gradient(350px circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 214, 10, 0.08), transparent 70%)",
+          }}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Background layer (Z = 0) */}
       <div
         style={{ transform: "translateZ(0px)" }}

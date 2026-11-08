@@ -152,11 +152,16 @@ export default function Mini3DIcon({ type, className = "" }: Mini3DIconProps) {
       }
     }
 
-    // Render loop
-    let animId: number;
+    // Render loop with IntersectionObserver sleeping
+    let animId: number | null = null;
+    let isIntersecting = true;
     let clock = new THREE.Clock();
 
     const render = () => {
+      if (!isIntersecting) {
+        animId = null;
+        return;
+      }
       animId = requestAnimationFrame(render);
       const delta = clock.getDelta();
       rootGroup.rotation.y += delta * 1.5;
@@ -164,10 +169,26 @@ export default function Mini3DIcon({ type, className = "" }: Mini3DIconProps) {
       renderer.render(scene, camera);
     };
 
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting && animId === null) {
+          clock.getDelta(); // flush delta to prevent jump
+          render();
+        } else if (!isIntersecting && animId !== null) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(mount);
+
     render();
 
     return () => {
-      cancelAnimationFrame(animId);
+      observer.disconnect();
+      if (animId !== null) cancelAnimationFrame(animId);
       if (renderer.domElement && mount.contains(renderer.domElement)) {
         mount.removeChild(renderer.domElement);
       }

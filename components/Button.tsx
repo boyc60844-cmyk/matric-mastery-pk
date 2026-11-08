@@ -38,16 +38,24 @@ export default function Button({
 
   const rawX = useMotionValue(0);
   const rawY = useMotionValue(0);
-  const x = useSpring(rawX, { stiffness: 350, damping: 22 });
-  const y = useSpring(rawY, { stiffness: 350, damping: 22 });
+  // Empirical physics constants: stiffness 420, damping 26, mass 0.35 (critically damped quick-response)
+  const x = useSpring(rawX, { stiffness: 420, damping: 26, mass: 0.35 });
+  const y = useSpring(rawY, { stiffness: 420, damping: 26, mass: 0.35 });
+
+  // Parallax inner offset for multi-plane depth
+  const textX = useSpring(rawX, { stiffness: 360, damping: 28, mass: 0.4 });
+  const textY = useSpring(rawY, { stiffness: 360, damping: 28, mass: 0.4 });
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!canHover || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    rawX.set((e.clientX - centerX) * 0.18);
-    rawY.set((e.clientY - centerY) * 0.25);
+    // Normalized quadratic falloff
+    const dx = (e.clientX - centerX) * 0.16;
+    const dy = (e.clientY - centerY) * 0.22;
+    rawX.set(dx);
+    rawY.set(dy);
   }
 
   function handleMouseLeave() {
@@ -56,7 +64,7 @@ export default function Button({
   }
 
   const baseStyles =
-    "relative inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold tracking-tight transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none preserve-3d";
+    "relative inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold tracking-tight cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none preserve-3d will-change-transform";
 
   const variantStyles = {
     primary:
@@ -72,13 +80,31 @@ export default function Button({
   const content = (
     <motion.div
       ref={ref}
-      style={{ x: canHover ? x : 0, y: canHover ? y : 0 }}
-      whileTap={{ scale: 0.96 }}
+      style={{
+        x: canHover ? x : 0,
+        y: canHover ? y : 0,
+      }}
+      whileTap={{
+        scale: 0.97,
+        transition: { type: "spring", stiffness: 500, damping: 28 },
+      }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={cn(baseStyles, variantStyles[variant], className)}
     >
-      {children}
+      <motion.span
+        style={{
+          x: canHover ? textX : 0,
+          y: canHover ? textY : 0,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "inherit",
+          transform: "translateZ(10px)",
+        }}
+        className="pointer-events-none"
+      >
+        {children}
+      </motion.span>
     </motion.div>
   );
 

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import MotionProvider from "@/components/MotionProvider";
 import Background from "@/components/Background";
 import ScrollProgress from "@/components/ScrollProgress";
-import CursorGlow from "@/components/CursorGlow";
 import Cursor3D from "@/components/Cursor3D";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -30,7 +29,8 @@ import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
 
-const SOFT_EASE = [0.22, 1, 0.36, 1] as const;
+const ENTER_EASE = [0.16, 1, 0.3, 1] as const; // Quintic soft-decelerate
+const EXIT_EASE = [0.25, 1, 0.5, 1] as const;
 
 function PageRenderer() {
   const pathname = usePathname();
@@ -159,16 +159,16 @@ function PageRenderer() {
           opacity: 1,
           y: 0,
           transition: {
-            duration: prefersReducedMotion ? 0.15 : 0.45,
-            ease: SOFT_EASE,
+            duration: prefersReducedMotion ? 0.15 : 0.42,
+            ease: ENTER_EASE,
           },
         }}
         exit={{
           opacity: 0,
           y: prefersReducedMotion ? 0 : -10,
           transition: {
-            duration: prefersReducedMotion ? 0.15 : 0.25,
-            ease: SOFT_EASE,
+            duration: prefersReducedMotion ? 0.15 : 0.22,
+            ease: EXIT_EASE,
           },
         }}
         className="min-h-[calc(100vh-66px-260px)] page-transition-content pointer-events-auto"
@@ -186,7 +186,6 @@ export default function App() {
         <MotionProvider>
           <div className="relative min-h-screen bg-[#0A0A0A] text-white selection:bg-[#FFD60A] selection:text-black antialiased font-sans flex flex-col justify-between">
             <ScrollProgress />
-            <CursorGlow />
             <Cursor3D />
             <Background />
             <Header />

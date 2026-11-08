@@ -63,12 +63,12 @@ function TiltCard({ subject, index }: { subject: SubjectItem; index: number }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Smooth spring physics for 15deg 3D tilt
-  const mouseXSpring = useSpring(x, { stiffness: 220, damping: 20 });
-  const mouseYSpring = useSpring(y, { stiffness: 220, damping: 20 });
+  // Critically damped harmonic oscillator for 15deg 3D tilt
+  const mouseXSpring = useSpring(x, { stiffness: 260, damping: 24, mass: 0.4 });
+  const mouseYSpring = useSpring(y, { stiffness: 260, damping: 24, mass: 0.4 });
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["14deg", "-14deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-14deg", "14deg"]);
 
   // Glare position
   const [glarePos, setGlarePos] = useState({ x: 50, y: 50 });

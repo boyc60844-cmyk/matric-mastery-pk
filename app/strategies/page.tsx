@@ -20,6 +20,7 @@ import StrategiesGrid from "@/components/StrategiesGrid";
 import ProblemFinder from "@/components/ProblemFinder";
 import { strategyArticles, GradeLevel } from "@/lib/content";
 import { useSearchParams } from "@/src/context/RouterContext";
+import { motion } from "framer-motion";
 
 const filterTags = [
   "All",
@@ -470,7 +471,7 @@ export default function StrategiesPage() {
               )}
             </div>
 
-            {/* Grade Filter Tabs (Section 17) */}
+            {/* Grade Filter Tabs (Section 17) with Research-Backed Sliding Spring Pill */}
             <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#121214] p-1 overflow-x-auto no-scrollbar">
               {gradeFilters.map((g) => {
                 const isActive = selectedGrade === g.value;
@@ -479,13 +480,20 @@ export default function StrategiesPage() {
                     key={g.value}
                     type="button"
                     onClick={() => setSelectedGrade(g.value)}
-                    className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-heading font-bold transition-all cursor-pointer ${
+                    className={`relative whitespace-nowrap rounded-lg px-3 py-2 text-xs font-heading font-bold transition-colors cursor-pointer select-none ${
                       isActive
-                        ? "bg-accent text-black shadow-sm"
-                        : "text-muted hover:text-white hover:bg-white/5"
+                        ? "text-black"
+                        : "text-muted hover:text-white"
                     }`}
                   >
-                    {g.label}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeGradeFilter"
+                        className="absolute inset-0 rounded-lg bg-accent shadow-sm"
+                        transition={{ type: "spring", stiffness: 420, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10">{g.label}</span>
                   </button>
                 );
               })}

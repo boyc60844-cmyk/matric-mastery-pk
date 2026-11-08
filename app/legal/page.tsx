@@ -1323,7 +1323,7 @@ export default function LegalPage() {
             </div>
           </div>
 
-          {/* Filter Tabs */}
+          {/* Filter Tabs with Research-Backed Sliding Spring Pill */}
           <div className="mt-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             {[
               { id: "all", label: "All 15 Sections" },
@@ -1333,20 +1333,30 @@ export default function LegalPage() {
               { id: "disclaimers", label: "Disclaimers & Guidance" },
               { id: "ip-copyright", label: "Copyright & DMCA" },
               { id: "safety-accessibility", label: "Safety & Accessibility" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setSelectedCategory(tab.id as PolicyCategory)}
-                className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-heading font-bold transition-all cursor-pointer ${
-                  selectedCategory === tab.id
-                    ? "bg-[#FFD600] text-black shadow-glow font-black"
-                    : "border border-white/10 bg-white/5 text-muted hover:text-white hover:border-white/20"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            ].map((tab) => {
+              const isActive = selectedCategory === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(tab.id as PolicyCategory)}
+                  className={`relative shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-heading font-bold cursor-pointer transition-colors select-none ${
+                    isActive
+                      ? "text-black"
+                      : "border border-white/10 bg-white/5 text-muted hover:text-white hover:border-white/20"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeLegalCategory"
+                      className="absolute inset-0 rounded-xl bg-[#FFD600] shadow-glow"
+                      transition={{ type: "spring", stiffness: 420, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Mobile Jump Navigator Button */}

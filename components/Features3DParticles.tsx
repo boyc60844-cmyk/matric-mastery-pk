@@ -58,7 +58,12 @@ export default function Features3DParticles() {
     let animId: number;
     let clock = new THREE.Clock();
 
+    let isIntersecting = true;
     const animate = () => {
+      if (!isIntersecting) {
+        animId = 0;
+        return;
+      }
       animId = requestAnimationFrame(animate);
       const pos = geometry.attributes.position.array as Float32Array;
 
@@ -74,6 +79,21 @@ export default function Features3DParticles() {
       renderer.render(scene, camera);
     };
 
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting && animId === 0) {
+          clock.getDelta();
+          animate();
+        } else if (!isIntersecting && animId !== 0) {
+          cancelAnimationFrame(animId);
+          animId = 0;
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(mount);
+
     animate();
 
     const handleResize = () => {
@@ -88,7 +108,8 @@ export default function Features3DParticles() {
     window.addEventListener("resize", handleResize);
 
     return () => {
-      cancelAnimationFrame(animId);
+      observer.disconnect();
+      if (animId) cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
       if (renderer.domElement && mount.contains(renderer.domElement)) {
         mount.removeChild(renderer.domElement);

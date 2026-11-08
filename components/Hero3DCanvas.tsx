@@ -240,10 +240,15 @@ export default function Hero3DCanvas() {
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
 
-    let animationFrameId: number;
+    let isIntersecting = true;
+    let animationFrameId: number | null = null;
     let clock = new THREE.Clock();
 
     const animate = () => {
+      if (!isIntersecting) {
+        animationFrameId = null;
+        return;
+      }
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
@@ -292,6 +297,21 @@ export default function Hero3DCanvas() {
       renderer.render(scene, camera);
     };
 
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting && animationFrameId === null) {
+          clock.getDelta();
+          animate();
+        } else if (!isIntersecting && animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
+
     animate();
 
     // -------------------------------------------------------------
@@ -317,7 +337,8 @@ export default function Hero3DCanvas() {
     window.addEventListener("resize", handleResize);
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
+      if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
       if (renderer.domElement && container.contains(renderer.domElement)) {

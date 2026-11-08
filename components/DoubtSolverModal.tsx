@@ -30,6 +30,7 @@ import {
   UploadedImageData,
 } from "@/lib/ai";
 import { addXP } from "@/lib/progress";
+import { motion, AnimatePresence } from "framer-motion";
 import AIMarkdownRenderer from "./AIMarkdownRenderer";
 import DoubtOrb3D from "./DoubtOrb3D";
 
@@ -257,11 +258,26 @@ export default function DoubtSolverModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-md">
-      <div className="relative flex h-[92vh] max-h-[850px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#121215] shadow-2xl shadow-black">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-md"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: 10 }}
+            transition={{ type: "spring", stiffness: 360, damping: 28, mass: 0.4 }}
+            className="relative flex h-[92vh] max-h-[850px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#121215] shadow-2xl shadow-black"
+          >
         {/* Top Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5 bg-[#16161a]">
           <div className="flex items-center gap-2.5">
@@ -732,7 +748,9 @@ export default function DoubtSolverModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 }
