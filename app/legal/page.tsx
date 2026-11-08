@@ -57,6 +57,9 @@ import {
   Bookmark,
   CheckCircle2,
   SlidersHorizontal,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -994,14 +997,15 @@ export default function LegalPage() {
   const [activeTOC, setActiveTOC] = useState<string>("preserved-original-content");
   const [copiedSectionId, setCopiedSectionId] = useState<string | null>(null);
   const [showChangelog, setShowChangelog] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Accordion collapsed state: Map of section id to boolean (false = open)
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
-
-  // Dynamic last updated date
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [currentDateFormatted, setCurrentDateFormatted] = useState("November 2026");
 
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Set formatted date on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const now = new Date();
@@ -1011,60 +1015,14 @@ export default function LegalPage() {
     }
   }, []);
 
-  // Filter sections by category and search
-  const filteredSections = useMemo(() => {
-    return LEGAL_CENTER_SECTIONS.filter((sec) => {
-      // Category filter
-      const matchesCategory =
-        selectedCategory === "all" || sec.category === selectedCategory;
-      if (!matchesCategory) return false;
-
-      // Search filter
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      const titleMatch = sec.title.toLowerCase().includes(q);
-      const summaryMatch = sec.shortSummary.toLowerCase().includes(q);
-      const badgeMatch = sec.badges.some((b) => b.toLowerCase().includes(q));
-
-      let contentMatch = false;
-      if (sec.paragraphs) {
-        contentMatch = sec.paragraphs.some((p) => p.toLowerCase().includes(q));
-      }
-      if (sec.subsections) {
-        contentMatch =
-          contentMatch ||
-          sec.subsections.some(
-            (sub) =>
-              sub.subtitle.toLowerCase().includes(q) ||
-              sub.paragraphs.some((p) => p.toLowerCase().includes(q))
-          );
-      }
-
-      // Also search within the preserved original items if searching Section 01
-      if (sec.isOriginalPreserved) {
-        const origMatch = PRESERVED_ORIGINAL_ITEMS.some(
-          (orig) =>
-            orig.title.toLowerCase().includes(q) ||
-            orig.shortSummary.toLowerCase().includes(q) ||
-            orig.paragraphs.some((p) => p.toLowerCase().includes(q))
-        );
-        contentMatch = contentMatch || origMatch;
-      }
-
-      return titleMatch || summaryMatch || badgeMatch || contentMatch;
-    });
-  }, [selectedCategory, searchQuery]);
-
-  // Total word count and calculated reading time
+  // Calculate total words and reading time
   const { totalWords, readingTimeMinutes } = useMemo(() => {
     let allText: string[] = [];
 
-    // Count preserved original
     PRESERVED_ORIGINAL_ITEMS.forEach((item) => {
       allText.push(item.title, item.shortSummary, ...item.paragraphs);
     });
 
-    // Count comprehensive sections
     LEGAL_CENTER_SECTIONS.forEach((sec) => {
       allText.push(sec.title, sec.shortSummary);
       if (sec.paragraphs) allText.push(...sec.paragraphs);
@@ -1082,15 +1040,99 @@ export default function LegalPage() {
     };
   }, []);
 
-  // Scroll spy for TOC
+  // Search match detection and indexing
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    const matches: { id: string; title: string; number: string }[] = [];
+
+    LEGAL_CENTER_SECTIONS.forEach((sec) => {
+      let isMatch =
+        sec.title.toLowerCase().includes(q) ||
+        sec.shortSummary.toLowerCase().includes(q) ||
+        sec.badges.some((b) => b.toLowerCase().includes(q));
+
+      if (!isMatch && sec.paragraphs) {
+        isMatch = sec.paragraphs.some((p) => p.toLowerCase().includes(q));
+      }
+      if (!isMatch && sec.subsections) {
+        isMatch = sec.subsections.some(
+          (sub) =>
+            sub.subtitle.toLowerCase().includes(q) ||
+            sub.paragraphs.some((p) => p.toLowerCase().includes(q))
+        );
+      }
+      if (!isMatch && sec.isOriginalPreserved) {
+        isMatch = PRESERVED_ORIGINAL_ITEMS.some(
+          (orig) =>
+            orig.title.toLowerCase().includes(q) ||
+            orig.shortSummary.toLowerCase().includes(q) ||
+            orig.paragraphs.some((p) => p.toLowerCase().includes(q))
+        );
+      }
+
+      if (isMatch) {
+        matches.push({ id: sec.id, title: sec.title, number: sec.number });
+      }
+    });
+
+    return matches;
+  }, [searchQuery]);
+
+  // Reset match index when query changes
+  useEffect(() => {
+    setCurrentMatchIndex(0);
+  }, [searchQuery]);
+
+  // Smooth scroll helper with header clearance (88px offset)
+  const scrollToElement = (id: string) => {
+    if (typeof window === "undefined") return;
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const offset = 88;
+    const bodyRect = document.body.getBoundingClientRect().top;
+    const elementRect = el.getBoundingClientRect().top;
+    const elementPosition = elementRect - bodyRect;
+    const offsetPosition = elementPosition - offset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: "smooth",
+    });
+    setActiveTOC(id);
+  };
+
+  // Search Prev/Next navigation
+  const goToNextMatch = () => {
+    if (searchMatches.length === 0) return;
+    const nextIdx = (currentMatchIndex + 1) % searchMatches.length;
+    setCurrentMatchIndex(nextIdx);
+    scrollToElement(searchMatches[nextIdx].id);
+  };
+
+  const goToPrevMatch = () => {
+    if (searchMatches.length === 0) return;
+    const prevIdx = (currentMatchIndex - 1 + searchMatches.length) % searchMatches.length;
+    setCurrentMatchIndex(prevIdx);
+    scrollToElement(searchMatches[prevIdx].id);
+  };
+
+  // Scroll listener for reading progress and sticky TOC spy
   useEffect(() => {
     const handleScroll = () => {
-      const sectionIds = filteredSections.map((s) => s.id);
+      const scrollY = window.scrollY;
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalHeight > 0) {
+        setScrollProgress(Math.min(100, Math.max(0, Math.round((scrollY / totalHeight) * 100))));
+      }
+
+      const sectionIds = LEGAL_CENTER_SECTIONS.map((s) => s.id);
       for (let i = sectionIds.length - 1; i >= 0; i--) {
         const el = document.getElementById(sectionIds[i]);
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= 200) {
+          if (rect.top <= 140) {
             setActiveTOC(sectionIds[i]);
             break;
           }
@@ -1100,36 +1142,34 @@ export default function LegalPage() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [filteredSections]);
+  }, []);
 
-  const toggleAccordion = (id: string) => {
-    setCollapsedSections((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  // Mobile Drawer accessibility: body scroll lock and escape listener
+  useEffect(() => {
+    if (isMobileDrawerOpen) {
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setIsMobileDrawerOpen(false);
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [isMobileDrawerOpen]);
 
-  const expandAll = () => {
-    setCollapsedSections({});
-  };
-
-  const collapseAll = () => {
-    const collapsedMap: Record<string, boolean> = {};
-    LEGAL_CENTER_SECTIONS.forEach((s) => {
-      collapsedMap[s.id] = true;
-    });
-    PRESERVED_ORIGINAL_ITEMS.forEach((s) => {
-      collapsedMap[s.id] = true;
-    });
-    setCollapsedSections(collapsedMap);
-  };
-
+  // Copy section permalink to clipboard with toast checkmark
   const copySectionLink = (id: string) => {
     if (typeof window !== "undefined") {
       const url = `${window.location.origin}/legal#${id}`;
       navigator.clipboard.writeText(url);
       setCopiedSectionId(id);
-      setTimeout(() => setCopiedSectionId(null), 2000);
+      setTimeout(() => setCopiedSectionId(null), 2200);
     }
   };
 
@@ -1145,14 +1185,30 @@ export default function LegalPage() {
     }
   };
 
-  // Text highlighting helper
+  // Category selection handler: selects tab and smoothly scrolls to first matching chapter
+  const handleCategorySelect = (catId: PolicyCategory) => {
+    setSelectedCategory(catId);
+    if (catId === "all") {
+      scrollToElement("preserved-original-content");
+      return;
+    }
+    const matchingSection = LEGAL_CENTER_SECTIONS.find((s) => s.category === catId);
+    if (matchingSection) {
+      scrollToElement(matchingSection.id);
+    }
+  };
+
+  // Text highlighting helper for search terms
   const highlightQuery = (text: string) => {
     if (!searchQuery.trim()) return text;
     const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const parts = text.split(new RegExp(`(${escaped})`, "gi"));
     return parts.map((part, i) =>
       part.toLowerCase() === searchQuery.toLowerCase() ? (
-        <mark key={i} className="bg-[#FFD600]/30 text-[#FFD600] font-bold px-1 py-0.2 rounded">
+        <mark
+          key={i}
+          className="bg-[#FFD600]/30 text-[#FFD600] font-bold px-1 py-0.5 rounded transition-colors"
+        >
           {part}
         </mark>
       ) : (
@@ -1161,99 +1217,165 @@ export default function LegalPage() {
     );
   };
 
-  return (
-    <div className="relative min-h-screen bg-[#0A0A0A] text-white selection:bg-[#FFD600] selection:text-black py-10 sm:py-16">
-      {/* Background Ambient Mesh */}
-      <div className="absolute top-12 left-10 h-[500px] w-[500px] rounded-full bg-[#FFD600]/[0.03] blur-[160px] pointer-events-none" />
-      <div className="absolute top-96 right-10 h-[500px] w-[500px] rounded-full bg-emerald-500/[0.02] blur-[180px] pointer-events-none" />
+  // Statutory classification metadata helper
+  const getStatutoryBadge = (secNumber: string) => {
+    switch (secNumber) {
+      case "01":
+        return { tag: "VERBATIM ARCHIVE", scope: "Original Foundational Legal Clauses" };
+      case "02":
+        return { tag: "STATUTORY OBLIGATION", scope: "Contract Act 1872 & Majority Act 1875" };
+      case "03":
+        return { tag: "STATUTORY & REGULATORY", scope: "Student Privacy & PECA 2016" };
+      case "04":
+        return { tag: "TECHNICAL STANDARDS", scope: "Cookie & Session Storage Architecture" };
+      case "05":
+        return { tag: "EDUCATIONAL DISCLAIMER", scope: "Revision & Study Aid Limitations" };
+      case "06":
+        return { tag: "OFFICIAL DISCLOSURE", scope: "BISE & FBISE Independence Declaration" };
+      case "07":
+        return { tag: "INTELLECTUAL PROPERTY", scope: "Multan, Punjab Platform Ownership" };
+      case "08":
+        return { tag: "EXTERNAL PROTOCOLS", scope: "Third-Party Resources & Links" };
+      case "09":
+        return { tag: "CRIMINAL DIRECTIVE", scope: "PECA 2016 Zero-Tolerance Anti-Cheating" };
+      case "10":
+        return { tag: "EDITORIAL STANDARDS", scope: "Curriculum Accuracy & Corrections" };
+      case "11":
+        return { tag: "COMMUNITY STANDARDS", scope: "Voluntary User Contributions" };
+      case "12":
+        return { tag: "CYBERSECURITY PROTOCOL", scope: "Data Encryption & FIA Cooperation" };
+      case "13":
+        return { tag: "STATUTORY & INTERNATIONAL", scope: "PECA Complaints & DMCA 1998 Takedown" };
+      case "14":
+        return { tag: "CIVIC STANDARD", scope: "WCAG 2.1 AA Platform Accessibility" };
+      case "15":
+        return { tag: "ADMINISTRATIVE CLAUSE", scope: "Effective Dates & Multan Jurisdiction" };
+      default:
+        return { tag: "POLICY PROVISION", scope: "Official Governance Framework" };
+    }
+  };
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  return (
+    <div className="relative min-h-screen bg-[#08080A] text-white selection:bg-[#FFD600] selection:text-black py-8 sm:py-14 print:bg-white print:text-black">
+      {/* Ambient background glows */}
+      <div className="absolute top-10 left-1/4 h-[450px] w-[450px] rounded-full bg-[#FFD600]/[0.025] blur-[150px] pointer-events-none print:hidden" />
+      <div className="absolute top-80 right-1/4 h-[500px] w-[500px] rounded-full bg-emerald-500/[0.018] blur-[180px] pointer-events-none print:hidden" />
+
+      {/* Main Container - strictly constrained to max-w-site (1200px) */}
+      <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
-            HERO HEADER - LEGAL & POLICIES CENTER
+            1. FOLIO MASTHEAD & HERO
             ========================================================================= */}
-        <header className="relative border-b border-white/10 pb-10 sm:pb-14">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#FFD600]/40 bg-[#FFD600]/10 px-4 py-1.5 font-mono text-xs font-bold text-[#FFD600] uppercase tracking-wider shadow-sm">
-              <Scale size={14} className="text-[#FFD600]" />
-              <span>Official Institutional Documentation · 15-Section Center</span>
+        <header className="border-b border-white/[0.12] pb-8 sm:pb-12 print:border-black">
+          {/* Folio Stamp & Official Regulatory Seal */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+            <div className="inline-flex items-center gap-2.5 font-mono text-xs text-white/70">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-[#FFD600]/40 bg-[#FFD600]/10 px-2.5 py-1 text-[11px] font-bold text-[#FFD600] uppercase tracking-wider">
+                <Scale size={13} className="text-[#FFD600]" />
+                ARCHIVE CODEX // MM-LEG-v3.5.0
+              </span>
+              <span className="hidden sm:inline text-white/20">|</span>
+              <span className="hidden sm:inline text-[11px] text-white/60 uppercase tracking-widest font-mono">
+                Multan Jurisdiction · Punjab, Pakistan
+              </span>
             </div>
 
-            {/* Quick Actions: Print, Changelog, Expand All */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Quick Action Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 print:hidden">
               <button
                 type="button"
                 onClick={() => setShowChangelog(!showChangelog)}
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-heading font-semibold text-muted hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-heading font-medium text-white/80 hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
               >
                 <History size={13} className="text-[#FFD600]" />
                 <span>Revision Changelog</span>
+                <span className="rounded bg-white/10 px-1.5 py-0.2 text-[10px] font-mono text-white/90">
+                  4
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-heading font-semibold text-muted hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-heading font-medium text-white/80 hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
               >
                 <Printer size={13} className="text-[#FFD600]" />
                 <span>Print / Save PDF</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => copySectionLink("preserved-original-content")}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-heading font-medium text-white/80 hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
+              >
+                <Bookmark size={13} className="text-[#FFD600]" />
+                <span>Jump to Preserved Clauses</span>
+              </button>
             </div>
           </div>
 
-          <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
+          {/* Display Heading */}
+          <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08]">
             Legal &amp;{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD600] via-amber-300 to-emerald-400">
               Policies Center
             </span>
           </h1>
 
-          <p className="mt-4 text-sm sm:text-base text-muted max-w-3xl leading-relaxed font-normal">
-            Official operational frameworks governing Matric Mastery. Encompassing our preserved foundational declarations, Terms of Service, Student Privacy, Cookie Architecture, Educational Disclaimers, Government Non-Affiliation, Intellectual Property, PECA 2016 Cybercrime Adherence, and our uncompromising Zero-Tolerance Anti-Cheating Policy.
+          {/* Editorial Lead Paragraph */}
+          <p className="mt-4 text-sm sm:text-base text-white/70 max-w-3xl leading-relaxed font-normal">
+            Official institutional repository and operational frameworks governing Matric Mastery. Encompassing our preserved foundational declarations, Terms of Service, Student Privacy, Cookie Architecture, Educational Disclaimers, Government Non-Affiliation, Intellectual Property, PECA 2016 Cybercrime Adherence, and Zero-Tolerance Anti-Cheating Directives.
           </p>
 
-          {/* Dynamic Legal Telemetry Strip */}
-          <div className="mt-6 flex flex-wrap items-center gap-3 text-xs font-mono">
-            <span className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-white/90">
-              <Calendar size={13} className="text-[#FFD600]" />
-              Last Updated: {currentDateFormatted}
-            </span>
+          {/* Typographic Metrics Strip */}
+          <div className="mt-6 flex flex-wrap items-center gap-2.5 sm:gap-4 text-xs font-mono">
+            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/90">
+              <Layers size={13} className="text-[#FFD600]" />
+              <span>15 Codified Chapters</span>
+            </div>
 
-            <span className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-white/90">
+            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/90">
+              <FileText size={13} className="text-[#FFD600]" />
+              <span>{totalWords.toLocaleString()} Exact Words</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/90">
               <Clock size={13} className="text-[#FFD600]" />
-              {readingTimeMinutes} min read ({totalWords} words)
-            </span>
+              <span>{readingTimeMinutes} Min Read</span>
+            </div>
 
-            <span className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-400 font-bold">
+            <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-400 font-bold">
               <ShieldCheck size={13} />
-              Version: v3.5.0 (Active &amp; Binding)
-            </span>
+              <span>100% Verbatim Preserved</span>
+            </div>
 
-            <span className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-muted">
-              Jurisdiction: Multan, Punjab, Pakistan
-            </span>
+            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/70">
+              <Calendar size={13} className="text-[#FFD600]" />
+              <span>Updated: {currentDateFormatted}</span>
+            </div>
           </div>
 
-          {/* Collapsible Revision Changelog Drawer */}
+          {/* Collapsible Revision Changelog Panel */}
           <AnimatePresence>
             {showChangelog && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-6 overflow-hidden rounded-2xl border border-white/15 bg-[#121216] p-5 shadow-2xl"
+                transition={{ duration: 0.25 }}
+                className="mt-6 overflow-hidden rounded-2xl border border-white/15 bg-[#0E0E12] p-5 shadow-2xl print:hidden"
               >
                 <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
                   <span className="font-heading text-xs font-black uppercase tracking-wider text-[#FFD600] flex items-center gap-2">
                     <History size={14} />
-                    <span>Regulatory Revision Changelog</span>
+                    <span>Regulatory Revision Changelog (4 Formal Ratifications)</span>
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowChangelog(false)}
-                    className="text-xs text-muted hover:text-white cursor-pointer"
+                    className="text-xs text-white/60 hover:text-white cursor-pointer px-2 py-1 rounded"
                   >
-                    Close
+                    Close &times;
                   </button>
                 </div>
 
@@ -1264,9 +1386,9 @@ export default function LegalPage() {
                         <span className="font-heading font-black text-white text-xs">
                           {log.version}
                         </span>
-                        <span className="font-mono text-[10px] text-muted">{log.date}</span>
+                        <span className="font-mono text-[10px] text-white/60">{log.date}</span>
                       </div>
-                      <ul className="mt-1.5 list-disc list-inside space-y-1 text-xs text-muted leading-relaxed">
+                      <ul className="mt-1.5 list-disc list-inside space-y-1 text-xs text-white/70 leading-relaxed">
                         {log.changes.map((c, i) => (
                           <li key={i}>{c}</li>
                         ))}
@@ -1278,476 +1400,594 @@ export default function LegalPage() {
             )}
           </AnimatePresence>
 
-          {/* Search & Category Filter Bar */}
-          <div className="mt-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            {/* Search with highlight support */}
-            <div className="relative flex-1 max-w-md">
+          {/* =======================================================================
+              SEARCH & FILTER CONTROL TOOLBAR
+              ======================================================================= */}
+          <div className="mt-7 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 print:hidden">
+            {/* Search Input with Match Counter and Prev/Next buttons */}
+            <div className="relative flex-1 max-w-lg">
               <Search
                 size={16}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none"
               />
               <input
+                ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search all 15 policies (e.g. PECA, cookies, Firebase, leaks)..."
-                className="w-full rounded-2xl border border-white/15 bg-[#121216] pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-muted focus:border-[#FFD600] focus:outline-none transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (e.shiftKey) goToPrevMatch();
+                    else goToNextMatch();
+                  }
+                }}
+                placeholder="Search all 15 chapters (e.g. PECA, cookies, Firebase, parental consent)..."
+                className="w-full rounded-xl border border-white/15 bg-[#121216] pl-10 pr-28 py-2.5 text-xs sm:text-sm text-white placeholder:text-white/40 focus:border-[#FFD600] focus:outline-none transition-colors"
               />
+
               {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-white cursor-pointer"
-                >
-                  Clear
-                </button>
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <span className="font-mono text-[10px] text-[#FFD600] bg-[#FFD600]/10 px-1.5 py-0.5 rounded">
+                    {searchMatches.length > 0
+                      ? `${currentMatchIndex + 1}/${searchMatches.length}`
+                      : "0"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={goToPrevMatch}
+                    disabled={searchMatches.length === 0}
+                    title="Previous match (Shift+Enter)"
+                    className="h-6 w-6 flex items-center justify-center rounded bg-white/5 text-white/70 hover:text-white disabled:opacity-30 cursor-pointer"
+                  >
+                    <ChevronUp size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToNextMatch}
+                    disabled={searchMatches.length === 0}
+                    title="Next match (Enter)"
+                    className="h-6 w-6 flex items-center justify-center rounded bg-white/5 text-white/70 hover:text-white disabled:opacity-30 cursor-pointer"
+                  >
+                    <ChevronDown size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    title="Clear search"
+                    className="h-6 w-6 flex items-center justify-center rounded text-white/50 hover:text-white cursor-pointer ml-0.5"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
               )}
             </div>
 
-            {/* Expand / Collapse All Toggles */}
-            <div className="flex items-center gap-2 self-end md:self-auto text-xs font-mono">
-              <button
-                type="button"
-                onClick={expandAll}
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-muted hover:text-white hover:border-white/20 transition-colors cursor-pointer"
-              >
-                Expand All
-              </button>
-              <button
-                type="button"
-                onClick={collapseAll}
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-muted hover:text-white hover:border-white/20 transition-colors cursor-pointer"
-              >
-                Collapse All
-              </button>
+            {/* Quick Directory / Stats readout */}
+            <div className="flex items-center gap-3 text-xs font-mono text-white/60">
+              {searchQuery ? (
+                <span className="text-[#FFD600]">
+                  Found {searchMatches.length} matching chapter{searchMatches.length === 1 ? "" : "s"}
+                </span>
+              ) : (
+                <span>All 15 chapters active &amp; binding</span>
+              )}
             </div>
           </div>
 
-          {/* Filter Tabs with Research-Backed Sliding Spring Pill */}
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {/* Category Filter Tabs with Soft Highlighting */}
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none print:hidden">
             {[
-              { id: "all", label: "All 15 Sections" },
-              { id: "preserved-original", label: "01. Original Preserved" },
+              { id: "all", label: "All 15 Chapters" },
+              { id: "preserved-original", label: "01. Preserved Foundations" },
               { id: "terms", label: "Terms & Access" },
               { id: "privacy-cookies", label: "Privacy & Cookies" },
               { id: "disclaimers", label: "Disclaimers & Guidance" },
               { id: "ip-copyright", label: "Copyright & DMCA" },
-              { id: "safety-accessibility", label: "Safety & Accessibility" },
+              { id: "safety-accessibility", label: "Safety & Standards" },
             ].map((tab) => {
               const isActive = selectedCategory === tab.id;
               return (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setSelectedCategory(tab.id as PolicyCategory)}
-                  className={`relative shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-heading font-bold cursor-pointer transition-colors select-none ${
+                  onClick={() => handleCategorySelect(tab.id as PolicyCategory)}
+                  className={`relative shrink-0 rounded-lg px-3 py-1.5 text-xs font-heading font-bold cursor-pointer transition-colors select-none ${
                     isActive
-                      ? "text-black"
-                      : "border border-white/10 bg-white/5 text-muted hover:text-white hover:border-white/20"
+                      ? "bg-[#FFD600] text-black shadow-glow"
+                      : "border border-white/10 bg-white/[0.03] text-white/70 hover:text-white hover:border-white/20"
                   }`}
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeLegalCategory"
-                      className="absolute inset-0 rounded-xl bg-[#FFD600] shadow-glow"
-                      transition={{ type: "spring", stiffness: 420, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">{tab.label}</span>
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
           </div>
-
-          {/* Mobile Jump Navigator Button */}
-          <div className="mt-4 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-full flex items-center justify-between rounded-xl border border-white/15 bg-[#121216] px-4 py-2.5 text-xs font-heading font-bold text-white"
-            >
-              <span className="flex items-center gap-2">
-                <Layers size={14} className="text-[#FFD600]" />
-                <span>Jump to Section ({filteredSections.length} available)</span>
-              </span>
-              <ChevronDown
-                size={16}
-                className={`text-muted transition-transform ${mobileMenuOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-
-            {mobileMenuOpen && (
-              <div className="mt-2 rounded-xl border border-white/15 bg-[#121216] p-2 space-y-1 max-h-60 overflow-y-auto">
-                {filteredSections.map((sec) => (
-                  <a
-                    key={sec.id}
-                    href={`#${sec.id}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMobileMenuOpen(false);
-                      const el = document.getElementById(sec.id);
-                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
-                    className="block rounded-lg px-3 py-1.5 text-xs text-muted hover:text-white hover:bg-white/5"
-                  >
-                    §{sec.number} {sec.title}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
         </header>
 
         {/* =========================================================================
-            MAIN BODY: 2-COLUMN LAYOUT (Sticky Desktop TOC + Legal Sections)
+            2. TWO-COLUMN RESPONSIVE LAYOUT (Desktop Ledger + Fluid Prose)
             ========================================================================= */}
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          {/* LEFT SIDEBAR: STICKY TABLE OF CONTENTS (DESKTOP) */}
-          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3 lg:sticky lg:top-24 space-y-4">
-            <div className="rounded-3xl border border-white/10 bg-[#121216]/95 p-5 backdrop-blur-xl shadow-2xl">
-              <span className="font-heading text-xs font-black uppercase tracking-wider text-muted flex items-center gap-2 mb-3 border-b border-white/10 pb-3">
-                <Layers size={14} className="text-[#FFD600]" />
-                <span>Policies Directory</span>
-              </span>
+        <div className="mt-8 lg:mt-12 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] gap-8 xl:gap-12 items-start">
+          {/* -----------------------------------------------------------------------
+              LEFT COLUMN: STICKY READING LEDGER (DESKTOP)
+              ----------------------------------------------------------------------- */}
+          <aside className="hidden lg:block lg:sticky lg:top-[88px] space-y-4 print:hidden">
+            <div className="rounded-2xl border border-white/[0.1] bg-[#0E0E12]/95 p-4 backdrop-blur-xl shadow-2xl">
+              {/* Reading Progress indicator */}
+              <div className="border-b border-white/10 pb-3 mb-3">
+                <div className="flex items-center justify-between text-[11px] font-mono mb-1.5">
+                  <span className="text-white/60 font-bold uppercase tracking-wider">
+                    Reading Progress
+                  </span>
+                  <span className="text-[#FFD600] font-bold">{scrollProgress}%</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#FFD600] to-emerald-400 transition-all duration-150"
+                    style={{ width: `${scrollProgress}%` }}
+                  />
+                </div>
+              </div>
 
-              <nav className="space-y-1 max-h-[62vh] overflow-y-auto pr-1 scrollbar-none">
-                {filteredSections.map((sec) => {
+              {/* Ledger Directory Header */}
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="font-mono text-[11px] font-bold text-white/50 uppercase tracking-widest flex items-center gap-1.5">
+                  <Layers size={12} className="text-[#FFD600]" />
+                  <span>Archive Ledger</span>
+                </span>
+                <span className="text-[10px] font-mono text-white/40">15 Chapters</span>
+              </div>
+
+              {/* Navigation Index */}
+              <nav className="space-y-1 max-h-[calc(100vh-270px)] overflow-y-auto pr-1 scrollbar-none">
+                {LEGAL_CENTER_SECTIONS.map((sec) => {
                   const isActive = activeTOC === sec.id;
+                  const stat = getStatutoryBadge(sec.number);
+                  const isHighlightedByCategory =
+                    selectedCategory === "all" || sec.category === selectedCategory;
+
                   return (
                     <a
                       key={sec.id}
                       href={`#${sec.id}`}
                       onClick={(e) => {
                         e.preventDefault();
-                        const el = document.getElementById(sec.id);
-                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        scrollToElement(sec.id);
                       }}
-                      className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-heading font-medium transition-all ${
+                      className={`group relative flex flex-col rounded-lg px-2.5 py-2 text-xs transition-all ${
                         isActive
-                          ? "bg-[#FFD600]/15 text-[#FFD600] font-bold border-l-2 border-[#FFD600]"
-                          : "text-muted hover:text-white hover:bg-white/5"
+                          ? "bg-[#FFD600]/15 text-white font-bold border-l-2 border-[#FFD600]"
+                          : isHighlightedByCategory
+                          ? "text-white/80 hover:text-white hover:bg-white/[0.04]"
+                          : "text-white/40 hover:text-white/70"
                       }`}
                     >
-                      <span className="truncate pr-2">
-                        {sec.number}. {sec.title}
-                      </span>
-                      <span className="text-[10px] font-mono opacity-60 shrink-0">
-                        §{sec.number}
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="truncate font-heading text-xs">
+                          <span className="font-mono text-[11px] text-[#FFD600] mr-1">
+                            §{sec.number}
+                          </span>
+                          {sec.title}
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-mono text-white/40 group-hover:text-white/60 truncate mt-0.5">
+                        {stat.tag}
                       </span>
                     </a>
                   );
                 })}
               </nav>
 
-              {/* Direct Support Desk Card in Sidebar */}
-              <div className="mt-5 border-t border-white/10 pt-4">
-                <p className="font-heading text-[11px] font-bold text-white uppercase tracking-wider">
-                  Verification &amp; Legal Desk:
-                </p>
-                <p className="text-[11px] text-muted mt-1 leading-snug">
-                  WhatsApp: +92 308 4703973
-                  <br />
-                  Multan, Punjab, Pakistan
-                </p>
+              {/* Institutional Support Verification Desk Mini Widget */}
+              <div className="mt-4 border-t border-white/10 pt-3 text-[11px] font-mono">
+                <div className="text-white/80 font-bold flex items-center gap-1">
+                  <ShieldCheck size={12} className="text-[#FFD600]" />
+                  <span>Institutional Desk:</span>
+                </div>
+                <p className="text-white/50 text-[10px] mt-0.5">Multan, Punjab, Pakistan</p>
                 <a
                   href="https://wa.me/923084703973?text=Hi%2C%20I%20have%20a%20formal%20legal%2C%20privacy%2C%20or%20DMCA%20inquiry%20regarding%20Matric%20Mastery"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#FFD600] hover:underline"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-[#FFD600] hover:underline"
                 >
-                  <MessageCircle size={12} />
-                  <span>Verify Line via WhatsApp &rarr;</span>
+                  <MessageCircle size={11} />
+                  <span>WhatsApp Line &rarr;</span>
                 </a>
               </div>
             </div>
           </aside>
 
-          {/* RIGHT COLUMN: EXPANDABLE LEGAL & POLICY CARDS */}
-          <main className="lg:col-span-8 xl:col-span-9 space-y-8">
-            {filteredSections.length === 0 ? (
-              <div className="rounded-3xl border border-white/10 bg-[#121216] p-12 text-center">
-                <Search size={32} className="mx-auto text-muted mb-3" />
-                <p className="font-heading text-lg font-bold text-white">
-                  No matching policy provisions found
-                </p>
-                <p className="text-xs text-muted mt-1">
-                  Try clearing your search term or selecting "All 15 Sections".
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory("all");
-                  }}
-                  className="mt-4 rounded-xl bg-[#FFD600] px-4 py-2 font-heading text-xs font-black text-black cursor-pointer"
-                >
-                  Reset Filters
-                </button>
-              </div>
-            ) : (
-              filteredSections.map((sec) => {
-                const isCollapsed = !!collapsedSections[sec.id];
+          {/* -----------------------------------------------------------------------
+              RIGHT COLUMN: PROSE READING COLUMN (FLUID UP TO 760px)
+              ----------------------------------------------------------------------- */}
+          <main className="max-w-[760px] w-full min-w-0 space-y-16 print:max-w-none print:space-y-8">
+            {LEGAL_CENTER_SECTIONS.map((sec, secIdx) => {
+              const stat = getStatutoryBadge(sec.number);
+              const prevSec = secIdx > 0 ? LEGAL_CENTER_SECTIONS[secIdx - 1] : null;
+              const nextSec =
+                secIdx < LEGAL_CENTER_SECTIONS.length - 1
+                  ? LEGAL_CENTER_SECTIONS[secIdx + 1]
+                  : null;
 
-                return (
-                  <section
-                    key={sec.id}
-                    id={sec.id}
-                    className="relative rounded-[26px] border border-white/10 bg-[#121216]/95 backdrop-blur-xl p-6 sm:p-8 shadow-2xl hover:border-[#FFD600]/40 transition-all duration-300"
-                  >
-                    {/* Header Bar of Section */}
-                    <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="font-mono text-xs font-bold text-[#FFD600] uppercase tracking-wider">
-                            SECTION {sec.number}
-                          </span>
-                          <span className="text-white/20">·</span>
-                          <span className="font-mono text-[10px] text-muted">
-                            Updated {sec.lastUpdated}
-                          </span>
-                          {sec.isOriginalPreserved && (
-                            <>
-                              <span className="text-white/20">·</span>
-                              <span className="rounded bg-accent/20 border border-accent/40 px-1.5 py-0.2 text-[9px] font-mono font-black text-accent uppercase">
-                                Preserved Verbatim
-                              </span>
-                            </>
-                          )}
+              return (
+                <article
+                  key={sec.id}
+                  id={sec.id}
+                  className="scroll-mt-[90px] pt-4 border-t border-white/[0.1] first:border-t-0 first:pt-0 print:border-black"
+                >
+                  {/* Chapter Header Bar */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      {/* Chapter Numeral & Statutory Badge */}
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="font-mono text-xs font-black text-[#FFD600] tracking-wider uppercase">
+                          CHAPTER {sec.number}
+                        </span>
+                        <span className="text-white/20">·</span>
+                        <span className="rounded bg-white/5 border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/80 uppercase">
+                          {stat.tag}
+                        </span>
+                        <span className="text-white/20">·</span>
+                        <span className="font-mono text-[10px] text-white/50">
+                          Updated {sec.lastUpdated}
+                        </span>
+                      </div>
+
+                      {/* Chapter Title */}
+                      <h2 className="font-heading text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
+                        {highlightQuery(sec.title)}
+                      </h2>
+
+                      {/* Editorial Short Summary Blockquote */}
+                      <div className="mt-3 border-l-2 border-[#FFD600]/60 pl-3.5 py-1 text-sm text-white/80 font-medium italic leading-relaxed bg-[#FFD600]/[0.02]">
+                        {highlightQuery(sec.shortSummary)}
+                      </div>
+                    </div>
+
+                    {/* Chapter Utilities: Copy Permalink */}
+                    <div className="shrink-0 pt-1 print:hidden">
+                      <button
+                        type="button"
+                        onClick={() => copySectionLink(sec.id)}
+                        title="Copy direct permalink to this chapter"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-white/60 hover:text-white hover:border-[#FFD600]/50 transition-colors cursor-pointer"
+                      >
+                        {copiedSectionId === sec.id ? (
+                          <Check size={14} className="text-emerald-400" />
+                        ) : (
+                          <Copy size={13} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Chapter Badges */}
+                  <div className="mt-3.5 flex flex-wrap gap-1.5">
+                    {sec.badges.map((b) => (
+                      <span
+                        key={b}
+                        className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] font-mono text-white/70"
+                      >
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Chapter Body Content */}
+                  <div className="mt-6 space-y-6 text-sm sm:text-base text-white/85 leading-[1.85] font-normal">
+                    {/* Flat Paragraphs (if any) */}
+                    {sec.paragraphs && sec.paragraphs.length > 0 && (
+                      <div className="space-y-4">
+                        {sec.paragraphs.map((para, pIdx) => (
+                          <p key={pIdx}>{highlightQuery(para)}</p>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ===================================================================
+                        SPECIAL CASE: SECTION 01 - VERBATIM PRESERVED ORIGINAL ARCHIVE
+                        =================================================================== */}
+                    {sec.isOriginalPreserved && (
+                      <div className="mt-8 space-y-6 pt-2">
+                        {/* Verbatim Preservation Archival Seal Banner */}
+                        <div className="rounded-xl border border-[#FFD600]/40 bg-[#FFD600]/[0.06] p-4 text-xs text-[#FFD600] font-heading font-medium leading-relaxed">
+                          <strong className="font-bold flex items-center gap-1.5 mb-1 text-sm">
+                            <ShieldCheck size={16} />
+                            Archival Verbatim Preservation Seal:
+                          </strong>
+                          The fourteen foundational clauses below contain every heading, paragraph, statutory disclaimer, and badge of Matric Mastery's original legal documentation, preserved 100% word-for-word without omission, summarization, or paraphrasing.
                         </div>
 
-                        <h2 className="font-heading text-xl sm:text-2xl font-black text-white tracking-tight">
-                          {highlightQuery(sec.title)}
-                        </h2>
-
-                        <p className="mt-1 text-xs sm:text-sm text-muted/90 font-medium leading-relaxed">
-                          {highlightQuery(sec.shortSummary)}
-                        </p>
-                      </div>
-
-                      {/* Action buttons: Copy link + Collapse toggle */}
-                      <div className="flex items-center gap-1.5 shrink-0 mt-1">
-                        <button
-                          type="button"
-                          onClick={() => copySectionLink(sec.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-muted hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
-                          title="Copy direct link to this section"
-                        >
-                          {copiedSectionId === sec.id ? (
-                            <Check size={14} className="text-emerald-400" />
-                          ) : (
-                            <Copy size={13} />
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => toggleAccordion(sec.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-muted hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
-                          title={isCollapsed ? "Expand section" : "Collapse section"}
-                        >
-                          {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Section Badges */}
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {sec.badges.map((b) => (
-                        <span
-                          key={b}
-                          className="rounded-md border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-mono text-white/80"
-                        >
-                          {b}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Collapsible Content */}
-                    <AnimatePresence initial={false}>
-                      {!isCollapsed && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="mt-5 space-y-5 text-xs sm:text-sm text-white/90 leading-[1.8] font-normal border-t border-white/5 pt-4">
-                            {/* Standard Paragraphs (Intro / Flat) */}
-                            {sec.paragraphs && sec.paragraphs.length > 0 && (
-                              <div className="space-y-3">
-                                {sec.paragraphs.map((para, pIdx) => (
-                                  <p key={pIdx}>{highlightQuery(para)}</p>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* SPECIAL CASE: SECTION 01 - EMBEDDED VERBATIM ORIGINAL SECTIONS */}
-                            {sec.isOriginalPreserved && (
-                              <div className="mt-6 space-y-4 pt-2">
-                                <div className="rounded-xl border border-[#FFD600]/30 bg-[#FFD600]/5 p-3.5 text-xs text-[#FFD600] font-heading font-medium">
-                                  <strong>Verbatim Preservation Notice:</strong> The fourteen subsections below contain every paragraph, heading, and badge of Matric Mastery's original legal page, preserved word-for-word without alteration.
+                        {/* All 14 original foundation clauses */}
+                        <div className="space-y-6">
+                          {PRESERVED_ORIGINAL_ITEMS.map((orig) => (
+                            <section
+                              key={orig.id}
+                              id={orig.id}
+                              className="scroll-mt-[90px] rounded-xl border border-white/[0.08] bg-[#0E0E12]/80 p-5 sm:p-6 transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/[0.06]">
+                                <div>
+                                  <span className="font-mono text-[10px] text-[#FFD600] uppercase font-bold tracking-wider">
+                                    FOUNDATION CLAUSE {orig.number}
+                                  </span>
+                                  <h3 className="font-heading text-lg sm:text-xl font-bold text-white mt-0.5">
+                                    {highlightQuery(orig.title)}
+                                  </h3>
+                                  <p className="text-xs text-white/60 mt-1 italic">
+                                    {highlightQuery(orig.shortSummary)}
+                                  </p>
                                 </div>
 
-                                {PRESERVED_ORIGINAL_ITEMS.map((orig) => {
-                                  const isOrigCollapsed = !!collapsedSections[orig.id];
-                                  return (
-                                    <div
-                                      key={orig.id}
-                                      id={orig.id}
-                                      className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5 hover:border-white/20 transition-colors"
-                                    >
-                                      <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                          <span className="font-mono text-[10px] text-[#FFD600] uppercase font-bold">
-                                            SECTION {orig.number}
-                                          </span>
-                                          <h3 className="font-heading text-base sm:text-lg font-bold text-white mt-0.5">
-                                            {highlightQuery(orig.title)}
-                                          </h3>
-                                          <p className="text-xs text-muted mt-0.5">
-                                            {highlightQuery(orig.shortSummary)}
-                                          </p>
-                                        </div>
-
-                                        <div className="flex items-center gap-1 shrink-0">
-                                          <button
-                                            type="button"
-                                            onClick={() => copySectionLink(orig.id)}
-                                            className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted hover:text-white"
-                                            title="Copy link to this subsection"
-                                          >
-                                            {copiedSectionId === orig.id ? (
-                                              <Check size={12} className="text-emerald-400" />
-                                            ) : (
-                                              <Copy size={11} />
-                                            )}
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => toggleAccordion(orig.id)}
-                                            className="h-7 w-7 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-muted hover:text-white"
-                                          >
-                                            {isOrigCollapsed ? (
-                                              <ChevronDown size={14} />
-                                            ) : (
-                                              <ChevronUp size={14} />
-                                            )}
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      <div className="mt-2.5 flex flex-wrap gap-1">
-                                        {orig.badges.map((b) => (
-                                          <span
-                                            key={b}
-                                            className="rounded px-2 py-0.5 text-[9px] font-mono bg-white/5 text-white/70"
-                                          >
-                                            {b}
-                                          </span>
-                                        ))}
-                                      </div>
-
-                                      {!isOrigCollapsed && (
-                                        <div className="mt-3.5 space-y-2.5 border-t border-white/5 pt-3 text-xs text-white/85 leading-relaxed">
-                                          {orig.paragraphs.map((p, idx) => (
-                                            <p key={idx}>{highlightQuery(p)}</p>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
+                                <button
+                                  type="button"
+                                  onClick={() => copySectionLink(orig.id)}
+                                  title="Copy permalink to this foundational clause"
+                                  className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/60 hover:text-white hover:border-[#FFD600]/40 transition-colors print:hidden"
+                                >
+                                  {copiedSectionId === orig.id ? (
+                                    <Check size={12} className="text-emerald-400" />
+                                  ) : (
+                                    <Copy size={12} />
+                                  )}
+                                </button>
                               </div>
-                            )}
 
-                            {/* Subsections with subtitles (for Sections 02 through 15) */}
-                            {sec.subsections && (
-                              <div className="space-y-5 pt-2">
-                                {sec.subsections.map((sub, sIdx) => (
-                                  <div
-                                    key={sIdx}
-                                    className="rounded-2xl border border-white/5 bg-white/[0.015] p-4 sm:p-5"
+                              <div className="mt-3 flex flex-wrap gap-1">
+                                {orig.badges.map((b) => (
+                                  <span
+                                    key={b}
+                                    className="rounded px-2 py-0.5 text-[9px] font-mono bg-white/[0.04] border border-white/[0.06] text-white/70"
                                   >
-                                    <h3 className="font-heading text-sm sm:text-base font-bold text-white mb-2 flex items-center gap-2">
-                                      <span className="h-1.5 w-1.5 rounded-full bg-[#FFD600]" />
-                                      <span>{highlightQuery(sub.subtitle)}</span>
-                                    </h3>
-                                    <div className="space-y-2.5 text-xs sm:text-sm text-white/85 leading-relaxed">
-                                      {sub.paragraphs.map((p, pIdx) => (
-                                        <p key={pIdx}>{highlightQuery(p)}</p>
-                                      ))}
-                                    </div>
-                                  </div>
+                                    {b}
+                                  </span>
                                 ))}
                               </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </section>
-                );
-              })
-            )}
 
-            {/* =========================================================================
-                YELLOW HERO CONTACT CARD: WHATSAPP VERIFICATION DESK
-                ========================================================================= */}
-            <div className="relative rounded-[28px] border-2 border-[#FFD600]/50 bg-gradient-to-br from-[#FFD600] to-amber-400 p-7 sm:p-9 text-black shadow-[0_0_50px_rgba(255,214,0,0.2)] overflow-hidden">
-              <div className="flex items-center gap-2 text-xs font-mono font-black uppercase tracking-wider text-black/80">
-                <ShieldCheck size={16} className="text-black" />
-                <span>OFFICIAL VERIFICATION &amp; DMCA DESK</span>
+                              <div className="mt-4 space-y-3 text-xs sm:text-sm text-white/85 leading-[1.8]">
+                                {orig.paragraphs.map((p, pIdx) => (
+                                  <p key={pIdx}>{highlightQuery(p)}</p>
+                                ))}
+                              </div>
+                            </section>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Subsections with subtitles (for Sections 02 through 15) */}
+                    {sec.subsections && sec.subsections.length > 0 && (
+                      <div className="space-y-6 pt-3">
+                        {sec.subsections.map((sub, sIdx) => (
+                          <div
+                            key={sIdx}
+                            className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-5 sm:p-6"
+                          >
+                            <h3 className="font-heading text-base sm:text-lg font-bold text-white mb-2.5 flex items-center gap-2">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#FFD600] shrink-0" />
+                              <span>{highlightQuery(sub.subtitle)}</span>
+                            </h3>
+                            <div className="space-y-3 text-xs sm:text-sm text-white/85 leading-[1.85]">
+                              {sub.paragraphs.map((p, pIdx) => (
+                                <p key={pIdx}>{highlightQuery(p)}</p>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Chapter Pagination Navigation */}
+                  <div className="mt-8 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs font-heading print:hidden">
+                    {prevSec ? (
+                      <button
+                        type="button"
+                        onClick={() => scrollToElement(prevSec.id)}
+                        className="inline-flex items-center gap-1.5 text-white/60 hover:text-white transition-colors cursor-pointer py-1.5"
+                      >
+                        <ChevronLeft size={14} className="text-[#FFD600]" />
+                        <span>
+                          Prev: §{prevSec.number} {prevSec.title}
+                        </span>
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+
+                    {nextSec ? (
+                      <button
+                        type="button"
+                        onClick={() => scrollToElement(nextSec.id)}
+                        className="inline-flex items-center gap-1.5 text-white/60 hover:text-white transition-colors cursor-pointer py-1.5 text-right"
+                      >
+                        <span>
+                          Next: §{nextSec.number} {nextSec.title}
+                        </span>
+                        <ChevronRight size={14} className="text-[#FFD600]" />
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+
+            {/* ===================================================================
+                OFFICIAL INSTITUTIONAL CONTACT & WHATSAPP VERIFICATION DESK
+                =================================================================== */}
+            <div className="rounded-2xl border border-[#FFD600]/40 bg-gradient-to-br from-[#0E0E12] via-[#14141A] to-[#0E0E12] p-6 sm:p-8 shadow-[0_0_40px_rgba(255,214,0,0.06)] print:border-black">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#FFD600]">
+                <ShieldCheck size={16} />
+                <span>OFFICIAL VERIFICATION &amp; LEGAL DESK</span>
               </div>
 
-              <h2 className="mt-2 font-heading text-2xl sm:text-3xl font-black text-black tracking-tight">
-                Questions or Legal Verification? WhatsApp Us
+              <h2 className="mt-2 font-heading text-xl sm:text-2xl font-black text-white tracking-tight">
+                Institutional Inquiries &amp; Legal Verification
               </h2>
 
-              <p className="mt-2 text-xs sm:text-sm font-semibold leading-relaxed text-black/90 max-w-xl">
-                For DMCA takedown submissions, student privacy masking requests, academy licensing inquiries, or to verify any official communication, connect directly with our legal desk.
+              <p className="mt-2 text-xs sm:text-sm text-white/70 leading-relaxed max-w-xl">
+                For PECA 2016 statutory notices, DMCA takedown submissions, student privacy masking requests, or to verify any official communication, connect directly with our legal desk in Multan, Punjab.
               </p>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              <div className="mt-6 flex flex-wrap items-center gap-3 print:hidden">
                 <a
                   href="https://wa.me/923084703973?text=Hi%2C%20I%20have%20a%20formal%20legal%2C%20copyright%2C%20or%20privacy%20inquiry%20regarding%20Matric%20Mastery"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3.5 font-heading text-xs sm:text-sm font-black text-white hover:bg-neutral-900 transition-all shadow-md active:scale-95 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFD600] px-5 py-3 font-heading text-xs sm:text-sm font-black text-black hover:bg-amber-300 transition-all shadow-md active:scale-95 cursor-pointer"
                 >
-                  <MessageCircle size={16} className="text-[#FFD600]" />
-                  <span>WhatsApp Legal Channel</span>
+                  <MessageCircle size={15} />
+                  <span>Connect via WhatsApp Legal Desk</span>
                 </a>
 
                 <Link
                   href="/about"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/30 bg-white/80 px-5 py-3.5 font-heading text-xs sm:text-sm font-bold text-black hover:bg-white transition-all shadow-sm cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-5 py-3 font-heading text-xs sm:text-sm font-bold text-white hover:bg-white/10 transition-all cursor-pointer"
                 >
                   <span>About Our Platform</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={13} />
                 </Link>
               </div>
 
-              <div className="mt-5 border-t border-black/20 pt-3 text-[11px] font-mono text-black/80 flex flex-wrap items-center justify-between gap-2">
+              <div className="mt-5 border-t border-white/10 pt-3 text-[11px] font-mono text-white/60 flex flex-wrap items-center justify-between gap-2">
                 <span>Verified Line: +92 308 4703973</span>
+                <span>Jurisdiction: Multan, Punjab, Pakistan</span>
                 <span>Response Target: Within 24–48 Hours</span>
               </div>
             </div>
 
-            {/* Back to top float button helper */}
-            <div className="flex justify-center pt-4">
+            {/* Back to top helper */}
+            <div className="flex justify-center pt-2 print:hidden">
               <button
                 type="button"
                 onClick={scrollToTop}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#141416] px-4 py-2 text-xs font-heading font-semibold text-muted hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#121216] px-4 py-2.5 text-xs font-heading font-semibold text-white/60 hover:text-white hover:border-[#FFD600]/40 transition-colors cursor-pointer"
               >
-                <ArrowUp size={14} className="text-[#FFD600]" />
-                <span>Back to Top of Legal Center</span>
+                <ArrowUp size={13} className="text-[#FFD600]" />
+                <span>Return to Top of Legal Center</span>
               </button>
             </div>
           </main>
         </div>
       </div>
+
+      {/* =========================================================================
+          3. MOBILE CHAPTER DRAWER (Viewport < 1024px)
+          ========================================================================= */}
+      {/* Floating Action Pill on Mobile Screens */}
+      <div className="lg:hidden print:hidden">
+        <button
+          type="button"
+          onClick={() => setIsMobileDrawerOpen(true)}
+          className="fixed bottom-6 right-5 z-40 flex items-center gap-2 rounded-full border border-[#FFD600]/40 bg-[#0E0E12]/95 backdrop-blur-xl px-4 py-3 text-xs font-heading font-black text-[#FFD600] shadow-[0_8px_30px_rgba(0,0,0,0.8)] active:scale-95 cursor-pointer min-h-[44px]"
+          aria-label="Open Archive Chapters Directory"
+        >
+          <Layers size={15} />
+          <span>Chapters (15)</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-[#FFD600] animate-pulse" />
+        </button>
+      </div>
+
+      {/* Modal Drawer with Focus Trap, Background Scroll Lock & Escape key listener */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
+            />
+
+            {/* Drawer Panel */}
+            <motion.div
+              ref={drawerRef}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="absolute inset-y-0 right-0 w-full max-w-xs sm:max-w-sm bg-[#0E0E12] border-l border-white/10 p-5 flex flex-col shadow-2xl overflow-hidden pb-safe"
+            >
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <Scale size={14} className="text-[#FFD600]" />
+                  <span className="font-heading text-sm font-black text-white">
+                    Archive Directory
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg text-white/60 hover:text-white cursor-pointer"
+                  aria-label="Close Chapters Drawer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Progress reading readout */}
+              <div className="mb-3 px-1 text-[11px] font-mono flex items-center justify-between text-white/60">
+                <span>Reading Progress:</span>
+                <span className="text-[#FFD600] font-bold">{scrollProgress}%</span>
+              </div>
+
+              {/* Drawer Chapter List */}
+              <nav className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-none">
+                {LEGAL_CENTER_SECTIONS.map((sec) => {
+                  const isActive = activeTOC === sec.id;
+                  const stat = getStatutoryBadge(sec.number);
+
+                  return (
+                    <button
+                      key={sec.id}
+                      type="button"
+                      onClick={() => {
+                        setIsMobileDrawerOpen(false);
+                        setTimeout(() => scrollToElement(sec.id), 120);
+                      }}
+                      className={`w-full text-left rounded-lg p-2.5 transition-all min-h-[44px] flex flex-col justify-center cursor-pointer ${
+                        isActive
+                          ? "bg-[#FFD600]/15 text-white font-bold border-l-2 border-[#FFD600]"
+                          : "text-white/80 hover:text-white hover:bg-white/[0.04]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] text-[#FFD600] font-bold">
+                          §{sec.number}
+                        </span>
+                        <span className="font-heading text-xs truncate">{sec.title}</span>
+                      </div>
+                      <span className="text-[9px] font-mono text-white/50 truncate mt-0.5">
+                        {stat.tag}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Drawer Bottom Support Link */}
+              <div className="mt-3 border-t border-white/10 pt-3">
+                <a
+                  href="https://wa.me/923084703973?text=Hi%2C%20I%20have%20a%20formal%20legal%2C%20privacy%2C%20or%20DMCA%20inquiry%20regarding%20Matric%20Mastery"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-[#FFD600] py-2.5 text-xs font-heading font-black text-black min-h-[44px]"
+                >
+                  <MessageCircle size={14} />
+                  <span>WhatsApp Legal Channel</span>
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
