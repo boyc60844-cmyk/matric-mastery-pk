@@ -1860,7 +1860,7 @@ export default function LegalPage() {
             </div>
 
             {/* Back to top helper */}
-            <div className="flex justify-center pt-2 print:hidden">
+            <div className="flex justify-center pt-2 pb-28 lg:pb-0 print:hidden">
               <button
                 type="button"
                 onClick={scrollToTop}
@@ -1877,12 +1877,12 @@ export default function LegalPage() {
       {/* =========================================================================
           3. MOBILE CHAPTER DRAWER (Viewport < 1024px)
           ========================================================================= */}
-      {/* Floating Action Pill on Mobile Screens */}
+      {/* Floating Action Pill on Mobile Screens - Positioned cleanly above AI Doubt button */}
       <div className="lg:hidden print:hidden">
         <button
           type="button"
           onClick={() => setIsMobileDrawerOpen(true)}
-          className="fixed bottom-6 right-5 z-40 flex items-center gap-2 rounded-full border border-[#FFD600]/40 bg-[#0E0E12]/95 backdrop-blur-xl px-4 py-3 text-xs font-heading font-black text-[#FFD600] shadow-[0_8px_30px_rgba(0,0,0,0.8)] active:scale-95 cursor-pointer min-h-[44px]"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] right-4 sm:bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] sm:right-5 z-40 flex items-center gap-2 rounded-full border border-[#FFD600]/40 bg-[#0E0E12]/95 backdrop-blur-xl px-4 py-3 text-xs font-heading font-black text-[#FFD600] shadow-[0_8px_30px_rgba(0,0,0,0.8)] active:scale-95 cursor-pointer min-h-[44px]"
           aria-label="Open Archive Chapters Directory"
         >
           <Layers size={15} />
