@@ -842,6 +842,16 @@ export default function BoardWatchPage() {
                       sessions. All future dates are labeled as estimates; official dates are binding
                       only upon publication of the signed PBCC gazette.
                     </p>
+                    <div className="mt-3">
+                      <Link
+                        href="/utilities?tab=calendar"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors"
+                      >
+                        <CalendarDays size={13} />
+                        <span>Launch Live PBCC Countdown &amp; Personal Calendar Tool</span>
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -25,6 +25,8 @@ import LeaderboardPage from "@/app/leaderboard/page";
 import LoginPage from "@/app/login/page";
 import ExamDayGuidebookPage from "@/app/exam-day-guidebook/page";
 import BoardWatchPage from "@/app/board-watch/page";
+import UtilitiesPage from "@/app/utilities/page";
+import UtilityHubModal from "@/components/utilities/UtilityHubModal";
 import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
 import Button from "@/components/Button";
@@ -69,6 +71,8 @@ function PageRenderer() {
       document.title = "Matric Mastery Exam Day Guidebook | Rules & Survival Tips";
     } else if (cleanPath === "/board-watch" || cleanPath === "/boardwatch" || cleanPath === "/bise-watch" || cleanPath === "/date-sheet") {
       document.title = "Board Watch — Punjab Exams | Official Notifications & Date Sheet Tracker";
+    } else if (cleanPath === "/utilities" || cleanPath === "/tools" || cleanPath === "/study-hub" || cleanPath === "/calculator") {
+      document.title = "Matric Mastery Study Tools & Utilities | Precision Academic Toolkit";
     } else if (cleanPath === "/strategies" || cleanPath === "/strategy" || cleanPath.startsWith("/strategies/") || cleanPath.startsWith("/strategy/")) {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
@@ -107,6 +111,8 @@ function PageRenderer() {
     pageContent = <ExamDayGuidebookPage />;
   } else if (cleanPath === "/board-watch" || cleanPath === "/boardwatch" || cleanPath === "/bise-watch" || cleanPath === "/date-sheet") {
     pageContent = <BoardWatchPage />;
+  } else if (cleanPath === "/utilities" || cleanPath === "/tools" || cleanPath === "/study-hub" || cleanPath === "/calculator") {
+    pageContent = <UtilitiesPage />;
   } else if (cleanPath === "/paper-hacks") {
     pageContent = <PaperHacksPage />;
   } else if (cleanPath === "/resources") {
@@ -180,6 +186,28 @@ function PageRenderer() {
 }
 
 export default function App() {
+  const [utilityModalOpen, setUtilityModalOpen] = useState(false);
+  const [utilityInitialTab, setUtilityInitialTab] = useState<
+    "dashboard" | "clock" | "calendar" | "timers" | "calculators" | "liveinfo"
+  >("dashboard");
+
+  useEffect(() => {
+    const handleOpenUtilities = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        tab?: "dashboard" | "clock" | "calendar" | "timers" | "calculators" | "liveinfo";
+      }>;
+      if (customEvent.detail?.tab) {
+        setUtilityInitialTab(customEvent.detail.tab);
+      }
+      setUtilityModalOpen(true);
+    };
+
+    window.addEventListener("mm:open-utilities", handleOpenUtilities);
+    return () => {
+      window.removeEventListener("mm:open-utilities", handleOpenUtilities);
+    };
+  }, []);
+
   return (
     <RouterProvider>
       <LanguageProvider>
@@ -193,6 +221,11 @@ export default function App() {
               <PageRenderer />
             </main>
             <FloatingDoubtButton />
+            <UtilityHubModal
+              isOpen={utilityModalOpen}
+              initialTab={utilityInitialTab}
+              onClose={() => setUtilityModalOpen(false)}
+            />
             <Footer />
           </div>
         </MotionProvider>

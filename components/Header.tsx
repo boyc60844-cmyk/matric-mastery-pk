@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "@/src/context/RouterContext";
 import { useLanguage } from "@/src/context/LanguageContext";
-import { ArrowUpRight, BookOpen, Sparkles, MessageCircle, Tag, X } from "lucide-react";
+import { ArrowUpRight, BookOpen, Sparkles, MessageCircle, Tag, X, Timer } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { whatsappLink } from "@/lib/utils";
 import { MAIN_NAV_ITEMS } from "@/lib/navigation";
@@ -171,8 +171,22 @@ export default function Header() {
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            {/* Desktop & Tablet items: Language toggle, User XP Login, WhatsApp (hidden on mobile phones to keep header clean) */}
+            {/* Desktop & Tablet items: Quick Tools, Language toggle, User XP Login, WhatsApp */}
             <div className="hidden sm:flex items-center gap-2 sm:gap-2.5">
+              {/* Quick Utility Hub Launcher */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("mm:open-utilities"));
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-[#141416] px-2.5 text-xs font-semibold text-neutral-300 hover:text-accent hover:border-accent/40 transition-colors"
+                title="Open Study Tools, Timers & Calculators"
+                aria-label="Open Study Tools"
+              >
+                <Timer size={14} className="text-accent" />
+                <span className="hidden xl:inline">Tools</span>
+              </button>
+
               {/* 2. ENG/اردو Language Toggle */}
               <LanguageToggle variant="compact" />
 
@@ -287,8 +301,19 @@ export default function Header() {
             <LanguageToggle variant="compact" />
           </div>
 
-          {/* User XP Login & WhatsApp */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* User XP Login & WhatsApp & Tools */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("mm:open-utilities"));
+              }}
+              className="flex h-9 items-center gap-1 rounded-xl border border-white/10 bg-[#141416] px-2 text-xs font-semibold text-neutral-300 hover:text-accent hover:border-accent/40 transition-colors shrink-0"
+              aria-label="Open Study Tools & Timers"
+            >
+              <Timer size={13} className="text-accent" />
+              <span>Tools</span>
+            </button>
             <AuthButton />
             <a
               href={whatsappLink()}
