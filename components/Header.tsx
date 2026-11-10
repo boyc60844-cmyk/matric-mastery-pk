@@ -112,13 +112,13 @@ export default function Header() {
   return (
     <>
       <header
-        className={`sticky top-0 z-50 transition-colors duration-200 border-b ${
+        className={`w-full sticky top-0 z-50 transition-colors duration-200 border-b ${
           scrolled || mobileMenuOpen
             ? "bg-[#0A0A0A]/95 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.6)] border-white/10"
             : "bg-[#0A0A0A]/85 backdrop-blur-sm border-white/5"
         }`}
       >
-        <div className="mx-auto flex h-[58px] sm:h-[66px] max-w-site items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-[58px] sm:h-[66px] max-w-site w-full items-center justify-between px-4 sm:px-6">
           {/* 1. 3D Isometric Block Logo with full text on all screen sizes */}
           <Link
             href="/"
@@ -281,7 +281,7 @@ export default function Header() {
         className="sm:hidden w-full border-b border-white/10 bg-[#0C0C0E]/95 py-1.5 px-4"
         aria-label="Mobile Quick Utilities"
       >
-        <div className="mx-auto flex items-center justify-between gap-2 max-w-site">
+        <div className="mx-auto flex items-center justify-between gap-2 max-w-site w-full">
           {/* Language Toggle: ENG / اردو */}
           <div className="shrink-0">
             <LanguageToggle variant="compact" />

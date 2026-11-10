@@ -38,6 +38,19 @@
 }
 
 @layer base {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    min-height: 100vh;
+  }
+
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 88px;
@@ -91,6 +104,7 @@
 /* Site constraints */
 .max-w-site {
   max-width: 1200px;
+  width: 100%;
 }
 
 .max-w-prose {

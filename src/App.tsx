@@ -171,7 +171,7 @@ function PageRenderer() {
             ease: EXIT_EASE,
           },
         }}
-        className="min-h-[calc(100vh-66px-260px)] page-transition-content pointer-events-auto"
+        className="min-h-[calc(100vh-66px-260px)] page-transition-content pointer-events-auto w-full min-w-0"
       >
         {pageContent}
       </motion.div>
@@ -184,12 +184,12 @@ export default function App() {
     <RouterProvider>
       <LanguageProvider>
         <MotionProvider>
-          <div className="relative min-h-screen bg-[#0A0A0A] text-white selection:bg-[#FFD60A] selection:text-black antialiased font-sans flex flex-col justify-between">
+          <div className="relative min-h-screen w-full bg-[#0A0A0A] text-white selection:bg-[#FFD60A] selection:text-black antialiased font-sans flex flex-col justify-between overflow-x-clip">
             <ScrollProgress />
             <Cursor3D />
             <Background />
             <Header />
-            <main className="flex-1">
+            <main className="flex-1 w-full min-w-0">
               <PageRenderer />
             </main>
             <FloatingDoubtButton />

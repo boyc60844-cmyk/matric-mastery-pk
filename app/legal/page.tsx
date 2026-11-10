@@ -1256,13 +1256,15 @@ export default function LegalPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#08080A] text-white selection:bg-[#FFD600] selection:text-black py-8 sm:py-14 print:bg-white print:text-black">
-      {/* Ambient background glows */}
-      <div className="absolute top-10 left-1/4 h-[450px] w-[450px] rounded-full bg-[#FFD600]/[0.025] blur-[150px] pointer-events-none print:hidden" />
-      <div className="absolute top-80 right-1/4 h-[500px] w-[500px] rounded-full bg-emerald-500/[0.018] blur-[180px] pointer-events-none print:hidden" />
+    <div className="relative min-h-screen w-full bg-[#08080A] text-white selection:bg-[#FFD600] selection:text-black py-8 sm:py-14 print:bg-white print:text-black overflow-x-clip">
+      {/* Ambient background glows - strictly clipped so they never cause viewport expansion */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden print:hidden" aria-hidden="true">
+        <div className="absolute top-10 left-1/4 h-[450px] w-[450px] rounded-full bg-[#FFD600]/[0.025] blur-[150px]" />
+        <div className="absolute top-80 right-1/4 h-[500px] w-[500px] rounded-full bg-emerald-500/[0.018] blur-[180px]" />
+      </div>
 
       {/* Main Container - strictly constrained to max-w-site (1200px) */}
-      <div className="mx-auto max-w-site px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-site w-full px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
             1. FOLIO MASTHEAD & HERO
             ========================================================================= */}
@@ -1507,7 +1509,7 @@ export default function LegalPage() {
         {/* =========================================================================
             2. TWO-COLUMN RESPONSIVE LAYOUT (Desktop Ledger + Fluid Prose)
             ========================================================================= */}
-        <div className="mt-8 lg:mt-12 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] gap-8 xl:gap-12 items-start">
+        <div className="mt-8 lg:mt-12 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] gap-8 xl:gap-12 items-start w-full">
           {/* -----------------------------------------------------------------------
               LEFT COLUMN: STICKY READING LEDGER (DESKTOP)
               ----------------------------------------------------------------------- */}
