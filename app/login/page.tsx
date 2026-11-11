@@ -255,7 +255,7 @@ export default function LoginPage() {
       badge: "Pre-Medical 2025",
       avatarBg: "bg-emerald-500",
       quote:
-        "Matric Mastery's timed mock tests and cloud sync completely transformed my 10th grade prep. The 24-hour mistake reminder is genuinely game-changing.",
+        "Matric Mastery's timed mock tests and offline dashboard completely transformed my 10th grade prep. The 24-hour mistake reminder is genuinely game-changing.",
     },
     {
       name: "Ayesha Noor",
@@ -315,10 +315,10 @@ export default function LoginPage() {
                       <ShieldCheck size={12} /> 🔒 Secure Firebase
                     </span>
                     <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#FFD600]/30 bg-[#FFD600]/10 px-2.5 py-1 text-[11px] font-mono font-bold text-[#FFD600]">
-                      <Cloud size={12} /> ☁️ Auto Sync
+                      <HardDrive size={12} /> 💾 Private Local Vault
                     </span>
                     <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-mono font-bold text-white/80">
-                      <Zap size={12} /> ⚡ Instant
+                      <Zap size={12} /> ⚡ 1-Click
                     </span>
                   </div>
 
@@ -328,12 +328,12 @@ export default function LoginPage() {
                 {/* Headline & Subtitle */}
                 <div>
                   <h1 className="font-heading text-2xl sm:text-3xl font-black text-white tracking-tight">
-                    {isRTL ? "اسٹوڈنٹ کلاؤڈ لاگ ان" : "Student Cloud Login"}
+                    {isRTL ? "اسٹوڈنٹ پروفائل لاگ ان" : "Student Profile Login"}
                   </h1>
                   <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
                     {t(
                       "auth.subheadline",
-                      "Login with Google to save your progress, secure your preparation, and compete on the Punjab Board leaderboard."
+                      "Authenticate with Google for a verified student badge on the leaderboard while keeping all study records 100% private on your device."
                     )}
                   </p>
                 </div>
@@ -495,14 +495,14 @@ export default function LoginPage() {
 
                       <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs">
                         <span className="inline-flex items-center gap-1.5 text-emerald-400 font-mono font-medium">
-                          <Cloud size={14} className="text-emerald-400 animate-pulse" />
-                          <span>{isRTL ? "کلاؤڈ سنک فعال ہے" : "Cloud Synced & Active"}</span>
+                          <CheckCircle2 size={14} className="text-emerald-400" />
+                          <span>{isRTL ? "تصدیق شدہ پروفائل فعال ہے" : "Verified Student Profile"}</span>
                         </span>
                         <span className="text-white/20">·</span>
                         <span className="inline-flex items-center gap-1 text-muted font-mono text-[11px]">
                           <Clock size={12} />
                           <span>
-                            {isRTL ? `آخری سنک: ${lastSyncTime}` : `Last sync: ${lastSyncTime}`}
+                            {isRTL ? `سیشن: ${lastSyncTime}` : `Session active: ${lastSyncTime}`}
                           </span>
                         </span>
                         <span className="text-white/20">·</span>
@@ -582,10 +582,10 @@ export default function LoginPage() {
                           <HardDrive size={16} />
                         </div>
                         <p className="font-heading text-xs font-black text-emerald-400 mt-1">
-                          Firebase Cloud
+                          Private Storage
                         </p>
                         <p className="text-[10px] font-mono text-muted uppercase mt-1">
-                          Encrypted Sync
+                          Local Device Vault
                         </p>
                       </div>
                     </div>
@@ -776,17 +776,17 @@ export default function LoginPage() {
                         </p>
                       </div>
 
-                      {/* 5-sec Auto Save */}
+                      {/* Local Data Vault */}
                       <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3.5">
                         <div className="flex items-center gap-2 mb-1.5 text-white font-heading font-bold">
-                          <RefreshCw size={14} className="text-blue-400 animate-spin-slow" />
-                          <span>{isRTL ? "خودکار محفوظ کاری" : "Realtime Data Sync"}</span>
+                          <HardDrive size={14} className="text-blue-400" />
+                          <span>{isRTL ? "مقامی ڈیٹا والٹ" : "Local Data Vault"}</span>
                         </div>
                         <p className="text-[11px] text-white/90 font-mono">
-                          Auto-saves every 5 sec
+                          Saved locally in browser
                         </p>
                         <p className="text-[10px] text-muted font-mono mt-1">
-                          Zero data loss guarantee
+                          100% private & exportable
                         </p>
                       </div>
                     </div>
@@ -860,7 +860,7 @@ export default function LoginPage() {
 
               <div className="relative z-10 flex items-center justify-between mb-2">
                 <span className="font-mono text-[10px] uppercase font-bold text-muted flex items-center gap-1.5">
-                  <Activity size={12} className="text-[#FFD600]" /> Realtime Sync Visualizer
+                  <Activity size={12} className="text-[#FFD600]" /> Student Activity Visualizer
                 </span>
                 <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-mono font-bold text-emerald-400">
                   99.9% Uptime
@@ -954,19 +954,19 @@ export default function LoginPage() {
               </p>
 
               <div className="space-y-2.5">
-                {/* 1. Auto Sync */}
+                {/* 1. Verified Identity */}
                 <div className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FFD600]/15 text-[#FFD600] shrink-0 mt-0.5">
-                    <Cloud size={14} />
+                    <ShieldCheck size={14} />
                   </div>
                   <div>
                     <p className="text-xs font-heading font-bold text-white">
-                      {isRTL ? "خودکار سنک (Auto Sync)" : "Auto Sync Across Devices"}
+                      {isRTL ? "تصدیق شدہ شناخت (Verified Identity)" : "Verified Google Identity"}
                     </p>
                     <p className="text-[11px] text-muted">
                       {isRTL
-                        ? "ہر ٹیسٹ اور غلطی فوراً بغیر کسی رکاوٹ کے محفوظ ہوتی ہے"
-                        : "Instant continuous sync ensures zero progress is ever lost"}
+                        ? "ایک کلک سے تصدیق شدہ طالب علم کا بیج حاصل کریں"
+                        : "1-click verified student badge on the Punjab Board leaderboard"}
                     </p>
                   </div>
                 </div>
@@ -1008,16 +1008,16 @@ export default function LoginPage() {
                 {/* 4. Secure Backup */}
                 <div className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 shrink-0 mt-0.5">
-                    <ShieldCheck size={14} />
+                    <HardDrive size={14} />
                   </div>
                   <div>
                     <p className="text-xs font-heading font-bold text-white">
-                      {isRTL ? "محفوظ بیک اپ (Secure Backup)" : "Encrypted Cloud Backup"}
+                      {isRTL ? "پرائیویٹ مقامی والٹ (Private Vault)" : "Private Local Vault"}
                     </p>
                     <p className="text-[11px] text-muted">
                       {isRTL
-                        ? "گوگل فائر بیس پر 256-بٹ سیکیورٹی کے ساتھ ڈیٹا محفوظ"
-                        : "Enterprise-grade 256-bit SSL secured by Google Cloud"}
+                        ? "آپ کا تمام ریکارڈ آپ کی ڈیوائس پر 100% نجی محفوظ رہتا ہے"
+                        : "All test scores, streaks, and mistakes remain 100% private on your device"}
                     </p>
                   </div>
                 </div>
@@ -1029,12 +1029,12 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <p className="text-xs font-heading font-bold text-white">
-                      {isRTL ? "ہر اسکرین پر ہم آہنگ" : "Cross-Device Continuity"}
+                      {isRTL ? "پورٹ ایبل بیک اپ (Portable Backup)" : "Portable JSON Backup"}
                     </p>
                     <p className="text-[11px] text-muted">
                       {isRTL
-                        ? "موبائل، ٹیبلٹ اور لیپ ٹاپ پر بغیر کسی پریشانی کے جاری رکھیں"
-                        : "Switch between phone on the go and laptop at night effortlessly"}
+                        ? "یوٹیلیٹیز ڈیش بورڈ سے بیک اپ ایکسپورٹ کر کے دوسری ڈیوائس پر منتقل کریں"
+                        : "Export your complete study record anytime in /utilities and import on any device"}
                     </p>
                   </div>
                 </div>

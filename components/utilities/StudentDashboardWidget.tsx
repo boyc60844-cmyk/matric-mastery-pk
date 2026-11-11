@@ -103,31 +103,82 @@ export default function StudentDashboardWidget({
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed.studyLogs)) {
-          localStorage.setItem(
-            "mm_study_session_records",
-            JSON.stringify(parsed.studyLogs)
-          );
+        const text = event.target?.result as string;
+        if (!text || typeof text !== "string") {
+          throw new Error("Empty file content");
         }
-        if (parsed.weeklyGoalHours) {
-          studySessionTracker.setWeeklyGoal(Number(parsed.weeklyGoalHours));
+        const parsed = JSON.parse(text);
+        if (!parsed || typeof parsed !== "object") {
+          throw new Error("Invalid JSON object");
         }
-        if (Array.isArray(parsed.personalEvents)) {
-          localStorage.setItem(
-            "mm_personal_calendar_events",
-            JSON.stringify(parsed.personalEvents)
-          );
+
+        // Backward-compatible extraction across legacy and standard keys
+        const rawSessions =
+          parsed.studyLogs ??
+          parsed.studySessions ??
+          parsed.sessions ??
+          parsed.mm_study_sessions ??
+          parsed.mm_study_session_records;
+        const rawEvents =
+          parsed.personalEvents ??
+          parsed.personalCalendarEvents ??
+          parsed.events ??
+          parsed.mm_personal_academic_events ??
+          parsed.mm_personal_calendar_events;
+        const rawWeeklyGoal = parsed.weeklyGoalHours ?? parsed.weeklyGoal;
+
+        let restoredSessions = false;
+        let restoredEvents = false;
+        let anyAttempted = false;
+
+        if (rawSessions !== undefined) {
+          anyAttempted = true;
+          restoredSessions = studySessionTracker.importSessions(rawSessions);
         }
+
+        if (rawEvents !== undefined) {
+          anyAttempted = true;
+          restoredEvents = academicCalendarService.importPersonalEvents(rawEvents);
+        }
+
+        if (rawWeeklyGoal !== undefined && !isNaN(Number(rawWeeklyGoal))) {
+          const numGoal = Math.max(1, Math.min(100, Number(rawWeeklyGoal)));
+          studySessionTracker.setWeeklyGoal(numGoal);
+        }
+
+        // Clean up legacy keys if present
+        try {
+          localStorage.removeItem("mm_study_session_records");
+          localStorage.removeItem("mm_personal_calendar_events");
+        } catch {
+          // Ignore
+        }
+
+        // Never display successful restoration if any provided record collection failed
+        if (
+          !anyAttempted ||
+          (rawSessions !== undefined && !restoredSessions) ||
+          (rawEvents !== undefined && !restoredEvents)
+        ) {
+          setImportStatus("Import failed: Backup file contained invalid or corrupted records.");
+          setTimeout(() => setImportStatus(null), 4000);
+          return;
+        }
+
+        // Refresh UI state directly from authoritative service singletons
         setTodayMinutes(studySessionTracker.getTodayMinutes());
         setWeeklyGoal(studySessionTracker.getWeeklyGoal());
         setPersonalCount(academicCalendarService.getPersonalEvents().length);
         setCountdowns(academicCalendarService.getUpcomingCountdowns(1));
-        setImportStatus("Import successful! All data restored.");
-        setTimeout(() => setImportStatus(null), 3000);
+
+        setImportStatus("Import successful! All study data and deadlines restored.");
+        setTimeout(() => setImportStatus(null), 3500);
       } catch {
-        setImportStatus("Invalid backup file. Please upload a valid JSON.");
-        setTimeout(() => setImportStatus(null), 3000);
+        setImportStatus("Invalid backup file. Please upload a valid Matric Mastery JSON export.");
+        setTimeout(() => setImportStatus(null), 3500);
+      } finally {
+        // Reset input element value so the same file can be re-selected if desired
+        e.target.value = "";
       }
     };
     reader.readAsText(file);
@@ -135,16 +186,31 @@ export default function StudentDashboardWidget({
 
   const handleClearData = () => {
     if (
+      typeof window !== "undefined" &&
       window.confirm(
-        "Are you sure you want to clear your local study logs and personal deadlines? This cannot be undone unless you have a JSON backup."
+        "Are you sure you want to clear your local study logs and personal deadlines? This cannot be undone unless you have an exported JSON backup."
       )
     ) {
-      localStorage.removeItem("mm_study_session_records");
-      localStorage.removeItem("mm_personal_calendar_events");
+      // Clear actual storage records and in-memory states
       studySessionTracker.clearAllSessions();
+      academicCalendarService.clearPersonalEvents();
+
+      // Clean up both active and legacy keys
+      try {
+        localStorage.removeItem("mm_study_sessions");
+        localStorage.removeItem("mm_personal_academic_events");
+        localStorage.removeItem("mm_study_session_records");
+        localStorage.removeItem("mm_personal_calendar_events");
+      } catch {
+        // Ignore
+      }
+
+      // Refresh component local state
       setTodayMinutes(0);
       setPersonalCount(0);
-      alert("Local study data has been reset.");
+      setCountdowns(academicCalendarService.getUpcomingCountdowns(1));
+      setImportStatus("Local study sessions and personal deadlines have been reset.");
+      setTimeout(() => setImportStatus(null), 3500);
     }
   };
 

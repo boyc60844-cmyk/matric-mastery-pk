@@ -15,6 +15,56 @@ export const WORLD_TIMEZONES: TimeZoneOption[] = [
   { id: "syd", label: "Australia (Sydney)", iana: "Australia/Sydney", flag: "🇦🇺", offsetHours: 11 },
 ];
 
+/**
+ * Dynamically computes current UTC offset in hours for any IANA timezone,
+ * correctly accounting for daylight-saving time (DST) shifts.
+ */
+export function getTimezoneOffsetHours(ianaZone: string, date: Date = new Date()): number {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: ianaZone,
+      timeZoneName: "shortOffset",
+    });
+    const parts = formatter.formatToParts(date);
+    const tzPart = parts.find((p) => p.type === "timeZoneName")?.value || "";
+    const match = tzPart.match(/GMT([+-])(\d+)(?::(\d+))?/i);
+    if (match) {
+      const sign = match[1] === "-" ? -1 : 1;
+      const h = parseInt(match[2], 10);
+      const m = parseInt(match[3] || "0", 10);
+      return sign * (h + m / 60);
+    }
+    if (tzPart === "GMT" || tzPart === "UTC") return 0;
+  } catch {
+    // Fallback: compare UTC vs zone dates
+    try {
+      const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
+      const zoneDate = new Date(date.toLocaleString("en-US", { timeZone: ianaZone }));
+      return Math.round((zoneDate.getTime() - utcDate.getTime()) / 360000) / 10;
+    } catch {
+      // Ignore
+    }
+  }
+  return 0;
+}
+
+/**
+ * Returns a human-readable dynamic offset badge (e.g. "UTC+5", "UTC+1", "UTC-4").
+ */
+export function formatTimezoneOffsetBadge(ianaZone: string, date: Date = new Date()): string {
+  try {
+    const offset = getTimezoneOffsetHours(ianaZone, date);
+    if (offset === 0) return "UTC";
+    const sign = offset > 0 ? "+" : "-";
+    const abs = Math.abs(offset);
+    const h = Math.floor(abs);
+    const m = Math.round((abs - h) * 60);
+    return m > 0 ? `UTC${sign}${h}:${String(m).padStart(2, "0")}` : `UTC${sign}${h}`;
+  } catch {
+    return "UTC";
+  }
+}
+
 const STORAGE_KEYS = {
   FORMAT: "mm_clock_format",
   TIMEZONE: "mm_clock_timezone",
@@ -266,6 +316,8 @@ class TimeService {
 
   /**
    * Convert an arbitrary time from one timezone to another.
+   * Resolves the source time strictly in the source timezone without device-clock bias,
+   * handles daylight-saving time transitions accurately, and validates all inputs.
    */
   public convertTime(
     sourceTimeString: string, // "14:30" or "02:30 PM"
@@ -273,14 +325,118 @@ class TimeService {
     targetZone: string
   ): { targetTimeString: string; targetDateOffset: string } {
     try {
+      // 1. Validate timezone identifiers
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: sourceZone });
+        new Intl.DateTimeFormat("en-US", { timeZone: targetZone });
+      } catch {
+        return {
+          targetTimeString: "--:--",
+          targetDateOffset: "Invalid timezone identifier",
+        };
+      }
+
+      // 2. Validate and parse time string
+      const trimmed = (sourceTimeString || "").trim();
+      const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      const match24 = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+
+      let hours = 0;
+      let minutes = 0;
+
+      if (match12) {
+        let h = parseInt(match12[1], 10);
+        const m = parseInt(match12[2], 10);
+        const ampm = match12[3].toUpperCase();
+        if (h < 1 || h > 12 || m < 0 || m > 59) {
+          return { targetTimeString: "--:--", targetDateOffset: "Invalid time format" };
+        }
+        if (ampm === "PM" && h < 12) h += 12;
+        if (ampm === "AM" && h === 12) h = 0;
+        hours = h;
+        minutes = m;
+      } else if (match24) {
+        const h = parseInt(match24[1], 10);
+        const m = parseInt(match24[2], 10);
+        if (h < 0 || h > 23 || m < 0 || m > 59) {
+          return { targetTimeString: "--:--", targetDateOffset: "Invalid time format" };
+        }
+        hours = h;
+        minutes = m;
+      } else {
+        return {
+          targetTimeString: "--:--",
+          targetDateOffset: "Invalid time format",
+        };
+      }
+
+      // 3. Obtain current year, month, day in sourceZone (independent of client device timezone)
       const now = this.getNow();
-      const [hStr, mStr] = sourceTimeString.split(":");
-      const hours = parseInt(hStr || "0", 10);
-      const minutes = parseInt(mStr || "0", 10);
+      const sourceDateParts = new Intl.DateTimeFormat("en-US", {
+        timeZone: sourceZone,
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: false,
+      }).formatToParts(now);
 
-      const tempDate = new Date(now);
-      tempDate.setHours(hours, minutes, 0, 0);
+      const getPart = (type: string) =>
+        parseInt(sourceDateParts.find((p) => p.type === type)?.value || "0", 10);
 
+      const Y = getPart("year");
+      const M = getPart("month");
+      const D = getPart("day");
+
+      // 4. Resolve the exact UTC epoch timestamp corresponding to (Y, M, D, hours, minutes) in sourceZone
+      let targetUtc = Date.UTC(Y, M - 1, D, hours, minutes, 0);
+
+      const getZoneParts = (utcMs: number, zone: string) => {
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: zone,
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          hour12: false,
+        }).formatToParts(new Date(utcMs));
+        const val = (type: string) =>
+          parseInt(parts.find((p) => p.type === type)?.value || "0", 10);
+        return {
+          y: val("year"),
+          m: val("month"),
+          d: val("day"),
+          h: val("hour") % 24,
+          min: val("minute"),
+          s: val("second"),
+        };
+      };
+
+      // Iteratively compute offset difference to resolve exact UTC timestamp in sourceZone
+      for (let iteration = 0; iteration < 2; iteration++) {
+        const inZone = getZoneParts(targetUtc, sourceZone);
+        const inZoneAsUtc = Date.UTC(inZone.y, inZone.m - 1, inZone.d, inZone.h, inZone.min, inZone.s);
+        const desiredAsUtc = Date.UTC(Y, M - 1, D, hours, minutes, 0);
+        const diff = desiredAsUtc - inZoneAsUtc;
+        targetUtc += diff;
+      }
+
+      const resolvedDate = new Date(targetUtc);
+
+      // Verify that the resolved date actually maps to requested time (guard against nonexistent DST transition gap)
+      const finalCheck = getZoneParts(targetUtc, sourceZone);
+      if (finalCheck.h !== hours || finalCheck.min !== minutes) {
+        return {
+          targetTimeString: "--:--",
+          targetDateOffset: "Nonexistent time (DST shift)",
+        };
+      }
+
+      // 5. Format resolved timestamp in targetZone
       const targetFormatter = new Intl.DateTimeFormat("en-US", {
         timeZone: targetZone,
         hour: "numeric",
@@ -288,29 +444,31 @@ class TimeService {
         hour12: true,
       });
 
-      const targetDateFormatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: targetZone,
-        day: "numeric",
-      });
-
-      const sourceDateFormatter = new Intl.DateTimeFormat("en-US", {
+      // 6. Calculate day difference (Same day, +1 day ahead, -1 day behind)
+      const sourceDayFmt = new Intl.DateTimeFormat("en-CA", {
         timeZone: sourceZone,
-        day: "numeric",
-      });
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(resolvedDate);
 
-      const targetDay = targetDateFormatter.format(tempDate);
-      const sourceDay = sourceDateFormatter.format(tempDate);
+      const targetDayFmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: targetZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(resolvedDate);
 
-      let offsetLabel = "Same day";
-      if (parseInt(targetDay, 10) > parseInt(sourceDay, 10)) {
-        offsetLabel = "+1 day ahead";
-      } else if (parseInt(targetDay, 10) < parseInt(sourceDay, 10)) {
-        offsetLabel = "-1 day behind";
+      let targetDateOffset = "Same day";
+      if (targetDayFmt > sourceDayFmt) {
+        targetDateOffset = "+1 day ahead";
+      } else if (targetDayFmt < sourceDayFmt) {
+        targetDateOffset = "-1 day behind";
       }
 
       return {
-        targetTimeString: targetFormatter.format(tempDate),
-        targetDateOffset: offsetLabel,
+        targetTimeString: targetFormatter.format(resolvedDate),
+        targetDateOffset,
       };
     } catch {
       return {

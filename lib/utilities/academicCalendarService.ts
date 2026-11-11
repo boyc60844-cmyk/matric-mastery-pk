@@ -198,6 +198,52 @@ class AcademicCalendarService {
     this.savePersonalEvents();
   }
 
+  public clearPersonalEvents(): void {
+    this.personalEvents = [];
+    this.savePersonalEvents();
+  }
+
+  public reloadPersonalEvents(): void {
+    this.loadPersonalEvents();
+    this.notify();
+  }
+
+  public importPersonalEvents(incoming: any[]): boolean {
+    if (!Array.isArray(incoming)) return false;
+    const valid: CalendarEvent[] = [];
+
+    for (const item of incoming) {
+      if (
+        item &&
+        typeof item.title === "string" &&
+        item.title.trim().length > 0 &&
+        typeof item.date === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(item.date)
+      ) {
+        valid.push({
+          id: typeof item.id === "string" ? item.id : "personal-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+          title: item.title.trim(),
+          date: item.date,
+          time: typeof item.time === "string" ? item.time : "08:30",
+          category: item.category || "deadline",
+          isOfficial: false,
+          verificationStatus: "student-custom",
+          description: typeof item.description === "string" ? item.description : undefined,
+          priority: item.priority === "high" || item.priority === "low" ? item.priority : "medium",
+          completed: Boolean(item.completed),
+        });
+      }
+    }
+
+    if (valid.length === 0 && incoming.length > 0) {
+      return false;
+    }
+
+    this.personalEvents = valid;
+    this.savePersonalEvents();
+    return true;
+  }
+
   public toggleEventCompleted(id: string) {
     this.personalEvents = this.personalEvents.map((evt) => {
       if (evt.id === id) {
@@ -210,16 +256,22 @@ class AcademicCalendarService {
 
   /**
    * Calculate live countdown for an event from the current timestamp.
+   * Interprets official examination target dates and times strictly in Pakistan Standard Time (PKT, UTC+05:00)
+   * to ensure countdown accuracy regardless of the visitor's device system timezone.
    */
   public calculateCountdown(event: CalendarEvent, currentNow: Date = new Date()): EventCountdown {
-    // Construct event target date with optional time (default 08:30 PKT morning shift)
-    const timeStr = event.time || "08:30";
-    const [h, m] = timeStr.split(":").map((v) => parseInt(v, 10));
+    // Construct event target time with optional time (default 08:30 PKT morning shift)
+    const timeStr = event.time && /^\d{1,2}:\d{2}$/.test(event.time) ? event.time : "08:30";
+    const [rawH, rawM] = timeStr.split(":").map((v) => parseInt(v, 10));
+    const padH = String(rawH).padStart(2, "0");
+    const padM = String(rawM).padStart(2, "0");
 
-    const targetDate = new Date(`${event.date}T00:00:00`);
-    targetDate.setHours(h, m, 0, 0);
+    // Explicitly anchor in Pakistan Standard Time (PKT, UTC+05:00)
+    const pktIsoString = `${event.date}T${padH}:${padM}:00+05:00`;
+    const targetTimeMs = Date.parse(pktIsoString);
 
-    const diffMs = targetDate.getTime() - currentNow.getTime();
+    const nowMs = currentNow.getTime();
+    const diffMs = isNaN(targetTimeMs) ? 0 : targetTimeMs - nowMs;
     const isExpired = diffMs <= 0;
     const absDiffSec = Math.max(0, Math.floor(diffMs / 1000));
 
@@ -228,10 +280,20 @@ class AcademicCalendarService {
     const minutes = Math.floor((absDiffSec % 3600) / 60);
     const seconds = absDiffSec % 60;
 
-    const isToday =
-      currentNow.getFullYear() === targetDate.getFullYear() &&
-      currentNow.getMonth() === targetDate.getMonth() &&
-      currentNow.getDate() === targetDate.getDate();
+    // Check if the current calendar day in PKT matches the event date
+    let isToday = false;
+    try {
+      const pktDateFormatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Karachi",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      isToday = pktDateFormatter.format(currentNow) === event.date;
+    } catch {
+      const todayStr = `${currentNow.getFullYear()}-${String(currentNow.getMonth() + 1).padStart(2, "0")}-${String(currentNow.getDate()).padStart(2, "0")}`;
+      isToday = todayStr === event.date;
+    }
 
     return {
       event,
@@ -272,8 +334,18 @@ class AcademicCalendarService {
     isToday: boolean;
     events: CalendarEvent[];
   }[] {
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    let todayStr = "";
+    try {
+      todayStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Karachi",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+    } catch {
+      const today = new Date();
+      todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    }
 
     const allEvents = this.getAllEvents();
 

@@ -19,6 +19,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { href: "/utilities", labelKey: "nav.utilities", defaultLabel: "Study Tools", badge: "Live" },
   { href: "/paper-hacks", labelKey: "nav.paperHacks", defaultLabel: "Paper Hacks" },
   { href: "/resources", labelKey: "nav.resources", defaultLabel: "Resources" },
+  { href: "/guide", labelKey: "nav.guide", defaultLabel: "Website Guide", badge: "Directory" },
   { href: "/about", labelKey: "nav.about", defaultLabel: "About" },
   { href: "/legal", labelKey: "nav.legal", defaultLabel: "Legal & Policies" },
 ];

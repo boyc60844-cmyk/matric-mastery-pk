@@ -13,7 +13,7 @@ import {
   ArrowRight,
   Sliders,
 } from "lucide-react";
-import { timeService, WORLD_TIMEZONES } from "@/lib/utilities/timeService";
+import { timeService, WORLD_TIMEZONES, formatTimezoneOffsetBadge } from "@/lib/utilities/timeService";
 import { TimeFormat, TimeZoneOption } from "@/lib/utilities/types";
 
 export default function LiveClockWidget() {
@@ -272,8 +272,11 @@ export default function LiveClockWidget() {
                   )}
                 </div>
 
-                <div className="mt-1 text-[10px] font-mono text-white/50 truncate">
-                  {zData.dayName} · {zone.iana}
+                <div className="mt-1 flex items-center justify-between text-[10px] font-mono text-white/50">
+                  <span className="truncate">{zData.dayName} · {zone.iana}</span>
+                  <span className="rounded bg-white/5 border border-white/10 px-1.5 py-0.2 text-[9px] font-semibold text-white/70 shrink-0 ml-1">
+                    {formatTimezoneOffsetBadge(zone.iana, timeService.getNow())}
+                  </span>
                 </div>
               </button>
             );
@@ -312,7 +315,7 @@ export default function LiveClockWidget() {
             >
               {WORLD_TIMEZONES.map((z) => (
                 <option key={z.iana} value={z.iana}>
-                  {z.flag} {z.label} ({z.iana})
+                  {z.flag} {z.label} ({formatTimezoneOffsetBadge(z.iana, timeService.getNow())})
                 </option>
               ))}
             </select>
@@ -333,7 +336,7 @@ export default function LiveClockWidget() {
             >
               {WORLD_TIMEZONES.map((z) => (
                 <option key={z.iana} value={z.iana}>
-                  {z.flag} {z.label} ({z.iana})
+                  {z.flag} {z.label} ({formatTimezoneOffsetBadge(z.iana, timeService.getNow())})
                 </option>
               ))}
             </select>

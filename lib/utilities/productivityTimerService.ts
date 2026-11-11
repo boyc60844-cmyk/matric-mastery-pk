@@ -498,14 +498,33 @@ export class StudySessionTracker {
     }
   }
 
-  private save() {
+  private save(): boolean {
+    // Bound study sessions to maximum 300 records (retaining newest)
+    if (this.sessions.length > 300) {
+      this.sessions = this.sessions.slice(0, 300);
+    }
+
     try {
       localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(this.sessions));
       localStorage.setItem(STORAGE_KEYS.STUDY_GOAL, this.weeklyGoalHours.toString());
-    } catch {
-      // Ignore
+      this.notify();
+      return true;
+    } catch (err) {
+      console.warn("Storage quota or write error in studySessionTracker:", err);
+      // Attempt quota recovery by truncating to latest 100 sessions
+      try {
+        if (this.sessions.length > 100) {
+          this.sessions = this.sessions.slice(0, 100);
+          localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(this.sessions));
+          this.notify();
+          return true;
+        }
+      } catch {
+        // Recovery failed
+      }
+      this.notify();
+      return false;
     }
-    this.notify();
   }
 
   public logSession(subject: string, durationMinutes: number, mode: "pomodoro" | "timer" | "manual", notes?: string) {
@@ -530,6 +549,44 @@ export class StudySessionTracker {
   public clearAllSessions() {
     this.sessions = [];
     this.save();
+  }
+
+  public reload(): void {
+    this.load();
+    this.notify();
+  }
+
+  public importSessions(incoming: any[]): boolean {
+    if (!Array.isArray(incoming)) return false;
+    const valid: StudySessionRecord[] = [];
+
+    for (const item of incoming) {
+      if (
+        item &&
+        typeof item.subject === "string" &&
+        typeof item.durationMinutes === "number" &&
+        item.durationMinutes > 0 &&
+        typeof item.timestamp === "number"
+      ) {
+        valid.push({
+          id: typeof item.id === "string" ? item.id : "sess-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+          subject: item.subject.trim() || "General Study",
+          durationMinutes: Math.min(1440, Math.round(item.durationMinutes)),
+          timestamp: item.timestamp,
+          notes: typeof item.notes === "string" ? item.notes : undefined,
+          mode: item.mode === "pomodoro" || item.mode === "timer" ? item.mode : "manual",
+        });
+      }
+    }
+
+    if (valid.length === 0 && incoming.length > 0) {
+      return false;
+    }
+
+    // Sort descending by timestamp and cap at 300
+    valid.sort((a, b) => b.timestamp - a.timestamp);
+    this.sessions = valid.slice(0, 300);
+    return this.save();
   }
 
   public setWeeklyGoal(hours: number) {

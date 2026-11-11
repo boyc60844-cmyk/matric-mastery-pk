@@ -27,6 +27,20 @@ import {
 } from "@/lib/question-bank";
 import { recordMockTestResult, MockTestResult, recordMistake } from "@/lib/progress";
 
+const ACTIVE_EXAM_SESSION_KEY = "mm_active_mock_exam_session_v1";
+
+interface ActiveExamSessionState {
+  currentTest: GeneratedMockTest;
+  targetEndTime: number; // epoch ms
+  userAnswers: { [qId: string]: string | number };
+  markedForReview: { [qId: string]: boolean };
+  currentIndex: number;
+  startTime: number;
+  studentName?: string;
+  selectedClass: "Class 9" | "Class 10";
+  selectedSubject: string;
+}
+
 export default function MockTestsPage() {
   const [stage, setStage] = useState<"setup" | "exam" | "results">("setup");
 
@@ -44,12 +58,71 @@ export default function MockTestsPage() {
   const [userAnswers, setUserAnswers] = useState<{ [qId: string]: string | number }>({});
   const [markedForReview, setMarkedForReview] = useState<{ [qId: string]: boolean }>({});
   const [timeLeftSeconds, setTimeLeftSeconds] = useState<number>(1800);
+  const [targetEndTime, setTargetEndTime] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(0);
   const [isWarned, setIsWarned] = useState<boolean>(false);
   const [confirmSubmitModal, setConfirmSubmitModal] = useState<boolean>(false);
 
   // Result state
   const [finalResult, setFinalResult] = useState<MockTestResult | null>(null);
+
+  // Restore active exam session from sessionStorage after accidental reload
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem(ACTIVE_EXAM_SESSION_KEY);
+      if (raw) {
+        const session: ActiveExamSessionState = JSON.parse(raw);
+        if (
+          session &&
+          session.currentTest &&
+          Array.isArray(session.currentTest.questions) &&
+          session.currentTest.questions.length > 0 &&
+          typeof session.targetEndTime === "number"
+        ) {
+          const remainingSec = Math.floor((session.targetEndTime - Date.now()) / 1000);
+          if (remainingSec > 5) {
+            setCurrentTest(session.currentTest);
+            setUserAnswers(session.userAnswers || {});
+            setMarkedForReview(session.markedForReview || {});
+            setCurrentIndex(session.currentIndex || 0);
+            setTimeLeftSeconds(remainingSec);
+            setTargetEndTime(session.targetEndTime);
+            setStartTime(session.startTime || Date.now());
+            if (session.studentName) setStudentName(session.studentName);
+            if (session.selectedClass) setSelectedClass(session.selectedClass);
+            if (session.selectedSubject) setSelectedSubject(session.selectedSubject);
+            setStage("exam");
+          } else {
+            sessionStorage.removeItem(ACTIVE_EXAM_SESSION_KEY);
+          }
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(ACTIVE_EXAM_SESSION_KEY);
+    }
+  }, []);
+
+  // Save session state changes during active exam
+  useEffect(() => {
+    if (stage !== "exam" || !currentTest || !targetEndTime) return;
+    try {
+      const sessionData: ActiveExamSessionState = {
+        currentTest,
+        targetEndTime,
+        userAnswers,
+        markedForReview,
+        currentIndex,
+        startTime,
+        studentName,
+        selectedClass,
+        selectedSubject,
+      };
+      sessionStorage.setItem(ACTIVE_EXAM_SESSION_KEY, JSON.stringify(sessionData));
+    } catch {
+      // Ignore sessionStorage quota error
+    }
+  }, [stage, currentTest, targetEndTime, userAnswers, markedForReview, currentIndex, startTime, studentName, selectedClass, selectedSubject]);
 
   // Available chapters for selected subject & class
   const currentSubjectConfig = SUBJECTS_CONFIG.find((s) => s.name === selectedSubject);
@@ -73,41 +146,68 @@ export default function MockTestsPage() {
       targetMarks,
       customDuration
     );
+    const durationSeconds = test.durationMinutes * 60;
+    const computedTargetEndTime = Date.now() + durationSeconds * 1000;
+
     setCurrentTest(test);
     setCurrentIndex(0);
     setUserAnswers({});
     setMarkedForReview({});
-    setTimeLeftSeconds(test.durationMinutes * 60);
+    setTimeLeftSeconds(durationSeconds);
+    setTargetEndTime(computedTargetEndTime);
     setStartTime(Date.now());
     setIsWarned(false);
     setStage("exam");
+
+    try {
+      const initialSession: ActiveExamSessionState = {
+        currentTest: test,
+        targetEndTime: computedTargetEndTime,
+        userAnswers: {},
+        markedForReview: {},
+        currentIndex: 0,
+        startTime: Date.now(),
+        studentName,
+        selectedClass,
+        selectedSubject,
+      };
+      sessionStorage.setItem(ACTIVE_EXAM_SESSION_KEY, JSON.stringify(initialSession));
+    } catch {
+      // Ignore
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Timer countdown
+  // Timer countdown with drift-free target timestamp synchronization
   useEffect(() => {
-    if (stage !== "exam") return;
+    if (stage !== "exam" || !targetEndTime) return;
 
     const timer = setInterval(() => {
-      setTimeLeftSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmitExam(true);
-          return 0;
-        }
-        if (prev <= 300 && !isWarned) {
-          setIsWarned(true);
-        }
-        return prev - 1;
-      });
+      const remaining = Math.max(0, Math.floor((targetEndTime - Date.now()) / 1000));
+      setTimeLeftSeconds(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleSubmitExam(true);
+      } else if (remaining <= 300 && !isWarned) {
+        setIsWarned(true);
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [stage, isWarned]);
+  }, [stage, targetEndTime, isWarned]);
 
   // Submit test
   const handleSubmitExam = (auto = false) => {
     if (!currentTest) return;
+
+    // Clear active session storage on submission
+    try {
+      sessionStorage.removeItem(ACTIVE_EXAM_SESSION_KEY);
+    } catch {
+      // Ignore
+    }
 
     const totalQuestions = currentTest.questions.length;
     let correctCount = 0;

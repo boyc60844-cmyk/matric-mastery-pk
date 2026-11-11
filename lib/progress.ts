@@ -149,13 +149,32 @@ export function loadProgress(): StudentProgress {
   }
 }
 
-export function saveProgress(progress: StudentProgress): void {
-  if (typeof window === "undefined") return;
+export function saveProgress(progress: StudentProgress): boolean {
+  if (typeof window === "undefined") return false;
+
+  // Bound mock test results to maximum 50 records (retaining newest)
+  if (Array.isArray(progress.mockTestResults) && progress.mockTestResults.length > 50) {
+    progress.mockTestResults = progress.mockTestResults.slice(0, 50);
+  }
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
     window.dispatchEvent(new Event("mm_progress_updated"));
+    return true;
   } catch (err) {
-    console.error("Failed to save progress", err);
+    console.warn("Storage quota or write error in saveProgress:", err);
+    // Quota recovery: trim mock test results to 20 newest and retry
+    try {
+      if (Array.isArray(progress.mockTestResults) && progress.mockTestResults.length > 20) {
+        progress.mockTestResults = progress.mockTestResults.slice(0, 20);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+        window.dispatchEvent(new Event("mm_progress_updated"));
+        return true;
+      }
+    } catch {
+      // Recovery failed
+    }
+    return false;
   }
 }
 
@@ -166,31 +185,45 @@ export function addXP(amount: number, reason?: string): { newXP: number; added: 
   return { newXP: progress.xp, added: amount };
 }
 
-// Record wrong question for spaced repetition in local storage
+// Record wrong question for spaced repetition in local storage (maximum 150 records)
 export async function recordMistake(
   question: string,
   correctAnswer: string,
   userAnswer: string,
   chapter: string = "General"
-) {
-  if (typeof window !== "undefined") {
-    try {
-      const mistakeId = Date.now().toString();
-      const raw = localStorage.getItem("mm_mistakes");
-      const mistakes = raw ? JSON.parse(raw) : [];
-      mistakes.push({
-        id: mistakeId,
-        question,
-        correctAnswer,
-        userAnswer,
-        chapter,
-        nextReview: Date.now() + 86400000,
-        createdAt: new Date().toISOString(),
-      });
-      localStorage.setItem("mm_mistakes", JSON.stringify(mistakes));
-    } catch (err) {
-      console.warn("Error recording mistake in storage:", err);
+): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const mistakeId = Date.now().toString();
+    const raw = localStorage.getItem("mm_mistakes");
+    let mistakes: any[] = [];
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) mistakes = parsed;
+      } catch {
+        mistakes = [];
+      }
     }
+
+    const newMistake = {
+      id: mistakeId,
+      question: question.trim(),
+      correctAnswer: correctAnswer.trim(),
+      userAnswer: userAnswer.trim(),
+      chapter: chapter.trim() || "General",
+      nextReview: Date.now() + 86400000,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Cap mistake history to newest 150 entries
+    const updated = [newMistake, ...mistakes].slice(0, 150);
+    localStorage.setItem("mm_mistakes", JSON.stringify(updated));
+    return true;
+  } catch (err) {
+    console.warn("Error recording mistake in storage (possible quota limit):", err);
+    return false;
   }
 }
 
@@ -231,6 +264,9 @@ export function markStrategyCompleted(slug: string): void {
 export function recordMockTestResult(result: MockTestResult): void {
   const progress = loadProgress();
   progress.mockTestResults.unshift(result);
+  if (progress.mockTestResults.length > 50) {
+    progress.mockTestResults = progress.mockTestResults.slice(0, 50);
+  }
   progress.xp += 50; // Mock test completed
 
   // Mark daily test goal

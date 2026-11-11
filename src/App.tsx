@@ -26,6 +26,7 @@ import LoginPage from "@/app/login/page";
 import ExamDayGuidebookPage from "@/app/exam-day-guidebook/page";
 import BoardWatchPage from "@/app/board-watch/page";
 import UtilitiesPage from "@/app/utilities/page";
+import WebsiteGuidePage from "@/app/guide/page";
 import UtilityHubModal from "@/components/utilities/UtilityHubModal";
 import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
@@ -77,6 +78,8 @@ function PageRenderer() {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
     } else if (cleanPath === "/my-story") {
       document.title = "My Story & Verification | Matric Mastery PK";
+    } else if (cleanPath === "/guide" || cleanPath === "/website-guide" || cleanPath === "/platform-guide" || cleanPath === "/directory" || cleanPath === "/site-guide") {
+      document.title = "Matric Mastery Website Guide | Complete Platform Directory & Orientation";
     } else if (cleanPath === "/legal" || cleanPath === "/terms" || cleanPath === "/privacy" || cleanPath === "/policies") {
       document.title = "Legal & Policies Center | Matric Mastery PK";
     } else {
@@ -117,6 +120,8 @@ function PageRenderer() {
     pageContent = <PaperHacksPage />;
   } else if (cleanPath === "/resources") {
     pageContent = <ResourcesPage />;
+  } else if (cleanPath === "/guide" || cleanPath === "/website-guide" || cleanPath === "/platform-guide" || cleanPath === "/directory" || cleanPath === "/site-guide") {
+    pageContent = <WebsiteGuidePage />;
   } else if (cleanPath === "/about" || cleanPath === "/contact") {
     pageContent = <AboutPage />;
   } else if (cleanPath === "/legal" || cleanPath === "/terms" || cleanPath === "/privacy" || cleanPath === "/policies") {

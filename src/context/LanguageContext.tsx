@@ -26,6 +26,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.boardWatch": "Board Watch",
     "nav.signOut": "Sign Out",
     "nav.resources": "Resources",
+    "nav.guide": "Website Guide",
     "nav.about": "About",
     "nav.legal": "Legal & Policies",
 
@@ -108,6 +109,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.boardWatch": "بورڈ واچ",
     "nav.signOut": "لاگ آؤٹ",
     "nav.resources": "امدادی مواد",
+    "nav.guide": "ویب سائٹ گائیڈ",
     "nav.about": "ہمارے بارے میں",
     "nav.legal": "قانونی امور و پالیسیاں",
 

@@ -7,6 +7,8 @@ import { Trophy, Medal, Flame, Zap, Shield, Sparkles, RefreshCw, Loader2 } from 
 import Link from "next/link";
 import AuthButton from "./AuthButton";
 
+import { loadProgress } from "@/lib/progress";
+
 interface LeaderboardUser {
   id: string;
   displayName: string;
@@ -42,16 +44,18 @@ export default function Leaderboard() {
       setRefreshing(true);
       const combined = [...DEFAULT_BOARD_TOPPERS];
       if (currentUser) {
-        const studentXP = parseInt(
-          localStorage.getItem("totalXP") || localStorage.getItem("xp") || "120",
-          10
-        );
+        const studentProgress = loadProgress();
+        const studentXP = typeof studentProgress?.xp === "number" ? studentProgress.xp : 0;
+        const studentBoard =
+          (typeof window !== "undefined" && localStorage.getItem("mm_user_board")) ||
+          "BISE Punjab";
+
         combined.push({
           id: currentUser.uid,
           displayName: currentUser.displayName || "You",
           xp: studentXP,
           photoURL: currentUser.photoURL || "",
-          board: "Your Board",
+          board: studentBoard,
         });
       }
       combined.sort((a, b) => b.xp - a.xp);
@@ -67,7 +71,12 @@ export default function Leaderboard() {
 
   useEffect(() => {
     fetchLeaderboard();
-  }, []);
+    const handleProgressUpdate = () => fetchLeaderboard();
+    window.addEventListener("mm_progress_updated", handleProgressUpdate);
+    return () => {
+      window.removeEventListener("mm_progress_updated", handleProgressUpdate);
+    };
+  }, [currentUser]);
 
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
