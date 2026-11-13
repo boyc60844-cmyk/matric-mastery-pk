@@ -1,11 +1,11 @@
 // scripts/test-ai-infrastructure.mjs
-// Automated verification suite for Matric Mastery AI (v3.9.0) & Cloudflare Workers AI Infrastructure
+// Automated verification suite for Matric Mastery AI (v4.0.0) & Cloudflare Workers AI Infrastructure
 
 import assert from "assert";
 import fs from "fs";
 
 console.log("=================================================");
-console.log("Matric Mastery AI — Launch Readiness Test Suite (v3.9.0)");
+console.log("Matric Mastery AI — Launch Readiness Test Suite (v4.0.0)");
 console.log("=================================================\n");
 
 let passedTests = 0;
@@ -349,18 +349,18 @@ runTest("Client Privacy & Storage: History bounded to 50 items and JSON export p
 });
 
 // -------------------------------------------------------------
-// Test 11: Release Version Consistency (v3.9.0 & Preserved History)
+// Test 11: Release Version Consistency (v4.0.0 & Preserved History)
 // -------------------------------------------------------------
-runTest("Release Management: v3.9.0 synchronized across manifest, package, and guide without erasing history", () => {
+runTest("Release Management: v4.0.0 synchronized across manifest, package, and guide without erasing history", () => {
   const manifestFile = fs.readFileSync("lib/releaseManifest.ts", "utf8");
   assert.ok(
-    manifestFile.includes('CURRENT_VERSION = "v3.9.0"') &&
-      manifestFile.includes('version: "v3.9.0"'),
-    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v3.9.0"
+    manifestFile.includes('CURRENT_VERSION = "v4.0.0"') &&
+      manifestFile.includes('version: "v4.0.0"'),
+    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v4.0.0"
   );
 
   // Confirm all historical versions remain intact
-  const historicalVersions = ["v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
+  const historicalVersions = ["v3.9.0", "v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
   for (const v of historicalVersions) {
     assert.ok(
       manifestFile.includes(`version: "${v}"`),
@@ -369,12 +369,12 @@ runTest("Release Management: v3.9.0 synchronized across manifest, package, and g
   }
 
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  assert.strictEqual(pkg.version, "3.9.0", "package.json version must be 3.9.0");
+  assert.strictEqual(pkg.version, "4.0.0", "package.json version must be 4.0.0");
 
   const faqFile = fs.readFileSync("lib/guideFaqData.ts", "utf8");
   assert.ok(
-    faqFile.includes("v3.9.0"),
-    "lib/guideFaqData.ts must reflect v3.9.0"
+    faqFile.includes("v4.0.0"),
+    "lib/guideFaqData.ts must reflect v4.0.0"
   );
 
   const envExample = fs.readFileSync(".env.example", "utf8");
@@ -385,9 +385,9 @@ runTest("Release Management: v3.9.0 synchronized across manifest, package, and g
 });
 
 // -------------------------------------------------------------
-// Test 12: Revamped /ai UI Quality & Safety Boundaries
+// Test 12: Revamped /ai UI Quality, Independent Scroll & Free Access Transparency
 // -------------------------------------------------------------
-runTest("AI Workspace UI: Clean architecture without WebGL orb, blocking dialogs, or unapproved image UI", () => {
+runTest("AI Workspace UI: Independent transcript scroll, educational guides, Free AI Access & safety guards", () => {
   const aiPage = fs.readFileSync("app/ai/page.tsx", "utf8");
   assert.ok(
     !aiPage.includes("DoubtOrb3D"),
@@ -404,6 +404,17 @@ runTest("AI Workspace UI: Clean architecture without WebGL orb, blocking dialogs
   assert.ok(
     aiPage.includes("آپ کے AI استعمال کی عارضی حد پوری ہو گئی ہے"),
     "app/ai/page.tsx must include student-friendly Urdu rate-limit guidance"
+  );
+  assert.ok(
+    aiPage.includes('id="ai-transcript-scroll"') &&
+      aiPage.includes("overscroll-y-contain") &&
+      aiPage.includes("shouldAutoScrollRef"),
+    "app/ai/page.tsx must implement dedicated independent transcript scroll with overscroll containment and scroll-position preservation"
+  );
+  assert.ok(
+    aiPage.includes("Free AI Access — Usage Information") &&
+      aiPage.includes("Your personal AI study assistant for Punjab Board Class 9–10."),
+    "app/ai/page.tsx must include required introduction and Free AI Access usage section"
   );
 
   const floatingBtn = fs.readFileSync("components/FloatingDoubtButton.tsx", "utf8");

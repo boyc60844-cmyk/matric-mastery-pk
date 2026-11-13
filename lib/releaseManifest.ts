@@ -22,9 +22,10 @@ export interface WeeklyUpgradePolicy {
   verificationStandard: string;
 }
 
-export const CURRENT_VERSION = "v3.9.0";
+export const CURRENT_VERSION = "v4.0.0";
 export const CURRENT_RELEASE_DATE = "November 2026";
-export const CURRENT_RELEASE_CODENAME = "Matric Mastery AI Workspace Revamp";
+export const CURRENT_RELEASE_CODENAME =
+  "Matric Mastery AI Tutoring Destination & Independent Scroll";
 
 export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
   cycle: "Targeted Weekly Iterations During Active Academic Cycles",
@@ -73,6 +74,28 @@ export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: "v4.0.0",
+    codename: "Matric Mastery AI Tutoring Destination & Independent Scroll",
+    releaseDate: "November 2026",
+    status: "released",
+    category: "Major System",
+    summary:
+      "Upgraded /ai into a complete Class 9–10 tutoring destination with genuinely independent conversation scrolling, structured subject guidance, interactive prompt templates, and transparent Free AI Access usage information while preserving Cloudflare Workers AI inference.",
+    features: [
+      "Separated the /ai conversation transcript (#ai-transcript-scroll) into a bounded independent scroll container with overscroll containment (overscroll-y-contain) so swiping or wheel-scrolling inside chat never moves the outer page, and vice versa.",
+      "Implemented smart transcript auto-scroll that keeps the latest message in view after sending while preserving older-message reading scroll positions with an optional 'Jump to latest' control.",
+      "Added organized Class 9–10 educational sections covering Mathematics, Physics, Chemistry, and Biology topics, 7 step-by-step usage instructions, 6 interactive example prompt templates, and practical answering tips.",
+      "Added the 'Free AI Access — Usage Information' section with honest shared-capacity guidance, live /api/ai/health status differentiation, and a friendly Pakistani Urdu reminder without fabricated quota numbers.",
+    ],
+    improvements: [
+      "Added compact workspace orientation and section jump links above #ai-chat-workspace so students reach the chat composer immediately without scrolling past introductory documentation.",
+      "Maintained pinned chat header and mobile-first input composer positions across 360px Android viewports and desktop displays.",
+      "Preserved all v3.9.0 Worker inference, English/Urdu RTL rendering, streaming, Stop/Retry, Copy/Share/Regenerate, JSON export, and local-only storage capabilities.",
+    ],
+    notes:
+      "Verified live inference and independent desktop/mobile scrolling against Cloudflare Workers AI; unapproved vision uploads remain paused until parent/guardian Meta license review.",
+  },
   {
     version: "v3.9.0",
     codename: "Matric Mastery AI Workspace Revamp",

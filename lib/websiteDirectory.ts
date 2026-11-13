@@ -234,21 +234,21 @@ export const DIRECTORY_MODULES: DirectoryModule[] = [
     href: "/ai",
     category: "intelligence",
     badge: "Free-First AI",
-    tagline: "Focused AI tutoring workspace with Math/Science formatting, Pakistani Urdu RTL support, and local chat history.",
+    tagline: "Independent Class 9–10 AI study destination with separated transcript scrolling, subject guides, Urdu RTL, and local history.",
     purpose:
-      "A distraction-free academic tutoring workspace connected to Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast for text queries) without commercial tracking, subscriptions, or paid upsells.",
+      "A complete academic tutoring destination connected to Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast for text queries) featuring independent conversation scrolling, subject guidance, interactive prompt templates, and honest free-tier usage transparency.",
     whatYouWillFind: [
-      "Clean, mobile-first tutoring workspace with live backend availability checks, New Chat reset, and Stop/Retry controls.",
-      "Curated Class 9–10 example prompts for Mathematics, Physics, Chemistry, and Biology in English (default) and Pakistani Urdu.",
+      "Independent transcript scrolling with overscroll containment and scroll-position preservation so reading older answers or scrolling outer guides never conflict.",
+      "Structured Class 9–10 subject coverage (Mathematics, Physics, Chemistry, Biology), 7-step usage guide, and clickable prompt templates.",
+      "Transparent Free AI Access — Usage Information with live /api/ai/health operational status and a concise Pakistani Urdu reminder.",
       "Accurate academic Urdu RTL rendering with isolated LTR formulas, C code blocks, and scrollable comparison tables.",
-      "Strict student privacy: zero server retention of prompts, no tracking cookies, and local-only JSON session exports.",
-      "Image/diagram inference remains disabled by default unless enabled after parent/guardian license review.",
+      "Strict student privacy: zero server retention of prompts, no tracking cookies, local-only JSON exports, and vision disabled until parent license approval.",
     ],
     whenToUse:
       "Whenever you need a clear, step-by-step syllabus explanation, derivation, or balanced chemical equation while studying.",
     proTips: [
       "Choose your subject (Mathematics, Physics, Chemistry, Biology) and English/Urdu mode right inside the composer before sending.",
-      "Never enter personal identity numbers or phone numbers — keep questions focused on Class 9–10 syllabus concepts.",
+      "Always verify important answers against your Punjab Board textbook and teacher.",
     ],
     connectedPages: [
       { name: "Subject Strategies", href: "/strategies" },
