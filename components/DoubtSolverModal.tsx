@@ -19,7 +19,9 @@ import {
   Zap,
   AlertCircle,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 import {
   streamSolveWithAI,
   getHistory,
@@ -288,11 +290,11 @@ export default function DoubtSolverModal({
               <h3 className="font-heading text-sm font-extrabold text-white flex items-center gap-2">
                 Matric Mastery AI
                 <span className="rounded bg-accent/20 px-2 py-0.5 text-[10px] font-mono font-bold text-accent">
-                  Gemini 1.5 Flash
+                  Cloudflare Workers AI
                 </span>
               </h3>
               <p className="text-[11px] text-muted font-sans">
-                Answers Literally Everything &bull; Streaming &bull; 100% Free
+                Free-First Educational AI &bull; Streaming &bull; 100% Free
               </p>
             </div>
           </div>
@@ -305,6 +307,17 @@ export default function DoubtSolverModal({
                 <span>+15 XP Earned!</span>
               </div>
             )}
+
+            {/* Open Full AI Workspace */}
+            <Link
+              href="/ai"
+              onClick={onClose}
+              className="hidden sm:flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 text-xs font-heading font-bold text-muted hover:text-white hover:border-accent/40 transition-colors"
+              title="Open Dedicated Full-Screen Matric AI Workspace"
+            >
+              <ExternalLink size={13} className="text-accent" />
+              <span>Full Page</span>
+            </Link>
 
             {/* History Toggle Button */}
             <button
@@ -518,7 +531,7 @@ export default function DoubtSolverModal({
                     className="h-12 w-12 rounded object-cover"
                   />
                   <span className="text-[11px] font-mono text-muted pr-6">
-                    Image ready for OCR analysis
+                    Diagram attached (requires active Workers AI &amp; adult vision approval)
                   </span>
                   <button
                     type="button"

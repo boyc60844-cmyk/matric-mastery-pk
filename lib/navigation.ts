@@ -16,6 +16,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { href: "/login", labelKey: "nav.login", defaultLabel: "Cloud Login", badge: "Sync" },
   { href: "/exam-day-guidebook", labelKey: "nav.guidebook", defaultLabel: "Exam Guidebook", badge: "2026" },
   { href: "/board-watch", labelKey: "nav.boardWatch", defaultLabel: "Board Watch", badge: "Punjab" },
+  { href: "/ai", labelKey: "nav.ai", defaultLabel: "Matric AI", badge: "AI" },
   { href: "/utilities", labelKey: "nav.utilities", defaultLabel: "Study Tools", badge: "Live" },
   { href: "/paper-hacks", labelKey: "nav.paperHacks", defaultLabel: "Paper Hacks" },
   { href: "/resources", labelKey: "nav.resources", defaultLabel: "Resources" },

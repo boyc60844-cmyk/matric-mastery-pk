@@ -27,6 +27,7 @@ import ExamDayGuidebookPage from "@/app/exam-day-guidebook/page";
 import BoardWatchPage from "@/app/board-watch/page";
 import UtilitiesPage from "@/app/utilities/page";
 import WebsiteGuidePage from "@/app/guide/page";
+import AIPage from "@/app/ai/page";
 import UtilityHubModal from "@/components/utilities/UtilityHubModal";
 import FloatingDoubtButton from "@/components/FloatingDoubtButton";
 import Link from "next/link";
@@ -72,6 +73,8 @@ function PageRenderer() {
       document.title = "Matric Mastery Exam Day Guidebook | Rules & Survival Tips";
     } else if (cleanPath === "/board-watch" || cleanPath === "/boardwatch" || cleanPath === "/bise-watch" || cleanPath === "/date-sheet") {
       document.title = "Board Watch — Punjab Exams | Official Notifications & Date Sheet Tracker";
+    } else if (cleanPath === "/ai" || cleanPath === "/matric-ai" || cleanPath === "/doubt-solver") {
+      document.title = "Matric Mastery AI — Punjab Board Study Companion | Free-First AI";
     } else if (cleanPath === "/utilities" || cleanPath === "/tools" || cleanPath === "/study-hub" || cleanPath === "/calculator") {
       document.title = "Matric Mastery Study Tools & Utilities | Precision Academic Toolkit";
     } else if (cleanPath === "/strategies" || cleanPath === "/strategy" || cleanPath.startsWith("/strategies/") || cleanPath.startsWith("/strategy/")) {
@@ -114,6 +117,8 @@ function PageRenderer() {
     pageContent = <ExamDayGuidebookPage />;
   } else if (cleanPath === "/board-watch" || cleanPath === "/boardwatch" || cleanPath === "/bise-watch" || cleanPath === "/date-sheet") {
     pageContent = <BoardWatchPage />;
+  } else if (cleanPath === "/ai" || cleanPath === "/matric-ai" || cleanPath === "/doubt-solver") {
+    pageContent = <AIPage />;
   } else if (cleanPath === "/utilities" || cleanPath === "/tools" || cleanPath === "/study-hub" || cleanPath === "/calculator") {
     pageContent = <UtilitiesPage />;
   } else if (cleanPath === "/paper-hacks") {

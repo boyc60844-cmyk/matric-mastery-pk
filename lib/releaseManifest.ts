@@ -22,9 +22,9 @@ export interface WeeklyUpgradePolicy {
   verificationStandard: string;
 }
 
-export const CURRENT_VERSION = "v3.7.0";
+export const CURRENT_VERSION = "v3.8.0";
 export const CURRENT_RELEASE_DATE = "November 2026";
-export const CURRENT_RELEASE_CODENAME = "Platform Guide & Orientation Architecture";
+export const CURRENT_RELEASE_CODENAME = "Matric Mastery AI & Free-First Workers Infrastructure";
 
 export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
   cycle: "Targeted Weekly Iterations During Active Academic Cycles",
@@ -73,6 +73,30 @@ export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: "v3.8.0",
+    codename: "Matric Mastery AI & Free-First Workers Infrastructure",
+    releaseDate: "November 2026",
+    status: "released",
+    category: "Major System",
+    summary:
+      "Introduced the dedicated /ai workspace and Free-First Cloudflare Workers AI backend architecture, completely removed legacy Gemini 1.5 Flash dependencies and deprecated model IDs, configured @cf/meta/llama-3.1-8b-instruct-fast for sustainable daily free Neuron capacity, and separated image inference under explicit adult license gating.",
+    features: [
+      "Launched dedicated standalone Matric Mastery AI workspace route (/ai) with subject tagging, Urdu/Roman Urdu mode, local-only chat history, and JSON export.",
+      "Prepared Cloudflare Workers AI backend (worker/index.ts) and standalone Wrangler configuration (worker/wrangler.toml) using server-side env.AI binding with VITE_AI_WORKER_URL integration.",
+      "Configured active text model @cf/meta/llama-3.1-8b-instruct-fast (~563 realistic daily queries within Cloudflare's 10,000 free Neurons/day cap) via TEXT_MODEL / AI_MODEL environment variables.",
+      "Separated multimodal diagram model (@cf/meta/llama-3.2-11b-vision-instruct) behind explicit ENABLE_VISION_MODEL=false gating until parent/guardian license acceptance.",
+      "Implemented HTTP 429 QUOTA_EXHAUSTED responses with zero paid fallback, CORS origin lockdown, strict input size/length limits, and zero student prompt logging.",
+    ],
+    improvements: [
+      "Completely scrubbed all Gemini 1.5 Flash inference code, fallbacks, and UI labels across lib/ai.ts, lib/aiClient.ts, DoubtSolverModal.tsx, /guide, and /ai.",
+      "Standardized product naming ('Matric Mastery AI') and backend labeling ('Cloudflare Workers AI') with transparent preview/unconfigured notices when worker deployment is pending.",
+      "Prevented untrusted client-side model overrides in worker/index.ts so users cannot drain daily Neuron capacity via larger models.",
+      "Added automated infrastructure & security verification suite (scripts/test-ai-infrastructure.mjs).",
+    ],
+    notes:
+      "Prepared worker/index.ts backend requires separate adult-supervised Cloudflare Free account deployment and VITE_AI_WORKER_URL configuration for live inference; vision inference remains paused pending Meta license approval.",
+  },
   {
     version: "v3.7.0",
     codename: "Platform Guide & Orientation Architecture",

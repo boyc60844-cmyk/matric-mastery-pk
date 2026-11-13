@@ -894,14 +894,14 @@ export default function WebsiteGuidePage() {
             {/* Advice 2 */}
             <div className="rounded-2xl border border-white/10 bg-[#0E0E12] p-5 space-y-2.5">
               <span className="font-heading font-bold text-accent uppercase text-[11px] tracking-wider block">
-                2. AI Doubt Solver Best Practices
+                2. Matric Mastery AI Best Practices
               </span>
               <p className="text-neutral-300 leading-relaxed">
-                Ask specific questions rather than vague chapter names. For math
-                numerical problems, attach a clear photo of the textbook diagram.
-                Always cross-check the AI&apos;s mathematical steps against your official
-                Punjab Textbook Board syllabus. Use it to understand concepts, never
-                to shortcut your own thinking.
+                Ask specific questions (including your Class 9 or 10 board subject)
+                rather than vague chapter names. Always cross-check worked
+                mathematical steps against your official Punjab Textbook Board
+                syllabus. Image diagram inference remains separated until adult
+                license approval is completed on deployment.
               </p>
             </div>
 
@@ -1060,7 +1060,7 @@ export default function WebsiteGuidePage() {
                 <AlertCircle size={14} /> AI Solver Says &quot;Server Busy&quot;
               </span>
               <p className="text-neutral-400 leading-relaxed">
-                The Gemini AI backend experiences occasional rate limits during peak
+                The Workers AI backend experiences occasional rate limits during peak
                 evening hours. Wait 5 seconds and click the red <strong>Retry</strong>{" "}
                 button. If attaching an image, ensure it is clear and under 5MB.
               </p>

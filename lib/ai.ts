@@ -1,6 +1,8 @@
 // lib/ai.ts
-// Matric Mastery AI - 100% Functional AI Engine for Google AI Studio
-// Powered directly by built-in `ai` object without external SDKs or API keys.
+// Matric Mastery AI — Educational Doubt Solver Engine
+// Powered by Cloudflare Workers AI with Free-First student safeguards.
+
+import { sendAIMessage, getWorkerEndpoint } from "./aiClient";
 
 export type LanguageMode = "english" | "urdu";
 
@@ -20,60 +22,46 @@ export const SYSTEM_PROMPT = `You are Matric Mastery AI - Pakistan's best teache
 
 const HISTORY_KEY = "matric_ai_history";
 
-// Safely access built-in ai in Google AI Studio
-export function getAI() {
-  if (typeof (globalThis as any).ai !== "undefined") {
-    return (globalThis as any).ai;
-  }
-  if (typeof window !== "undefined" && (window as any).ai) {
-    return (window as any).ai;
-  }
-  return null;
-}
-
-export function isLiveAIAvailable(): boolean {
-  const aiObject = getAI();
-  return Boolean(aiObject?.models);
-}
-
-// Educational notice displayed when live Gemini AI runtime is not connected
+// Educational notice displayed when Cloudflare Workers AI backend is awaiting deployment
 function getOfflineEducationalNotice(lang: LanguageMode, hasImage: boolean): string {
   if (lang === "urdu") {
-    return `### ℹ️ لائیو AI اسٹوڈیو نوٹس (Live AI Notice)
+    return `### ℹ️ میٹرک ماسٹری AI نوٹس (Notice)
 
-**Live AI Doubt Solver standalone mode me chal raha hai.**
+**Matric Mastery AI اسٹینڈ الون پریویو موڈ میں ہے۔**
 
-Real-time Gemini AI streaming aur camera image OCR ke liye active **Google AI Studio** session darkaar hota hai.${
-  hasImage ? "\n\n⚠️ **Image OCR Notice:** Tasweer se sawal parhna sirf active live AI environment me dastyab hai." : ""
+لائیو کلاؤڈ فلائر ورکرز AI (Cloudflare Workers AI) ماڈل انفرینس اور کیمرہ امیج انالیسس کے لیے ایڈلٹ سپروائزڈ ڈپلائمنٹ درکار ہے۔${
+  hasImage ? "\n\n⚠️ **Image OCR Notice:** کتاب کی تصویری ڈایاگرام سے سوال حل کرنے کے لیے ایکٹیو ورکر سروس ضروری ہے۔" : ""
 }
 
-**Aap ki parhai ke liye mufeed zariye:**
-- 📖 **[Study Strategies](/strategies)** — Class 9 & 10 ke topper study plans aur chapter revision roadmaps.
-- ✍️ **[Paper Presentation Hacks](/paper-hacks)** — Punjab Board ke 605 marker presentation formulas aur paper-solving techniques.
-- 💬 **Student WhatsApp Group** — Apne sawalaat senior matric mentors aur sathiyon se WhatsApp community me poochiye.
+**طلباء کے لیے فوری اور مفت تعلیمی ذرائع:**
+- 📖 **[Study Strategies](/strategies)** — کلاس 9 اور 10 کے ٹاپرز کے منظور شدہ اسٹڈی پلینز اور چیپٹر ریویژن روڈ میپس۔
+- ✍️ **[Paper Presentation Hacks](/paper-hacks)** — پنجاب بورڈ کے 605 مارکر پریزنٹیشن کے رہنما اصول اور پیپر حل کرنے کے طریقے کار۔
+- 📚 **[Past Papers](/past-papers)** — تمام پنجاب بورڈز اور فیڈرل بورڈ کے حل شدہ سابقہ پرچہ جات۔
+- 💬 **Student WhatsApp Group** — سینئر طلباء اور اساتذہ سے سوالات پوچھنے کے لیے واٹس ایپ کمیونٹی۔
 
-*Mashwara: Interactive Gemini 1.5 Flash live streaming chalane ke liye Matric Mastery ko Google AI Studio preview me open karein.*`;
+*رہنمائی: مکمل ڈیسک ٹاپ ورک اسپیس کے لیے اوپر دیے گئے "Full Page" لنک سے [/ai](/ai) ملاحظہ کریں۔*`;
   }
 
-  return `### ℹ️ Live AI Streaming Notice
+  return `### ℹ️ Matric Mastery AI Notice
 
-**The Live AI Doubt Solver is currently running in Standalone Browser Mode.**
+**Matric Mastery AI is currently running in Standalone Preview Mode.**
 
-Real-time Gemini AI streaming and multimodal question image OCR require an active **Google AI Studio** session.${
-    hasImage ? "\n\n⚠️ **Image OCR Notice:** Direct image text extraction requires the active live Google AI runtime." : ""
+Live text problem solving via **Cloudflare Workers AI** (\`@cf/meta/llama-3.1-8b-instruct-fast\`) requires adult-supervised deployment with \`VITE_AI_WORKER_URL\`. Multimodal image analysis (\`@cf/meta/llama-3.2-11b-vision-instruct\`) remains separated and paused pending parent/guardian license acceptance.${
+    hasImage ? "\n\n⚠️ **Image OCR Notice:** Direct textbook diagram analysis requires adult Meta license approval and active backend configuration." : ""
   }
 
-To protect student privacy and maintain zero-cost access without client-side API key exposure, automated question generation is paused outside the studio environment.
+To protect student privacy and ensure 100% free access without credit card requirements, automated inference is paused outside the connected worker.
 
-**Recommended Educational Alternatives for Your Preparation:**
+**Recommended Free Educational Alternatives for Your Preparation:**
 - 📖 **[Study Strategies](/strategies)** — Complete chapter-by-chapter revision schedules and topper routines for Class 9 & 10.
 - ✍️ **[Paper Presentation Hacks](/paper-hacks)** — Board-verified marker techniques, margin rules, and 605 heading templates.
+- 📚 **[Past Papers](/past-papers)** — Solved past papers across all Punjab Boards and FBISE.
 - 💬 **Student WhatsApp Community** — Connect directly with senior matric mentors and peer study groups.
 
-*Tip: Run Matric Mastery inside Google AI Studio to unlock live Gemini 1.5 Flash streaming and real-time image problem solving.*`;
+*Tip: Visit the dedicated [/ai](/ai) workspace to explore full infrastructure settings and export options.*`;
 }
 
-// 100% Functional Solver with Streaming using built-in ai object
+// 100% Truthful Solver: Connects to Workers AI backend when configured; streams educational guidance when unconfigured
 export async function streamSolveWithAI({
   question,
   language,
@@ -85,80 +73,45 @@ export async function streamSolveWithAI({
   uploadedImage?: UploadedImageData | null;
   onChunk: (text: string) => void;
 }): Promise<string> {
-  const userText = `Language: ${language}. Question: ${question.trim() || "Solve this question in image completely step by step."}`;
-  const aiObject = getAI();
+  const userText = question.trim() || "Solve this question in image completely step by step.";
+  const workerUrl = getWorkerEndpoint();
 
-  // If built-in ai is present in AI Studio
-  if (aiObject?.models) {
-    const contents = uploadedImage
-      ? [
-          {
-            role: "user",
-            parts: [
-              { text: userText },
-              {
-                inlineData: {
-                  mimeType: uploadedImage.mimeType,
-                  data: uploadedImage.base64,
-                },
-              },
-            ],
-          },
-        ]
-      : [
-          {
-            role: "user",
-            parts: [{ text: userText }],
-          },
-        ];
-
-    // Try 1: Streaming
+  // If Cloudflare Worker backend is configured, invoke live streaming inference
+  if (workerUrl) {
     try {
-      const stream = await aiObject.models.generateContentStream({
-        model: "gemini-1.5-flash",
-        contents,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          temperature: 0.7,
-        },
+      const response = await sendAIMessage({
+        messages: [
+          {
+            id: `doubt-${Date.now()}`,
+            role: "user",
+            content: userText,
+            timestamp: Date.now(),
+            image: uploadedImage
+              ? {
+                  previewUrl: uploadedImage.previewUrl,
+                  mimeType: uploadedImage.mimeType,
+                  base64: uploadedImage.base64,
+                }
+              : undefined,
+          },
+        ],
+        image: uploadedImage
+          ? { mimeType: uploadedImage.mimeType, base64: uploadedImage.base64 }
+          : null,
+        language: language === "urdu" ? "ur" : "en",
+        onChunk,
       });
 
-      let fullAnswer = "";
-      for await (const chunk of stream) {
-        if (chunk?.text) {
-          fullAnswer += chunk.text;
-          onChunk(fullAnswer);
-        }
-      }
-
-      if (fullAnswer.trim()) {
-        return fullAnswer;
-      }
-    } catch (streamError) {
-      console.warn("generateContentStream failed, trying non-streaming generateContent fallback:", streamError);
-
-      // Try 2: Non-streaming fallback
-      try {
-        const response = await aiObject.models.generateContent({
-          model: "gemini-1.5-flash",
-          contents,
-          config: {
-            systemInstruction: SYSTEM_PROMPT,
-          },
-        });
-        const text = response?.text;
-        if (text) {
-          onChunk(text);
-          return text;
-        }
-      } catch (genError) {
-        console.error("Non-streaming generateContent also threw:", genError);
-        throw genError;
+      return response;
+    } catch (err: any) {
+      // If error is other than UNCONFIGURED, rethrow so UI can offer retry
+      if (err?.code !== "UNCONFIGURED") {
+        throw err;
       }
     }
   }
 
-  // When live ai is unavailable, stream honest educational notice instead of fake answers
+  // When live worker is not yet configured, stream honest educational notice instead of fake answers
   const notice = getOfflineEducationalNotice(language, Boolean(uploadedImage));
   let accumulated = "";
   const tokens = notice.split(/(\s+)/);

@@ -38,13 +38,13 @@ export const GUIDE_FAQS: GuideFaqItem[] = [
   {
     question: "How do website versions work, and what is the current version?",
     answer:
-      "Matric Mastery tracks public releases through semantic versioning documented in a centralized release manifest (lib/releaseManifest.ts). The current active release is v3.7.0 (Platform Guide & Orientation Architecture), succeeding v3.6.0 (Real-World Utility & Intelligence System) and v3.5.0 (Legal & Policies Center). Milestone v3.2.0 was an internal staging branch for authentication testing and was not published as an independent public codex edition. Each version represents verified, live functionality rather than unreleased prototypes.",
+      "Matric Mastery tracks public releases through semantic versioning documented in a centralized release manifest (lib/releaseManifest.ts). The current active release is v3.8.0 (Matric Mastery AI & Free-First Workers Infrastructure), succeeding v3.7.0 (Platform Guide & Orientation Architecture), v3.6.0 (Real-World Utility & Intelligence System), and v3.5.0 (Legal & Policies Center). Milestone v3.2.0 was an internal staging branch for authentication testing and was not published as an independent public codex edition. Each version records verified engineering and documentation updates without altering historical release records.",
     category: "technical",
   },
   {
-    question: "How does the AI Doubt Solver work, and what are its capabilities and limitations?",
+    question: "How does Matric Mastery AI work, and what are its capabilities and limitations?",
     answer:
-      "The AI Doubt Solver is an on-demand concept-clearing companion accessible via the floating sparkle orb on every page, powered by Google Gemini. It accepts text questions, spoken questions via Web Speech voice dictation (in English and Urdu/Roman Urdu), and photo attachments of textbook questions or numerical diagrams. It outputs step-by-step solutions following Punjab Textbook Board derivations and awarding conventions. It also references related past paper years and awards +15 XP. Limitations: It requires an active internet connection to generate streaming answers. It is intended strictly as a concept-clearing aid for self-study and homework, not as a replacement for studying textbooks or for use during examinations.",
+      "Matric Mastery AI is an on-demand concept-clearing companion available via both the dedicated /ai workspace and the quick sparkle modal across the site, engineered for Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast for text queries). It accepts typed questions, spoken voice dictation via Web Speech API (English and Urdu/Roman Urdu), and keeps conversation history strictly in browser LocalStorage. Live model inference activates when connected to the adult-deployed Worker endpoint via VITE_AI_WORKER_URL (within Cloudflare's 10,000 free daily Neurons limit, with zero paid fallback). Multimodal image/diagram inference (@cf/meta/llama-3.2-11b-vision-instruct) is kept separate and paused until parent/guardian license acceptance. When disconnected or when daily free quota is exhausted, the interface transparently directs students to verified study guides rather than showing fake AI responses.",
     category: "features",
   },
   {
