@@ -43,14 +43,19 @@ export interface AIStatus {
 const STORAGE_KEY = "mm_dedicated_ai_chat_v1";
 const MAX_LOCAL_MESSAGES = 50;
 
-// Configurable endpoint
-export function getWorkerEndpoint(): string | null {
-  if (typeof window === "undefined") return null;
-  const envUrl = (import.meta as any).env?.VITE_AI_WORKER_URL;
+export const DEFAULT_AI_WORKER_URL =
+  "https://matric-mastery-ai-worker.boyc60844.workers.dev";
+
+// Configurable endpoint (uses VITE_AI_WORKER_URL from env, falls back to deployed Worker URL)
+export function getWorkerEndpoint(): string {
+  const envUrl =
+    typeof import.meta !== "undefined"
+      ? (import.meta as any).env?.VITE_AI_WORKER_URL
+      : undefined;
   if (envUrl && typeof envUrl === "string" && envUrl.trim().length > 0) {
     return envUrl.trim().replace(/\/+$/, "");
   }
-  return null;
+  return DEFAULT_AI_WORKER_URL;
 }
 
 /**

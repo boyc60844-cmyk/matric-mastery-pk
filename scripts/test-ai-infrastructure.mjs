@@ -273,21 +273,31 @@ runTest("Security Audit: No secret tokens or Cloudflare API keys exposed in brow
     assert.ok(
       !content.includes("CF_API_TOKEN") &&
         !content.includes("CLOUDFLARE_API_KEY") &&
+        !content.includes("VITE_GEMINI_API_KEY") &&
+        !content.includes("generativelanguage.googleapis.com") &&
         !content.includes("Bearer "),
-      `File ${relPath} must not contain hardcoded bearer tokens or Cloudflare secrets`
+      `File ${relPath} must not contain hardcoded bearer tokens, Cloudflare secrets, or direct Gemini API keys`
     );
   }
 });
 
 // -------------------------------------------------------------
-// Test 8: No Scripted Answers Masquerading as Live AI
+// Test 8: Worker Fallback Endpoint & Authenticity Guards
 // -------------------------------------------------------------
-runTest("Authenticity: Unconfigured state returns transparent notice, not fake answers", () => {
+runTest("Authenticity & Routing: Uses VITE_AI_WORKER_URL with deployed fallback and no fake answers", () => {
   const clientFile = fs.readFileSync("lib/aiClient.ts", "utf8");
 
   assert.ok(
+    clientFile.includes("https://matric-mastery-ai-worker.boyc60844.workers.dev"),
+    "Client must define fallback URL https://matric-mastery-ai-worker.boyc60844.workers.dev"
+  );
+  assert.ok(
+    clientFile.includes("VITE_AI_WORKER_URL"),
+    "Client must read VITE_AI_WORKER_URL from environment"
+  );
+  assert.ok(
     clientFile.includes('code = "UNCONFIGURED"'),
-    "Client must explicitly return UNCONFIGURED status code when provider is absent"
+    "Client must explicitly retain UNCONFIGURED guard when endpoint is unreachable/empty"
   );
   assert.ok(
     !clientFile.includes("quadratic equation ki nature of roots"),
