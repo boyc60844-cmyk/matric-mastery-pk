@@ -314,6 +314,7 @@ export default function AIPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatWorkspaceRef = useRef<HTMLDivElement>(null);
+  const composerDockRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isSubmittingRef = useRef(false);
@@ -345,13 +346,39 @@ export default function AIPage() {
     }
   }, [refreshHealthStatus]);
 
-  // Auto-resize composer textarea cleanly (up to 128px inside bounded workspace)
+  // Auto-resize composer textarea cleanly (starts at 2 lines, grows up to ~6 lines, then scrolls)
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+    const maxHeight = 156;
+    const nextHeight = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
   }, [inputText]);
+
+  // Keep floating composer visible when mobile on-screen keyboard opens
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const alignComposerForKeyboard = () => {
+      if (
+        window.innerWidth < 768 &&
+        document.activeElement === textareaRef.current
+      ) {
+        composerDockRef.current?.scrollIntoView({
+          block: "end",
+          behavior: "auto",
+        });
+      }
+    };
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", alignComposerForKeyboard);
+    window.addEventListener("resize", alignComposerForKeyboard);
+    return () => {
+      vv?.removeEventListener("resize", alignComposerForKeyboard);
+      window.removeEventListener("resize", alignComposerForKeyboard);
+    };
+  }, []);
 
   // Scroll strictly inside the dedicated transcript container — NEVER scroll the outer page
   const scrollTranscriptToBottom = useCallback(
@@ -801,51 +828,51 @@ export default function AIPage() {
       </div>
 
       {/* =====================================================================
-          2. DEDICATED INDEPENDENT-SCROLL AI WORKSPACE CONTAINER
+          2. DEDICATED FULL-HEIGHT CHAT WORKSPACE (~90dvh, centered 760px)
          ===================================================================== */}
       <section
         aria-label="Matric Mastery AI Tutoring Workspace"
-        className="mx-auto w-full max-w-4xl px-2.5 sm:px-6"
+        className="w-full border-t border-white/[0.06] bg-[#0A0A0A]"
       >
         <div
           ref={chatWorkspaceRef}
           id="ai-chat-workspace"
-          className="scroll-mt-20 flex h-[calc(100dvh-205px)] min-h-[430px] max-h-[620px] sm:h-[min(74dvh,700px)] sm:min-h-[460px] sm:max-h-[720px] flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#0D0D12]"
+          className="scroll-mt-20 mx-auto flex h-[90dvh] min-h-[300px] w-full max-w-[760px] flex-col overflow-hidden bg-[#0A0A0A]"
         >
-          {/* A. Pinned Chat Header */}
-          <header className="shrink-0 w-full border-b border-white/[0.08] bg-[#0F0F15] px-3 py-2.5 sm:px-5 sm:py-2.5">
-            <div className="flex items-start sm:items-center justify-between gap-2.5 sm:gap-2">
-              <div className="flex items-start sm:items-center gap-2.5 min-w-0">
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFD60A] text-black">
-                  <GraduationCap size={17} strokeWidth={2.2} />
+          {/* A. Clean Chat Top Bar */}
+          <header className="shrink-0 w-full border-b border-white/[0.06] bg-[#0A0A0A] px-4 py-3 sm:px-6 sm:py-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFD60A] text-black">
+                  <GraduationCap size={18} strokeWidth={2.2} />
                 </div>
-                <div className="min-w-0">
-                  <h1 className="font-heading text-sm sm:text-base font-bold tracking-tight text-white sm:truncate">
+                <div className="min-w-0 flex-1">
+                  <h1 className="font-heading text-[15px] sm:text-base font-bold tracking-tight text-white leading-tight">
                     Matric Mastery AI
                   </h1>
-                  <div className="mt-0.5 sm:mt-0 flex items-start sm:items-center gap-1.5 text-[11px] sm:text-xs leading-snug text-neutral-400 sm:truncate">
+                  <div className="mt-0.5 flex flex-wrap items-start gap-x-1.5 text-xs leading-snug text-neutral-400">
                     <span className="hidden sm:inline shrink-0">Class 9–10 Study Tutor</span>
                     <span className="hidden sm:inline shrink-0" aria-hidden="true">·</span>
                     {statusLoading ? (
-                      <span className="whitespace-normal break-words sm:truncate">{statusDisplay.label}</span>
+                      <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                     ) : status.state === "ready" ? (
-                      <span className="inline-flex items-start sm:items-center gap-1 text-emerald-400 sm:truncate">
-                        <CheckCircle2 size={11} className="mt-0.5 sm:mt-0 shrink-0" aria-hidden="true" />
-                        <span className="whitespace-normal break-words sm:truncate">{statusDisplay.label}</span>
+                      <span className="inline-flex items-start gap-1 text-emerald-400">
+                        <CheckCircle2 size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                       </span>
                     ) : status.state === "quota_exhausted" ? (
-                      <span className="inline-flex items-start sm:items-center gap-1 text-amber-300 sm:truncate">
-                        <AlertCircle size={11} className="mt-0.5 sm:mt-0 shrink-0" aria-hidden="true" />
-                        <span className="whitespace-normal break-words sm:truncate">{statusDisplay.label}</span>
+                      <span className="inline-flex items-start gap-1 text-amber-300">
+                        <AlertCircle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                       </span>
                     ) : (
                       <button
                         type="button"
                         onClick={refreshHealthStatus}
-                        className="inline-flex items-start sm:items-center gap-1 text-left text-red-300 hover:text-red-200 underline-offset-2 hover:underline cursor-pointer sm:truncate"
+                        className="inline-flex items-start gap-1 text-left text-red-300 hover:text-red-200 underline-offset-2 hover:underline cursor-pointer"
                       >
-                        <WifiOff size={11} className="mt-0.5 sm:mt-0 shrink-0" aria-hidden="true" />
-                        <span className="whitespace-normal break-words sm:truncate">{statusDisplay.label}</span>
+                        <WifiOff size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                       </button>
                     )}
                   </div>
@@ -853,32 +880,34 @@ export default function AIPage() {
               </div>
 
               {/* Workspace Actions */}
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {messages.length > 0 && (
                   <button
                     type="button"
                     onClick={handleExportJSON}
-                    className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    aria-label="Download study session JSON"
                     title="Download this study session as JSON"
+                    className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   >
-                    <Download size={14} aria-hidden="true" />
-                    <span className="hidden sm:inline">Export</span>
+                    <Download size={15} aria-hidden="true" />
+                    <span className="hidden sm:inline">Download</span>
                   </button>
                 )}
 
                 {messages.length > 0 && confirmClear ? (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={handleStartNewChat}
-                      className="inline-flex min-h-[34px] items-center rounded-lg bg-[#FFD60A] px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-black hover:bg-[#FFD60A]/90 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      className="inline-flex min-h-[40px] items-center rounded-xl bg-[#FFD60A] px-2.5 sm:px-3 text-xs font-semibold text-black hover:bg-[#FFD60A]/90 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
-                      Confirm Reset
+                      <span className="min-[380px]:hidden">Reset</span>
+                      <span className="hidden min-[380px]:inline">Confirm Reset</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmClear(false)}
-                      className="inline-flex min-h-[34px] items-center rounded-lg border border-white/15 px-2 py-1 text-[11px] sm:text-xs font-medium text-neutral-300 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      className="inline-flex min-h-[40px] items-center rounded-xl border border-white/15 px-2.5 text-xs font-medium text-neutral-300 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -894,10 +923,13 @@ export default function AIPage() {
                       }
                     }}
                     disabled={messages.length === 0 && !isGenerating}
-                    className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-white/15 bg-white/[0.04] px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium text-white hover:border-[#FFD60A]/50 hover:text-[#FFD60A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    aria-label="New Chat"
+                    title="New Chat"
+                    className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-2.5 sm:px-3 text-xs font-medium text-white hover:border-[#FFD60A]/50 hover:text-[#FFD60A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   >
-                    <Plus size={13} className="sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-                    <span>New Chat</span>
+                    <Plus size={15} aria-hidden="true" />
+                    <span className="min-[380px]:hidden">New</span>
+                    <span className="hidden min-[380px]:inline">New Chat</span>
                   </button>
                 )}
               </div>
@@ -913,17 +945,22 @@ export default function AIPage() {
             aria-live="polite"
             aria-label="AI conversation transcript"
             style={{ overscrollBehaviorY: "contain", WebkitOverflowScrolling: "touch" }}
-            className="relative flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y px-3 sm:px-6"
+            className="relative flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y px-4 sm:px-6"
           >
             {messages.length === 0 ? (
-              /* First-Visit Welcome & Starter Prompts */
-              <div className="py-4 sm:py-7 space-y-4 sm:space-y-5">
-                <div className="space-y-2" dir={isUrduUI ? "rtl" : "ltr"}>
+              /* First-Visit Spacious Empty State & Big Tappable Suggestion Cards */
+              <div className="py-6 sm:py-10 pb-10 space-y-6">
+                <div className="space-y-2.5" dir={isUrduUI ? "rtl" : "ltr"}>
+                  <div className={`flex ${isUrduUI ? "justify-end" : "justify-start"}`}>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFD60A] text-black shadow-[0_6px_24px_rgba(255,214,10,0.2)]">
+                      <GraduationCap size={22} strokeWidth={2.2} />
+                    </div>
+                  </div>
                   <h2
                     className={`font-bold text-white tracking-tight text-balance ${
                       isUrduUI
-                        ? "font-urdu text-xl sm:text-2xl leading-[1.9] text-right"
-                        : "font-heading text-xl sm:text-2xl"
+                        ? "font-urdu text-2xl sm:text-[28px] leading-[1.9] text-right"
+                        : "font-heading text-2xl sm:text-[28px] leading-tight"
                     }`}
                   >
                     {isUrduUI
@@ -931,10 +968,10 @@ export default function AIPage() {
                       : "What would you like to solve today?"}
                   </h2>
                   <p
-                    className={`text-neutral-400 max-w-xl ${
+                    className={`text-neutral-400 max-w-2xl ${
                       isUrduUI
-                        ? "font-urdu text-[14px] leading-[2] text-right"
-                        : "text-xs sm:text-sm leading-relaxed"
+                        ? "font-urdu text-[15px] leading-[2] text-right"
+                        : "text-[15px] sm:text-base leading-[1.6]"
                     }`}
                   >
                     {isUrduUI
@@ -943,13 +980,13 @@ export default function AIPage() {
                   </p>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <p className="text-xs font-medium text-neutral-400">
                     {isUrduUI
                       ? "مثال کے سوالات (فوری حل کے لیے کلک کریں)"
                       : "Try an example question"}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {STARTER_QUESTIONS.map((item) => {
                       const questionText = isUrduUI ? item.ur : item.en;
                       return (
@@ -959,7 +996,7 @@ export default function AIPage() {
                           disabled={isGenerating}
                           onClick={() => handleSendMessage(questionText, item.subject)}
                           dir={isUrduUI ? "rtl" : "ltr"}
-                          className={`group flex flex-col justify-between gap-1.5 rounded-xl border border-white/10 bg-[#13131A] p-3 sm:p-3.5 transition-colors hover:border-[#FFD60A]/50 hover:bg-[#171720] disabled:opacity-50 cursor-pointer ${
+                          className={`group flex min-h-[96px] sm:min-h-[112px] flex-col justify-between gap-2.5 rounded-2xl border border-white/10 bg-[#141419] p-4 sm:p-5 transition-[transform,border-color,background-color] duration-150 hover:border-[#FFD60A]/50 hover:bg-[#191920] active:scale-[0.99] disabled:opacity-50 cursor-pointer ${
                             isUrduUI ? "text-right" : "text-left"
                           }`}
                         >
@@ -967,10 +1004,10 @@ export default function AIPage() {
                             {item.subject}
                           </span>
                           <span
-                            className={`text-neutral-200 group-hover:text-white ${
+                            className={`text-neutral-100 group-hover:text-white ${
                               isUrduUI
-                                ? "font-urdu text-[13px] leading-[1.95]"
-                                : "text-xs sm:text-sm leading-snug"
+                                ? "font-urdu text-[15px] leading-[1.95]"
+                                : "text-[15px] leading-relaxed"
                             }`}
                           >
                             {questionText}
@@ -983,7 +1020,7 @@ export default function AIPage() {
               </div>
             ) : (
               /* Active Conversation Thread */
-              <div className="py-4 sm:py-5 space-y-4 sm:space-y-5">
+              <div className="pt-5 pb-10 sm:pt-6 sm:pb-12 space-y-5 sm:space-y-6">
                 {messages.map((msg, idx) => {
                   const isUser = msg.role === "user";
                   const urduContent = isUrduText(msg.content);
@@ -997,23 +1034,25 @@ export default function AIPage() {
 
                   if (isUser) {
                     return (
-                      <div key={msg.id} className="flex flex-col items-end gap-1">
+                      <div key={msg.id} className="flex flex-col items-end gap-1.5 ai-msg-enter">
                         <div
                           dir="auto"
-                          className={`max-w-[88%] sm:max-w-[78%] rounded-2xl border border-white/10 bg-[#181820] px-3.5 sm:px-4 py-2.5 text-base sm:text-[15px] text-white ${
-                            urduContent ? "font-urdu leading-[2] text-right" : "leading-relaxed"
+                          className={`max-w-[88%] sm:max-w-[78%] rounded-2xl border border-[#FFD60A]/30 bg-[#FFD60A]/[0.13] px-4 py-3 sm:px-5 sm:py-3.5 text-[16px] sm:text-[17px] text-white ${
+                            urduContent
+                              ? "font-urdu leading-[2.0] text-right"
+                              : "leading-[1.65]"
                           }`}
                         >
                           {msg.image && (
                             <img
                               src={msg.image.previewUrl}
                               alt="Attached question"
-                              className="mb-2.5 max-h-52 rounded-lg border border-white/15 object-contain bg-black"
+                              className="mb-3 max-h-56 rounded-xl border border-white/15 object-contain bg-black"
                             />
                           )}
                           <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                         </div>
-                        <div className="flex items-center gap-2 px-1 text-[11px] text-neutral-500 tabular-nums">
+                        <div className="flex items-center gap-2 px-1 text-xs text-neutral-500 tabular-nums">
                           <span>
                             {msg.subject && msg.subject !== "General" ? msg.subject : "Student"}
                           </span>
@@ -1027,10 +1066,13 @@ export default function AIPage() {
                   return (
                     <article
                       key={msg.id}
-                      className="w-full border-b border-white/[0.06] pb-5 last:border-b-0 space-y-2.5"
+                      className="w-full space-y-3 py-1 ai-msg-enter"
                     >
                       <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#FFD60A] text-black">
+                            <GraduationCap size={13} strokeWidth={2.2} aria-hidden="true" />
+                          </span>
                           <span className="font-semibold text-white">Matric Mastery AI</span>
                           {msg.subject && msg.subject !== "General" && (
                             <>
@@ -1039,15 +1081,15 @@ export default function AIPage() {
                             </>
                           )}
                         </div>
-                        <span className="tabular-nums text-[11px] text-neutral-500">
+                        <span className="tabular-nums text-xs text-neutral-500 shrink-0">
                           {formattedTime}
                         </span>
                       </div>
 
                       {showThinkState ? (
-                        <div className="flex items-center gap-2.5 py-2 text-sm text-neutral-300">
+                        <div className="flex items-center gap-2.5 py-2 text-[16px] text-neutral-300">
                           <Loader2
-                            size={15}
+                            size={16}
                             className="animate-spin text-[#FFD60A]"
                             aria-hidden="true"
                           />
@@ -1060,7 +1102,7 @@ export default function AIPage() {
                       ) : msg.error ? (
                         <div
                           dir={urduContent ? "rtl" : "ltr"}
-                          className={`rounded-xl border p-4 space-y-3 ${
+                          className={`rounded-2xl border p-4 sm:p-5 space-y-3 ${
                             msg.errorKind === "rate_limit"
                               ? "border-amber-500/35 bg-amber-500/[0.07] text-amber-100"
                               : "border-red-500/35 bg-red-500/[0.07] text-red-100"
@@ -1070,13 +1112,13 @@ export default function AIPage() {
                             {msg.errorKind === "network" ? (
                               <WifiOff
                                 size={18}
-                                className="shrink-0 mt-0.5 text-red-300"
+                                className="shrink-0 mt-1 text-red-300"
                                 aria-hidden="true"
                               />
                             ) : (
                               <AlertCircle
                                 size={18}
-                                className={`shrink-0 mt-0.5 ${
+                                className={`shrink-0 mt-1 ${
                                   msg.errorKind === "rate_limit"
                                     ? "text-amber-300"
                                     : "text-red-300"
@@ -1086,10 +1128,10 @@ export default function AIPage() {
                             )}
                             <div className="space-y-1.5 flex-1 min-w-0">
                               <p
-                                className={`text-sm font-medium ${
+                                className={`text-[16px] font-medium ${
                                   urduContent
                                     ? "font-urdu leading-[2] text-right"
-                                    : "leading-relaxed"
+                                    : "leading-[1.65]"
                                 }`}
                               >
                                 {msg.content}
@@ -1107,9 +1149,9 @@ export default function AIPage() {
                               type="button"
                               disabled={isGenerating}
                               onClick={() => handleRetryTurn(msg.id)}
-                              className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-white text-black px-3 py-1.5 text-xs font-semibold hover:bg-neutral-200 disabled:opacity-50 transition-colors cursor-pointer"
+                              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-white text-black px-3.5 py-2 text-xs font-semibold hover:bg-neutral-200 disabled:opacity-50 transition-colors cursor-pointer"
                             >
-                              <RotateCcw size={13} aria-hidden="true" />
+                              <RotateCcw size={14} aria-hidden="true" />
                               <span>Retry Question</span>
                             </button>
 
@@ -1117,13 +1159,13 @@ export default function AIPage() {
                               <>
                                 <Link
                                   href="/strategies"
-                                  className="inline-flex min-h-[38px] items-center rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:border-[#FFD60A]/60 transition-colors"
+                                  className="inline-flex min-h-[40px] items-center rounded-xl border border-white/20 px-3.5 py-2 text-xs font-medium text-white hover:border-[#FFD60A]/60 transition-colors"
                                 >
                                   Exam Strategies
                                 </Link>
                                 <Link
                                   href="/past-papers"
-                                  className="inline-flex min-h-[38px] items-center rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:border-[#FFD60A]/60 transition-colors"
+                                  className="inline-flex min-h-[40px] items-center rounded-xl border border-white/20 px-3.5 py-2 text-xs font-medium text-white hover:border-[#FFD60A]/60 transition-colors"
                                 >
                                   Past Papers
                                 </Link>
@@ -1133,39 +1175,42 @@ export default function AIPage() {
                         </div>
                       ) : (
                         <>
-                          <AIMarkdownRenderer content={msg.content} />
+                          <div className="w-full min-w-0">
+                            <AIMarkdownRenderer content={msg.content} />
+                          </div>
 
                           {!(isGenerating && isLastMessage) && msg.content && (
-                            <div className="flex flex-wrap items-center gap-2 pt-1.5">
+                            <div className="flex items-center gap-2 pt-1">
                               <button
                                 type="button"
                                 onClick={() => handleCopyMessage(msg.id, msg.content)}
-                                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors cursor-pointer"
+                                aria-label={copiedId === msg.id ? "Copied" : "Copy"}
+                                title={copiedId === msg.id ? "Copied" : "Copy"}
+                                className="inline-flex h-10 w-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-neutral-300 hover:border-white/25 hover:text-white active:scale-[0.97] transition-[transform,color,border-color] duration-150 cursor-pointer"
                               >
                                 {copiedId === msg.id ? (
-                                  <>
-                                    <Check
-                                      size={13}
-                                      className="text-emerald-400"
-                                      aria-hidden="true"
-                                    />
-                                    <span className="text-emerald-400">Copied</span>
-                                  </>
+                                  <Check
+                                    size={16}
+                                    className="text-emerald-400"
+                                    aria-hidden="true"
+                                  />
                                 ) : (
-                                  <>
-                                    <Copy size={13} aria-hidden="true" />
-                                    <span>Copy</span>
-                                  </>
+                                  <Copy size={16} aria-hidden="true" />
                                 )}
+                                <span className="sr-only">
+                                  {copiedId === msg.id ? "Copied" : "Copy"}
+                                </span>
                               </button>
 
                               <button
                                 type="button"
                                 onClick={() => handleShareWhatsApp(msg.content)}
-                                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors cursor-pointer"
+                                aria-label="Share"
+                                title="Share"
+                                className="inline-flex h-10 w-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-neutral-300 hover:border-white/25 hover:text-white active:scale-[0.97] transition-[transform,color,border-color] duration-150 cursor-pointer"
                               >
-                                <Share2 size={13} aria-hidden="true" />
-                                <span>Share</span>
+                                <Share2 size={16} aria-hidden="true" />
+                                <span className="sr-only">Share</span>
                               </button>
 
                               {isLastMessage && (
@@ -1173,10 +1218,12 @@ export default function AIPage() {
                                   type="button"
                                   disabled={isGenerating}
                                   onClick={() => handleRetryTurn(msg.id)}
-                                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white disabled:opacity-40 transition-colors cursor-pointer"
+                                  aria-label="Regenerate"
+                                  title="Regenerate"
+                                  className="inline-flex h-10 w-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-neutral-300 hover:border-white/25 hover:text-white disabled:opacity-40 active:scale-[0.97] transition-[transform,color,border-color] duration-150 cursor-pointer"
                                 >
-                                  <RotateCcw size={13} aria-hidden="true" />
-                                  <span>Regenerate</span>
+                                  <RotateCcw size={16} aria-hidden="true" />
+                                  <span className="sr-only">Regenerate</span>
                                 </button>
                               )}
                             </div>
@@ -1189,9 +1236,9 @@ export default function AIPage() {
               </div>
             )}
 
-            {/* Floating "Latest" pill shown inside transcript ONLY when student scrolled up */}
+            {/* Floating "Latest" pill inside transcript ONLY when student scrolled up */}
             {showScrollToLatest && (
-              <div className="sticky bottom-3 z-10 flex justify-center pointer-events-none">
+              <div className="sticky bottom-4 z-10 flex justify-center pointer-events-none">
                 <button
                   type="button"
                   onClick={() => {
@@ -1199,36 +1246,45 @@ export default function AIPage() {
                     setShowScrollToLatest(false);
                     scrollTranscriptToBottom("smooth");
                   }}
-                  className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-[#181820]/95 px-3 py-1.5 text-xs font-medium text-white shadow-lg hover:border-[#FFD60A]/60 transition-colors cursor-pointer"
+                  className="pointer-events-auto inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-white/20 bg-[#181822]/95 px-3.5 py-2 text-xs font-medium text-white shadow-lg hover:border-[#FFD60A]/60 transition-colors cursor-pointer"
                 >
-                  <ArrowDown size={13} aria-hidden="true" />
+                  <ArrowDown size={14} aria-hidden="true" />
                   <span>Jump to latest</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* C. Pinned Input Composer inside Chat Workspace */}
-          <div className="shrink-0 w-full border-t border-white/[0.08] bg-[#0B0B10] px-3 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-2 sm:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          {/* C. Bottom Pinned Dock with Soft Gradient Fade + Slim Controls + Floating 24px Composer */}
+          <div
+            ref={composerDockRef}
+            className="relative shrink-0 w-full bg-[#0A0A0A] px-3 sm:px-6 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          >
+            {/* Soft fade above composer so scrolling messages glide underneath */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 -top-9 h-9 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent"
+            />
+
             {composerNotice && (
               <div
                 role="status"
-                className="mb-2 sm:mb-1.5 flex items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 sm:py-1 text-[11px] text-amber-200"
+                className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
               >
-                <span className="leading-snug sm:truncate">{composerNotice}</span>
+                <span className="leading-snug">{composerNotice}</span>
                 <button
                   type="button"
                   onClick={() => setComposerNotice(null)}
-                  className="text-amber-200/80 hover:text-white p-0.5 shrink-0 cursor-pointer"
+                  className="text-amber-200/80 hover:text-white p-1 shrink-0 cursor-pointer"
                   aria-label="Dismiss notice"
                 >
-                  <X size={13} />
+                  <X size={14} />
                 </button>
               </div>
             )}
 
             {status.visionEnabled && attachedImage && (
-              <div className="mb-2 sm:mb-1.5 inline-flex items-center gap-2.5 rounded-xl border border-[#FFD60A]/40 bg-[#141418] p-1.5 pr-3">
+              <div className="mb-2 inline-flex items-center gap-2.5 rounded-xl border border-[#FFD60A]/40 bg-[#141418] p-1.5 pr-3">
                 <img
                   src={attachedImage.previewUrl}
                   alt="Attached textbook problem"
@@ -1246,12 +1302,58 @@ export default function AIPage() {
               </div>
             )}
 
+            {/* Slim row above floating input: Subject dropdown & English/اردو toggle, equal height */}
+            <div className="mb-2.5 grid grid-cols-2 sm:flex sm:items-center gap-2.5">
+              <select
+                aria-label="Select subject"
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="h-10 w-full sm:w-auto sm:min-w-[175px] rounded-xl border border-white/12 bg-[#14141A] px-3 text-[13px] font-medium text-neutral-100 focus:border-[#FFD60A] focus:outline-none cursor-pointer"
+              >
+                {SUBJECT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+
+              <div
+                role="group"
+                aria-label="Response language"
+                className="grid grid-cols-2 h-10 w-full sm:w-auto sm:min-w-[164px] rounded-xl border border-white/12 bg-[#14141A] p-1 shrink-0"
+              >
+                <button
+                  type="button"
+                  onClick={() => setLanguageMode("en")}
+                  className={`h-full rounded-lg px-2 text-[13px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
+                    languageMode === "en"
+                      ? "bg-white text-black font-semibold"
+                      : "text-neutral-300 hover:text-white"
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguageMode("ur")}
+                  className={`h-full rounded-lg px-2 text-[13px] font-urdu transition-colors whitespace-nowrap cursor-pointer ${
+                    languageMode === "ur"
+                      ? "bg-white text-black font-semibold"
+                      : "text-neutral-300 hover:text-white"
+                  }`}
+                >
+                  اردو
+                </button>
+              </div>
+            </div>
+
+            {/* Large Floating 24px Rounded Composer with soft shadow + yellow glow on focus */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="rounded-xl border border-white/15 bg-[#13131A] focus-within:border-[#FFD60A]/70 transition-colors"
+              className="rounded-[24px] border border-white/15 bg-[#14141A] px-3.5 pt-3 pb-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.7)] focus-within:border-[#FFD60A]/75 focus-within:shadow-[0_12px_36px_rgba(0,0,0,0.75),0_0_24px_rgba(255,214,10,0.22)] transition-[border-color,box-shadow] duration-200"
             >
               <textarea
                 ref={textareaRef}
@@ -1261,10 +1363,12 @@ export default function AIPage() {
                 onChange={(e) => setInputText(e.target.value)}
                 onFocus={() => {
                   if (typeof window !== "undefined" && window.innerWidth < 768) {
-                    chatWorkspaceRef.current?.scrollIntoView({
-                      block: "nearest",
-                      behavior: "smooth",
-                    });
+                    window.setTimeout(() => {
+                      composerDockRef.current?.scrollIntoView({
+                        block: "end",
+                        behavior: "smooth",
+                      });
+                    }, 120);
                   }
                 }}
                 placeholder={
@@ -1273,7 +1377,7 @@ export default function AIPage() {
                     : "Ask a Class 9–10 Math, Physics, Chemistry, or Biology question..."
                 }
                 dir={isUrduUI && !inputText ? "rtl" : "auto"}
-                rows={1}
+                rows={2}
                 maxLength={2000}
                 disabled={isGenerating}
                 onKeyDown={(e) => {
@@ -1286,62 +1390,36 @@ export default function AIPage() {
                     handleSendMessage();
                   }
                 }}
-                className={`w-full resize-none bg-transparent px-3 pt-2.5 pb-2 sm:pt-2 sm:pb-1 text-base sm:text-[15px] text-white placeholder-neutral-500 focus:outline-none disabled:opacity-60 ${
+                className={`w-full resize-none bg-transparent px-1 pb-1.5 text-[16px] text-white placeholder-neutral-500 focus:outline-none disabled:opacity-60 ${
                   isUrduUI || isUrduText(inputText)
                     ? "font-urdu leading-[1.85]"
-                    : "leading-snug"
+                    : "leading-[1.5]"
                 }`}
               />
 
-              {/* Controls Bar — 2 balanced rows on phones (< sm), classic single row on tablet/desktop (sm:+) */}
-              <div className="flex flex-col gap-2.5 border-t border-white/[0.06] p-2.5 sm:flex-row sm:items-center sm:gap-1.5 sm:px-2 sm:py-1.5">
-                {/* Phone Row 1: Equal-width Subject dropdown + English/اردو switch */}
-                <div className="grid grid-cols-2 gap-2.5 w-full sm:flex sm:w-auto sm:items-center sm:gap-1.5 sm:min-w-0">
-                  <select
-                    aria-label="Select subject"
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-white/10 bg-[#191922] px-2.5 text-xs font-medium text-neutral-200 focus:border-[#FFD60A] focus:outline-none cursor-pointer truncate sm:h-9 sm:w-auto sm:max-w-none sm:px-2"
-                  >
-                    {SUBJECT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div
-                    role="group"
-                    aria-label="Response language"
-                    className="grid grid-cols-2 h-11 w-full rounded-lg border border-white/10 bg-[#191922] p-0.5 sm:inline-flex sm:h-auto sm:w-auto sm:shrink-0"
-                  >
+              {/* Bottom Action Row inside composer: Mic (+ Image) on left, Send on right */}
+              <div className="mt-1 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {speechSupported && (
                     <button
                       type="button"
-                      onClick={() => setLanguageMode("en")}
-                      className={`min-h-[38px] sm:min-h-[32px] rounded-md px-1.5 sm:px-2 text-[11px] sm:text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                        languageMode === "en"
-                          ? "bg-white text-black font-semibold"
-                          : "text-neutral-300 hover:text-white"
+                      onClick={toggleVoiceInput}
+                      aria-label={isRecording ? "Stop voice dictation" : "Start voice dictation"}
+                      title={isRecording ? "Stop voice dictation" : "Start voice dictation"}
+                      className={`inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border transition-colors cursor-pointer shrink-0 ${
+                        isRecording
+                          ? "border-red-500/60 bg-red-500/20 text-red-300"
+                          : "border-white/12 bg-white/[0.04] text-neutral-200 hover:border-white/25 hover:text-white"
                       }`}
                     >
-                      English
+                      {isRecording ? (
+                        <MicOff size={18} aria-hidden="true" />
+                      ) : (
+                        <Mic size={18} aria-hidden="true" />
+                      )}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setLanguageMode("ur")}
-                      className={`min-h-[38px] sm:min-h-[32px] rounded-md px-1.5 sm:px-2 text-[11px] sm:text-xs font-urdu transition-colors whitespace-nowrap cursor-pointer ${
-                        languageMode === "ur"
-                          ? "bg-white text-black font-semibold"
-                          : "text-neutral-300 hover:text-white"
-                      }`}
-                    >
-                      اردو
-                    </button>
-                  </div>
-                </div>
+                  )}
 
-                {/* Phone Row 2: Compact >=44px Mic (+ optional Image) & flex-1 >=44px Send */}
-                <div className="flex items-center gap-2.5 w-full sm:flex-1 sm:w-auto sm:gap-1.5 sm:min-w-0">
                   {/* Image attachment: rendered strictly when backend reports visionEnabled === true */}
                   {status.visionEnabled && (
                     <>
@@ -1355,68 +1433,56 @@ export default function AIPage() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1 rounded-lg border border-white/10 bg-[#191922] px-2.5 text-xs font-medium text-neutral-300 hover:text-white transition-colors cursor-pointer shrink-0 sm:h-9 sm:min-w-0 sm:px-2"
+                        className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-2xl border border-white/12 bg-white/[0.04] px-3 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white transition-colors cursor-pointer shrink-0"
                         aria-label="Attach question image"
+                        title="Attach question image"
                       >
-                        <ImageIcon size={15} className="sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+                        <ImageIcon size={17} aria-hidden="true" />
                         <span className="hidden sm:inline">Image</span>
                       </button>
                     </>
                   )}
+                </div>
 
-                  {speechSupported && (
-                    <button
-                      type="button"
-                      onClick={toggleVoiceInput}
-                      aria-label={isRecording ? "Stop voice dictation" : "Start voice dictation"}
-                      className={`inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border text-xs transition-colors cursor-pointer shrink-0 sm:h-9 sm:w-9 sm:min-h-0 sm:min-w-0 ${
-                        isRecording
-                          ? "border-red-500/60 bg-red-500/20 text-red-300"
-                          : "border-white/10 bg-[#191922] text-neutral-300 hover:text-white"
-                      }`}
-                    >
-                      {isRecording ? (
-                        <MicOff size={16} className="sm:w-[15px] sm:h-[15px]" aria-hidden="true" />
-                      ) : (
-                        <Mic size={16} className="sm:w-[15px] sm:h-[15px]" aria-hidden="true" />
-                      )}
-                    </button>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  {inputText.length > 0 && (
+                    <span className="hidden sm:inline text-[11px] font-mono tabular-nums text-neutral-500">
+                      {inputText.length}/2000
+                    </span>
                   )}
 
-                  <div className="flex flex-1 items-center gap-2.5 min-w-0 shrink-0 sm:flex-none sm:ml-auto sm:gap-2">
-                    {inputText.length > 0 && (
-                      <span className="hidden sm:inline text-[11px] font-mono tabular-nums text-neutral-500">
-                        {inputText.length}/2000
-                      </span>
-                    )}
-
-                    {isGenerating ? (
-                      <button
-                        type="button"
-                        onClick={handleStopGeneration}
-                        aria-label="Stop generating response"
-                        className="inline-flex w-full min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white hover:bg-white/15 transition-colors whitespace-nowrap shrink-0 cursor-pointer sm:w-auto sm:min-h-[36px]"
-                      >
-                        <Square size={12} className="fill-current" aria-hidden="true" />
-                        <span>Stop</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        disabled={!inputText.trim() && !(status.visionEnabled && attachedImage)}
-                        aria-label="Send question"
-                        className="inline-flex w-full min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl bg-[#FFD60A] px-3 text-xs font-bold text-black hover:bg-[#FFD60A]/90 active:scale-[0.98] disabled:opacity-35 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0 cursor-pointer sm:w-auto sm:min-h-[36px]"
-                      >
-                        <Send size={15} className="sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-                        <span>Send</span>
-                      </button>
-                    )}
-                  </div>
+                  {isGenerating ? (
+                    <button
+                      type="button"
+                      onClick={handleStopGeneration}
+                      aria-label="Stop generating response"
+                      title="Stop"
+                      className="inline-flex h-11 min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-2xl border border-white/20 bg-white/10 px-4 text-xs font-semibold text-white hover:bg-white/15 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      <Square size={14} className="fill-current" aria-hidden="true" />
+                      <span>Stop</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!inputText.trim() && !(status.visionEnabled && attachedImage)}
+                      aria-label="Send question"
+                      title="Send"
+                      className={`inline-flex h-11 min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-2xl bg-[#FFD60A] px-4 text-xs font-bold text-black whitespace-nowrap shrink-0 transition-[transform,opacity,box-shadow] duration-150 cursor-pointer ${
+                        !inputText.trim() && !(status.visionEnabled && attachedImage)
+                          ? "opacity-35 cursor-not-allowed"
+                          : "opacity-100 shadow-[0_0_16px_rgba(255,214,10,0.3)] hover:bg-[#FFD60A]/90 active:scale-[0.98]"
+                      }`}
+                    >
+                      <Send size={16} aria-hidden="true" />
+                      <span>Send</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </form>
 
-            <p className="mt-2 sm:mt-1 text-center text-[11px] leading-snug text-neutral-500 sm:truncate">
+            <p className="mt-2 text-center text-[11px] leading-snug text-neutral-500">
               History stays on this device · Verify textbook answers · Avoid sharing personal IDs
             </p>
           </div>

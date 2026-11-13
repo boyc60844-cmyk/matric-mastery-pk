@@ -298,7 +298,7 @@ export default function AIMarkdownRenderer({ content }: AIMarkdownRendererProps)
           key={`ul-${i}`}
           dir={isUrduLine ? "rtl" : "ltr"}
           className={`flex items-start gap-2.5 ${
-            isUrduLine ? "font-urdu text-base sm:text-[15px] leading-[2.05] text-right" : ""
+            isUrduLine ? "font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right" : ""
           }`}
         >
           <span className="text-[#FFD60A] pt-1 text-xs shrink-0" aria-hidden="true">
@@ -319,7 +319,7 @@ export default function AIMarkdownRenderer({ content }: AIMarkdownRendererProps)
           key={`ol-${i}`}
           dir={isUrduLine ? "rtl" : "ltr"}
           className={`flex items-start gap-2.5 ${
-            isUrduLine ? "font-urdu text-base sm:text-[15px] leading-[2.05] text-right" : ""
+            isUrduLine ? "font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right" : ""
           }`}
         >
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-white/[0.08] font-mono text-xs font-semibold tabular-nums text-[#FFD60A]">
@@ -339,8 +339,8 @@ export default function AIMarkdownRenderer({ content }: AIMarkdownRendererProps)
         dir={isUrduLine ? "rtl" : "ltr"}
         className={
           isUrduLine
-            ? "font-urdu text-base leading-[2.1] text-right text-neutral-100"
-            : "text-neutral-200 leading-relaxed"
+            ? "font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right text-neutral-100"
+            : "text-neutral-200 leading-[1.65]"
         }
       >
         {renderInline(trimmed)}
@@ -350,7 +350,7 @@ export default function AIMarkdownRenderer({ content }: AIMarkdownRendererProps)
   }
 
   return (
-    <div className="space-y-3 text-base sm:text-[15px] leading-relaxed text-neutral-200 break-words">
+    <div className="space-y-3 text-[16px] sm:text-[17px] leading-[1.65] text-neutral-200 break-words min-w-0 max-w-full">
       {elements}
     </div>
   );
