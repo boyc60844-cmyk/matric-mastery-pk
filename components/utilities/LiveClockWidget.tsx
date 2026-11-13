@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Clock,
   Globe,
@@ -32,17 +32,28 @@ export default function LiveClockWidget() {
     timeService.convertTime("14:30", "Asia/Karachi", "Europe/London")
   );
 
-  // Subscribe to timeService clock ticks (1 sec interval)
+  // Subscribe to timeService clock ticks (reuses existing single 1s interval; pauses while tab hidden)
   useEffect(() => {
     const update = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       setClockData(timeService.formatTimeForZone(selectedZone, format));
       setSyncState(timeService.getSyncState());
     };
 
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        update();
+      }
+    };
+
     update();
     const unsubscribe = timeService.subscribe(update);
-    return () => unsubscribe();
-  }, [selectedZone, format]);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [selectedZone, format, showAnalog]);
 
   // Recalculate converter when inputs change
   useEffect(() => {
@@ -54,11 +65,6 @@ export default function LiveClockWidget() {
     await timeService.syncWithNetworkTime();
     setIsSyncing(false);
   };
-
-  // Analog Clock angles
-  const secondAngle = (clockData.seconds / 60) * 360;
-  const minuteAngle = ((clockData.minutes + clockData.seconds / 60) / 60) * 360;
-  const hourAngle = (((clockData.hours % 12) + clockData.minutes / 60) / 12) * 360;
 
   return (
     <div className="space-y-6">
@@ -175,51 +181,14 @@ export default function LiveClockWidget() {
             </div>
           </div>
 
-          {/* SVG Analog Clock */}
+          {/* Scalable SVG Analog Clock */}
           {showAnalog && (
-            <div className="md:col-span-4 flex justify-center py-2">
-              <div className="relative h-44 w-44 rounded-full border-2 border-white/20 bg-[#121216] shadow-inner flex items-center justify-center">
-                {/* 12-hour tick marks */}
-                {[...Array(12)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute w-1 bg-white/40 rounded-full"
-                    style={{
-                      height: i % 3 === 0 ? "8px" : "4px",
-                      transform: `rotate(${i * 30}deg) translateY(-80px)`,
-                    }}
-                  />
-                ))}
-
-                {/* Hour Hand */}
-                <div
-                  className="absolute w-1.5 h-12 bg-white rounded-full origin-bottom"
-                  style={{
-                    transform: `rotate(${hourAngle}deg) translateY(-24px)`,
-                  }}
-                />
-
-                {/* Minute Hand */}
-                <div
-                  className="absolute w-1 h-16 bg-[#FFD60A] rounded-full origin-bottom"
-                  style={{
-                    transform: `rotate(${minuteAngle}deg) translateY(-32px)`,
-                  }}
-                />
-
-                {/* Second Hand */}
-                <div
-                  className={`absolute w-0.5 h-18 bg-emerald-400 rounded-full origin-bottom ${
-                    clockData.seconds === 0 ? "" : "transition-transform duration-75"
-                  }`}
-                  style={{
-                    transform: `rotate(${secondAngle}deg) translateY(-36px)`,
-                  }}
-                />
-
-                {/* Center Pivot Point */}
-                <div className="h-3 w-3 rounded-full bg-[#FFD60A] shadow-glow z-10" />
-              </div>
+            <div className="md:col-span-4 flex items-center justify-center py-2">
+              <PrecisionAnalogClock
+                hours={clockData.hours}
+                minutes={clockData.minutes}
+                seconds={clockData.seconds}
+              />
             </div>
           )}
         </div>
@@ -356,6 +325,207 @@ export default function LiveClockWidget() {
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+const MINUTE_TICKS = Array.from({ length: 60 }, (_, i) => i);
+
+export function PrecisionAnalogClock({
+  hours,
+  minutes,
+  seconds,
+}: {
+  hours: number;
+  minutes: number;
+  seconds: number;
+}) {
+  const hourAngle = (hours % 12) * 30 + minutes * 0.5;
+  const minuteAngle = minutes * 6 + seconds * 0.1;
+  const secondAngle = seconds * 6;
+
+  const prevAnglesRef = useRef<{
+    hour: number;
+    minute: number;
+    second: number;
+  } | null>(null);
+
+  const prev = prevAnglesRef.current;
+  const skipHourTransition =
+    !prev || hourAngle < prev.hour || Math.abs(hourAngle - prev.hour) > 20;
+  const skipMinuteTransition =
+    !prev || minuteAngle < prev.minute || Math.abs(minuteAngle - prev.minute) > 20;
+  const skipSecondTransition =
+    !prev || secondAngle < prev.second || Math.abs(secondAngle - prev.second) > 20;
+
+  useEffect(() => {
+    prevAnglesRef.current = {
+      hour: hourAngle,
+      minute: minuteAngle,
+      second: secondAngle,
+    };
+  }, [hourAngle, minuteAngle, secondAngle]);
+
+  return (
+    <div
+      aria-hidden="true"
+      className="w-full max-w-[300px] aspect-square flex items-center justify-center rounded-full overflow-hidden"
+    >
+      <svg
+        viewBox="0 0 200 200"
+        aria-hidden="true"
+        focusable="false"
+        className="w-full h-full block select-none"
+      >
+        <defs>
+          <radialGradient id="mmAnalogDialGrad" cx="50%" cy="42%" r="60%">
+            <stop offset="0%" stopColor="#1A1A21" />
+            <stop offset="65%" stopColor="#111116" />
+            <stop offset="100%" stopColor="#09090C" />
+          </radialGradient>
+        </defs>
+
+        {/* Dial Face & Thin Yellow Outer Ring */}
+        <circle
+          cx="100"
+          cy="100"
+          r="95"
+          fill="url(#mmAnalogDialGrad)"
+          stroke="#FFD60A"
+          strokeOpacity="0.72"
+          strokeWidth="1.5"
+        />
+        <circle
+          cx="100"
+          cy="100"
+          r="91.5"
+          fill="none"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth="0.75"
+        />
+
+        {/* 60 Minute Ticks (every 5th tick longer and thicker) */}
+        {MINUTE_TICKS.map((tick) => {
+          const isHourMark = tick % 5 === 0;
+          return (
+            <line
+              key={tick}
+              x1="100"
+              y1="10"
+              x2="100"
+              y2={isHourMark ? "20" : "14.5"}
+              stroke={isHourMark ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0.24)"}
+              strokeWidth={isHourMark ? "2.2" : "1"}
+              strokeLinecap="round"
+              transform={`rotate(${tick * 6} 100 100)`}
+            />
+          );
+        })}
+
+        {/* Cardinal Numerals (12, 3, 6, 9) in heading font */}
+        <g
+          fill="rgba(255,255,255,0.9)"
+          fontSize="14"
+          fontWeight="700"
+          textAnchor="middle"
+          dominantBaseline="central"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          <text x="100" y="34">12</text>
+          <text x="166" y="100">3</text>
+          <text x="100" y="166">6</text>
+          <text x="34" y="100">9</text>
+        </g>
+
+        {/* Hour Hand (short ~50 units, thick, rounded, white, rotating around (100,100)) */}
+        <g
+          data-hand="hour"
+          data-angle={hourAngle}
+          className={
+            skipHourTransition
+              ? "motion-reduce:transition-none"
+              : "transition-transform duration-150 ease-out motion-reduce:transition-none"
+          }
+          style={{
+            transform: `rotate(${hourAngle}deg)`,
+            transformOrigin: "100px 100px",
+            transformBox: "view-box",
+          }}
+        >
+          <line
+            x1="100"
+            y1="100"
+            x2="100"
+            y2="50"
+            stroke="#FFFFFF"
+            strokeWidth="5.5"
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* Minute Hand (longer ~72 units, slimmer, white, rotating around (100,100)) */}
+        <g
+          data-hand="minute"
+          data-angle={minuteAngle}
+          className={
+            skipMinuteTransition
+              ? "motion-reduce:transition-none"
+              : "transition-transform duration-150 ease-out motion-reduce:transition-none"
+          }
+          style={{
+            transform: `rotate(${minuteAngle}deg)`,
+            transformOrigin: "100px 100px",
+            transformBox: "view-box",
+          }}
+        >
+          <line
+            x1="100"
+            y1="100"
+            x2="100"
+            y2="28"
+            stroke="#FFFFFF"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* Second Hand (thinnest, yellow, ~80 units forward + 14-unit tail, rotating around (100,100)) */}
+        <g
+          data-hand="second"
+          data-angle={secondAngle}
+          className={
+            skipSecondTransition
+              ? "motion-reduce:transition-none"
+              : "transition-transform duration-100 ease-out motion-reduce:transition-none"
+          }
+          style={{
+            transform: `rotate(${secondAngle}deg)`,
+            transformOrigin: "100px 100px",
+            transformBox: "view-box",
+          }}
+        >
+          <line
+            x1="100"
+            y1="114"
+            x2="100"
+            y2="20"
+            stroke="#FFD60A"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* Layered Center Cap hiding pivot: white ring with yellow center dot */}
+        <circle
+          cx="100"
+          cy="100"
+          r="6"
+          fill="#0E0E12"
+          stroke="#FFFFFF"
+          strokeWidth="2.2"
+        />
+        <circle cx="100" cy="100" r="2.8" fill="#FFD60A" />
+      </svg>
     </div>
   );
 }
