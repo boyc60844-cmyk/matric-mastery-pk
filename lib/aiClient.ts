@@ -1,20 +1,13 @@
 /**
- * Matric Mastery AI — Unified Client Service (v3.8.0)
+ * Matric Mastery AI — Unified Client Service (v3.9.0)
  *
- * Coordinates between:
- * 1. Cloudflare Workers AI backend (when VITE_AI_WORKER_URL is configured)
- * 2. Transparent Unconfigured State (when awaiting adult-supervised deployment)
- *
- * Free-First Principles:
- * - Text Model: @cf/meta/llama-3.1-8b-instruct-fast (Workers Free sustainable capacity)
- * - Vision Model: @cf/meta/llama-3.2-11b-vision-instruct (kept separate until parent/guardian license acceptance)
- * - Never presents scripted answers as real AI.
- * - Respects the 10,000 Neurons/day free quota.
- * - Zero client-side API keys or token leaks.
- * - Keeps conversation history 100% private in browser LocalStorage.
+ * Coordinates all AI requests through the Cloudflare Workers AI backend:
+ * - Uses VITE_AI_WORKER_URL from environment when configured
+ * - Automatically falls back to https://matric-mastery-ai-worker.boyc60844.workers.dev
+ * - Never calls Google Gemini APIs directly
+ * - Respects Cloudflare Workers Free (10,000 Neurons/day) without paid fallback
+ * - Keeps conversation history strictly in browser LocalStorage
  */
-
-import { SYSTEM_PROMPT } from "./ai";
 
 export interface AIChatMessage {
   id: string;
@@ -28,7 +21,17 @@ export interface AIChatMessage {
   };
   subject?: string;
   error?: boolean;
+  errorKind?: AIErrorKind;
+  resetsAt?: string;
 }
+
+export type AIErrorKind =
+  | "rate_limit"
+  | "network"
+  | "server"
+  | "invalid"
+  | "vision_paused"
+  | "unconfigured";
 
 export interface AIStatus {
   state: "ready" | "unconfigured" | "quota_exhausted" | "error";
@@ -40,8 +43,38 @@ export interface AIStatus {
   visionEnabled?: boolean;
 }
 
+export class AIRequestError extends Error {
+  code: string;
+  kind: AIErrorKind;
+  statusCode?: number;
+  resetsAt?: string;
+
+  constructor({
+    message,
+    code,
+    kind,
+    statusCode,
+    resetsAt,
+  }: {
+    message: string;
+    code: string;
+    kind: AIErrorKind;
+    statusCode?: number;
+    resetsAt?: string;
+  }) {
+    super(message);
+    this.name = "AIRequestError";
+    this.code = code;
+    this.kind = kind;
+    this.statusCode = statusCode;
+    this.resetsAt = resetsAt;
+  }
+}
+
 const STORAGE_KEY = "mm_dedicated_ai_chat_v1";
 const MAX_LOCAL_MESSAGES = 50;
+const MAX_WORKER_HISTORY = 10;
+const MAX_WORKER_MESSAGE_CHARS = 2000;
 
 export const DEFAULT_AI_WORKER_URL =
   "https://matric-mastery-ai-worker.boyc60844.workers.dev";
@@ -59,18 +92,29 @@ export function getWorkerEndpoint(): string {
 }
 
 /**
- * Evaluates current AI runtime availability without masking unconfigured or license-gated states
+ * Evaluates current AI runtime availability using GET /api/ai/health
  */
 export async function checkAIStatus(): Promise<AIStatus> {
   const workerUrl = getWorkerEndpoint();
 
-  // 1. Check if Cloudflare Worker backend is configured
   if (workerUrl) {
     try {
       const res = await fetch(`${workerUrl}/api/ai/health`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
       });
+
+      if (res.status === 429) {
+        return {
+          state: "quota_exhausted",
+          provider: "cloudflare-workers-ai",
+          model: "@cf/meta/llama-3.1-8b-instruct-fast",
+          message: "Daily free AI usage limit reached.",
+          endpoint: workerUrl,
+          streamingSupported: true,
+          visionEnabled: false,
+        };
+      }
+
       if (res.ok) {
         const data = await res.json();
         const textM = data.models?.text || "@cf/meta/llama-3.1-8b-instruct-fast";
@@ -82,63 +126,143 @@ export async function checkAIStatus(): Promise<AIStatus> {
           provider: "cloudflare-workers-ai",
           model: visionEnabled
             ? `${textM} (Text) & ${visionM} (Vision)`
-            : `${textM} (Text Active · Vision Pending License Review)`,
+            : textM,
           message: data.bindingConfigured
-            ? visionEnabled
-              ? "Cloudflare Workers AI (Text & Vision, 10,000 Free Daily Neurons) is connected."
-              : "Cloudflare Workers AI Text Solver is active (10,000 Free Daily Neurons). Image inference remains paused until adult license review."
-            : "Cloudflare Worker endpoint is reachable, but native [ai] binding requires adult-supervised deployment.",
+            ? "Connected to Matric Mastery AI (Free Tier)"
+            : "AI backend reachable; Workers AI binding is pending setup.",
           endpoint: workerUrl,
           streamingSupported: Boolean(data.streamingSupported),
           visionEnabled,
         };
       }
+
+      return {
+        state: "error",
+        provider: "cloudflare-workers-ai",
+        model: "@cf/meta/llama-3.1-8b-instruct-fast",
+        message: "Temporary issue reaching the AI service.",
+        endpoint: workerUrl,
+        streamingSupported: false,
+        visionEnabled: false,
+      };
     } catch {
-      // Endpoint unreachable
+      return {
+        state: "error",
+        provider: "cloudflare-workers-ai",
+        model: "@cf/meta/llama-3.1-8b-instruct-fast",
+        message: "Unable to reach the AI service right now.",
+        endpoint: workerUrl,
+        streamingSupported: false,
+        visionEnabled: false,
+      };
     }
   }
 
-  // 2. Transparent Unconfigured State (No legacy Gemini fallbacks)
   return {
     state: "unconfigured",
     provider: "none",
-    model: "@cf/meta/llama-3.1-8b-instruct-fast (Text) · @cf/meta/llama-3.2-11b-vision-instruct (Vision Gated)",
-    message:
-      "Free-First AI Infrastructure is prepared in worker/index.ts. Live inference requires adult-supervised Cloudflare deployment with VITE_AI_WORKER_URL.",
+    model: "@cf/meta/llama-3.1-8b-instruct-fast",
+    message: "AI backend endpoint is not configured.",
     streamingSupported: false,
     visionEnabled: false,
   };
 }
 
 /**
- * Sends a chat message and streams or resolves the response
+ * Formats outgoing conversation turns so history respects Worker 10-message & 2000-char limits
+ * and passes concise syllabus / Urdu academic terminology guidance when selected.
+ */
+function buildWorkerMessagesPayload(
+  messages: AIChatMessage[],
+  language: "en" | "ur",
+  subject?: string
+): Array<{ role: "user" | "assistant"; content: string }> {
+  const validMessages = messages
+    .filter((m) => !m.error && typeof m.content === "string" && m.content.trim().length > 0)
+    .slice(-MAX_WORKER_HISTORY);
+
+  const lastUserIdx = validMessages.reduce(
+    (acc, m, idx) => (m.role === "user" ? idx : acc),
+    -1
+  );
+
+  return validMessages.map((m, idx) => {
+    let text = m.content.trim();
+
+    if (idx === lastUserIdx && m.role === "user") {
+      const directives: string[] = [];
+      if (subject && subject !== "General") {
+        directives.push(`Subject: ${subject} (Punjab Board / FBISE Class 9-10)`);
+      }
+      if (language === "ur") {
+        directives.push(
+          "Respond in clear Pakistani Urdu (اردو) using accurate academic terms (مساوات, عبارت, متغیر, عددی سر, حل, تجزیہ, قوت, تعجیل, ضیائی تالیف). Keep mathematical formulas clear and short, logical steps."
+        );
+      }
+
+      if (directives.length > 0) {
+        const prefix = `[${directives.join(". ")}]\n`;
+        if (prefix.length + text.length <= MAX_WORKER_MESSAGE_CHARS) {
+          text = `${prefix}${text}`;
+        }
+      }
+    }
+
+    if (text.length > MAX_WORKER_MESSAGE_CHARS) {
+      text = `${text.slice(0, MAX_WORKER_MESSAGE_CHARS - 3)}...`;
+    }
+
+    return {
+      role: m.role,
+      content: text,
+    };
+  });
+}
+
+/**
+ * Sends a chat message to the Cloudflare Worker and streams or resolves the response
  */
 export async function sendAIMessage({
   messages,
   image,
   language = "en",
+  subject,
   onChunk,
   signal,
 }: {
   messages: AIChatMessage[];
   image?: { mimeType: string; base64: string } | null;
   language?: "en" | "ur";
+  subject?: string;
   onChunk?: (partialText: string) => void;
   signal?: AbortSignal;
 }): Promise<string> {
   const workerUrl = getWorkerEndpoint();
 
-  // 1. If Cloudflare Worker is connected, invoke server-side endpoint
-  if (workerUrl) {
-    const formattedMessages = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+  if (!workerUrl) {
+    throw new AIRequestError({
+      message: "Matric Mastery AI backend is not configured.",
+      code: "UNCONFIGURED",
+      kind: "unconfigured",
+    });
+  }
 
-    // Request streaming if onChunk is provided and no image is attached
-    const shouldStream = Boolean(onChunk) && !image;
+  const formattedMessages = buildWorkerMessagesPayload(messages, language, subject);
+  if (formattedMessages.length === 0) {
+    throw new AIRequestError({
+      message: "Please enter a question before sending.",
+      code: "INVALID_MESSAGES",
+      kind: "invalid",
+      statusCode: 400,
+    });
+  }
 
-    const response = await fetch(`${workerUrl}/api/ai/chat`, {
+  // Request streaming when onChunk is provided and no image is attached
+  const shouldStream = Boolean(onChunk) && !image;
+
+  let response: Response;
+  try {
+    response = await fetch(`${workerUrl}/api/ai/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -150,88 +274,145 @@ export async function sendAIMessage({
       }),
       signal,
     });
-
-    if (response.status === 429) {
-      const errData = await response.json().catch(() => ({}));
-      const quotaErr = new Error(
-        errData.error || "Cloudflare Free daily limit of 10,000 Neurons has been reached."
-      );
-      (quotaErr as any).code = "QUOTA_EXHAUSTED";
-      throw quotaErr;
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      throw err;
     }
-
-    if (response.status === 403) {
-      const errData = await response.json().catch(() => ({}));
-      const forbiddenErr = new Error(
-        errData.error ||
-          "Image inference is paused until a parent/guardian reviews and accepts the Meta Llama 3.2 license."
-      );
-      (forbiddenErr as any).code = errData.code || "FORBIDDEN";
-      throw forbiddenErr;
-    }
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error || `AI server returned error ${response.status}`);
-    }
-
-    // Handle SSE streaming response if worker returned text/event-stream
-    const contentType = response.headers.get("content-type") || "";
-    if (contentType.includes("text/event-stream") && response.body) {
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = "";
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith("data: ")) {
-            const dataStr = trimmed.slice(6);
-            if (dataStr === "[DONE]") break;
-            try {
-              const parsed = JSON.parse(dataStr);
-              const chunk =
-                parsed.response ||
-                parsed.text ||
-                parsed.choices?.[0]?.delta?.content ||
-                "";
-              accumulated += chunk;
-              if (onChunk) onChunk(accumulated);
-            } catch {
-              accumulated += dataStr;
-              if (onChunk) onChunk(accumulated);
-            }
-          }
-        }
-      }
-      if (accumulated.trim()) return accumulated;
-    }
-
-    // Standard JSON response fallback
-    const data = await response.json();
-    const resultText =
-      data.response ||
-      data.choices?.[0]?.message?.content ||
-      data.text ||
-      "";
-    if (onChunk) onChunk(resultText);
-    return resultText;
+    throw new AIRequestError({
+      message:
+        language === "ur"
+          ? "انٹرنیٹ کنکشن میں مسئلہ ہے۔ براہ کرم اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔"
+          : "Connection issue while reaching Matric Mastery AI. Please check your internet connection and try again.",
+      code: "NETWORK_ERROR",
+      kind: "network",
+    });
   }
 
-  // 2. Unconfigured State: Throw unconfigured error with explicit guidance (No legacy Gemini fallback)
-  const unconfiguredError = new Error(
-    "Matric Mastery AI backend is prepared in worker/index.ts. Live inference requires adult-supervised Cloudflare deployment with VITE_AI_WORKER_URL."
-  );
-  (unconfiguredError as any).code = "UNCONFIGURED";
-  throw unconfiguredError;
+  if (response.status === 429) {
+    const errData = await response.json().catch(() => ({}));
+    throw new AIRequestError({
+      message:
+        language === "ur"
+          ? "آپ کے AI استعمال کی عارضی حد پوری ہو گئی ہے۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔ آپ کا سوال محفوظ ہے تو اسے دوبارہ بھیج سکتے ہیں۔"
+          : "Free AI usage limit reached for now. Your question is saved — please try again shortly.",
+      code: "QUOTA_EXHAUSTED",
+      kind: "rate_limit",
+      statusCode: 429,
+      resetsAt: typeof errData.resetsAt === "string" ? errData.resetsAt : undefined,
+    });
+  }
+
+  if (response.status === 403) {
+    const errData = await response.json().catch(() => ({}));
+    const isVisionPaused = errData.code === "VISION_PENDING_APPROVAL";
+    throw new AIRequestError({
+      message: isVisionPaused
+        ? language === "ur"
+          ? "تصویری سوالات ابھی فعال نہیں ہیں۔ براہ کرم اپنا سوال متن میں لکھ کر پوچھیں۔"
+          : "Image-based questions are not active yet. Please type your question in text instead."
+        : language === "ur"
+          ? "یہ درخواست پراسیس نہیں ہو سکی۔ براہ کرم صفحہ ریفریش کر کے دوبارہ کوشش کریں۔"
+          : "This request could not be processed from this origin.",
+      code: errData.code || "FORBIDDEN",
+      kind: isVisionPaused ? "vision_paused" : "invalid",
+      statusCode: 403,
+    });
+  }
+
+  if (response.status >= 500) {
+    const errData = await response.json().catch(() => ({}));
+    throw new AIRequestError({
+      message:
+        language === "ur"
+          ? "سرور میں عارضی خرابی ہے۔ براہ کرم تھوڑی دیر بعد دوبارہ کوشش کریں۔"
+          : "Matric Mastery AI is experiencing a temporary server issue. Please try again in a moment.",
+      code: errData.code || "SERVER_ERROR",
+      kind: "server",
+      statusCode: response.status,
+    });
+  }
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new AIRequestError({
+      message:
+        language === "ur"
+          ? "آپ کا سوال پراسیس نہیں ہو سکا۔ براہ کرم سوال کو مختصر (2000 حروف سے کم) اور واضح لکھ کر دوبارہ بھیجیں۔"
+          : "Your question could not be processed. Please keep your message under 2,000 characters and try again.",
+      code: errData.code || "INVALID_REQUEST",
+      kind: "invalid",
+      statusCode: response.status,
+    });
+  }
+
+  // Handle SSE streaming response if worker returned text/event-stream
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("text/event-stream") && response.body) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let accumulated = "";
+    let buffer = "";
+
+    const processLine = (rawLine: string): boolean => {
+      const trimmed = rawLine.trim();
+      if (!trimmed.startsWith("data: ")) return false;
+      const dataStr = trimmed.slice(6).trim();
+      if (!dataStr) return false;
+      if (dataStr === "[DONE]") return true;
+
+      try {
+        const parsed = JSON.parse(dataStr);
+        const chunk =
+          parsed.response ||
+          parsed.text ||
+          parsed.choices?.[0]?.delta?.content ||
+          "";
+        if (chunk) {
+          accumulated += chunk;
+          if (onChunk) onChunk(accumulated);
+        }
+      } catch {
+        accumulated += dataStr;
+        if (onChunk) onChunk(accumulated);
+      }
+      return false;
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        if (buffer.trim()) {
+          processLine(buffer);
+        }
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      let reachedDone = false;
+      for (const line of lines) {
+        if (processLine(line)) {
+          reachedDone = true;
+          break;
+        }
+      }
+      if (reachedDone) break;
+    }
+
+    if (accumulated.trim()) return accumulated;
+  }
+
+  // Standard JSON response fallback
+  const data = await response.json();
+  const resultText =
+    data.response ||
+    data.choices?.[0]?.message?.content ||
+    data.text ||
+    "";
+  if (onChunk) onChunk(resultText);
+  return resultText;
 }
 
 // -------------------------------------------------------------
@@ -242,7 +423,16 @@ export function getLocalChatHistory(): AIChatMessage[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (m) =>
+        m &&
+        typeof m.id === "string" &&
+        (m.role === "user" || m.role === "assistant") &&
+        typeof m.content === "string"
+    );
   } catch {
     return [];
   }

@@ -1,46 +1,39 @@
 /* ==========================================================================
-   MATRIC MASTERY AI — DEDICATED STANDALONE PAGE (/ai) (v3.8.0)
-   - Free-First AI Architecture with Cloudflare Workers AI
-     Text: @cf/meta/llama-3.1-8b-instruct-fast | Vision: @cf/meta/llama-3.2-11b-vision-instruct (Gated)
-   - Zero-Telemetry & Strict Student Privacy: No server retention of prompts
-   - Transparent States: Ready, Unconfigured, Quota Exhausted, Thinking, Error
-   - 100% Free: Respects 10,000 Daily Neurons Allocation without paid upselling
+   MATRIC MASTERY AI — DEDICATED STUDY WORKSPACE (/ai) (v3.9.0)
+   - Linear / Modern ChatGPT inspired academic tutoring workspace
+   - Routes 100% of inference through Cloudflare Workers AI (lib/aiClient.ts)
+   - Bilingual English (default) & Pakistani Urdu (RTL) with accurate terms
+   - Zero WebGL bloat, mobile-first sticky composer, local-only persistence
    ========================================================================== */
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Sparkles,
   Send,
+  Square,
   Loader2,
   Image as ImageIcon,
   X,
   Copy,
   Check,
   Share2,
-  Trash2,
   Download,
   AlertCircle,
-  ShieldCheck,
-  BookOpen,
-  HelpCircle,
+  WifiOff,
   RotateCcw,
-  Cpu,
-  Layers,
-  ArrowRight,
-  ExternalLink,
-  Info,
   Mic,
   MicOff,
-  Flame,
+  Plus,
+  CheckCircle2,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
-import { useLanguage } from "@/src/context/LanguageContext";
 import AIMarkdownRenderer from "@/components/AIMarkdownRenderer";
-import DoubtOrb3D from "@/components/DoubtOrb3D";
 import {
   AIChatMessage,
+  AIErrorKind,
+  AIRequestError,
   AIStatus,
   checkAIStatus,
   sendAIMessage,
@@ -51,61 +44,126 @@ import {
 } from "@/lib/aiClient";
 import { addXP } from "@/lib/progress";
 
-const HIGH_YIELD_PROMPTS = [
+interface StarterQuestion {
+  subject: string;
+  en: string;
+  ur: string;
+}
+
+const STARTER_QUESTIONS: StarterQuestion[] = [
   {
-    topic: "Physics",
-    query: "Derive F = ma formula step by step with Punjab Board marking scheme",
+    subject: "Math",
+    en: "Factorize x^2 - 7x + 12 = 0 step by step and verify the roots.",
+    ur: "مساوات x^2 - 7x + 12 = 0 کی تجزیہ (Factorization) کریں اور حل کی تصدیق کریں۔",
   },
   {
-    topic: "Math",
-    query: "How to find discriminant and nature of roots of 2x^2 - 7x + 3 = 0?",
+    subject: "Physics",
+    en: "Derive F = ma from Newton's Second Law of Motion and state SI units.",
+    ur: "نیوٹن کے حرکت کے دوسرے قانون سے قوت کا فارمولا F = ma اخذ کریں اور SI یونٹ بیان کریں۔",
   },
   {
-    topic: "Physics",
-    query: "State Ohm's Law and explain its temperature limitations with V-I graph",
+    subject: "Chemistry",
+    en: "Balance H2 + O2 -> H2O and calculate the number of moles in 36 g of water.",
+    ur: "کیمیائی مساوات H2 + O2 -> H2O کو متوازن کریں اور 36 گرام پانی میں مولز کی تعداد معلوم کریں۔",
   },
   {
-    topic: "Chemistry",
-    query: "Explain oxidation states and how to balance redox equations by ion-electron method",
-  },
-  {
-    topic: "Biology",
-    query: "Differentiate between Mitosis and Meiosis in a clear exam comparison table",
-  },
-  {
-    topic: "Computer",
-    query: "Explain the difference between compiler and interpreter with examples in C language",
+    subject: "Biology",
+    en: "Explain the light and dark reactions of Photosynthesis with its chemical equation.",
+    ur: "ضیائی تالیف (Photosynthesis) کے روشنی اور تاریکی کے مراحل کیمیائی مساوات سمیت بیان کریں۔",
   },
 ];
 
-export default function AIPage() {
-  const { t, isRTL } = useLanguage();
+const SUBJECT_OPTIONS = [
+  { value: "General", label: "All Subjects" },
+  { value: "Math", label: "Mathematics" },
+  { value: "Physics", label: "Physics" },
+  { value: "Chemistry", label: "Chemistry" },
+  { value: "Biology", label: "Biology" },
+  { value: "Computer", label: "Computer Science" },
+  { value: "English", label: "English" },
+  { value: "Urdu", label: "Urdu / Islamiyat" },
+];
 
+const URDU_CHAR_REGEX = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+function isUrduText(text: string): boolean {
+  return URDU_CHAR_REGEX.test(text);
+}
+
+function getStudentFriendlyError(
+  err: unknown,
+  languageMode: "en" | "ur"
+): { message: string; kind: AIErrorKind; resetsAt?: string } {
+  if (err instanceof AIRequestError) {
+    return {
+      message: err.message,
+      kind: err.kind,
+      resetsAt: err.resetsAt,
+    };
+  }
+
+  const msg = err instanceof Error ? err.message : "";
+  const lower = msg.toLowerCase();
+
+  if (lower.includes("429") || lower.includes("quota") || lower.includes("limit")) {
+    return {
+      kind: "rate_limit",
+      message:
+        languageMode === "ur"
+          ? "آپ کے AI استعمال کی عارضی حد پوری ہو گئی ہے۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔ آپ کا سوال محفوظ ہے تو اسے دوبارہ بھیج سکتے ہیں۔"
+          : "Free AI usage limit reached for now. Your question is saved — please try again shortly.",
+    };
+  }
+
+  if (
+    lower.includes("network") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("offline")
+  ) {
+    return {
+      kind: "network",
+      message:
+        languageMode === "ur"
+          ? "انٹرنیٹ کنکشن میں مسئلہ ہے۔ براہ کرم اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔"
+          : "Connection issue while reaching Matric Mastery AI. Please check your internet connection and try again.",
+    };
+  }
+
+  return {
+    kind: "server",
+    message:
+      languageMode === "ur"
+        ? "سوال کا جواب تیار کرنے میں عارضی مسئلہ آیا ہے۔ براہ کرم تھوڑی دیر بعد دوبارہ کوشش کریں۔"
+        : "Something went wrong while preparing the explanation. Please try again in a moment.",
+  };
+}
+
+export default function AIPage() {
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("General");
   const [languageMode, setLanguageMode] = useState<"en" | "ur">("en");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
   const [status, setStatus] = useState<AIStatus>({
     state: "unconfigured",
     provider: "none",
-    model: "@cf/meta/llama-3.1-8b-instruct-fast (Text) · @cf/meta/llama-3.2-11b-vision-instruct (Vision Gated)",
-    message: "Checking AI service status...",
+    model: "@cf/meta/llama-3.1-8b-instruct-fast",
+    message: "Checking service availability...",
     visionEnabled: false,
   });
 
-  // Image attachment state
+  // Image attachment state (active only if backend genuinely reports visionEnabled === true)
   const [attachedImage, setAttachedImage] = useState<{
     previewUrl: string;
     mimeType: string;
     base64: string;
   } | null>(null);
+  const [composerNotice, setComposerNotice] = useState<string | null>(null);
 
-  // UI state
+  // UI interactions
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isQuotaExhausted, setIsQuotaExhausted] = useState(false);
-  const [showPrivacyBanner, setShowPrivacyBanner] = useState(true);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
 
@@ -113,13 +171,21 @@ export default function AIPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isSubmittingRef = useRef(false);
 
-  // Initialize status & chat history
+  const refreshHealthStatus = useCallback(async () => {
+    setStatusLoading(true);
+    try {
+      const next = await checkAIStatus();
+      setStatus(next);
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
+  // Load status, local history, and browser speech support
   useEffect(() => {
-    checkAIStatus().then((s) => {
-      setStatus(s);
-      if (s.state === "quota_exhausted") setIsQuotaExhausted(true);
-    });
+    refreshHealthStatus();
 
     const savedHistory = getLocalChatHistory();
     if (savedHistory.length > 0) {
@@ -127,34 +193,43 @@ export default function AIPage() {
     }
 
     if (typeof window !== "undefined") {
-      const hasSpeech = "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+      const hasSpeech =
+        "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
       setSpeechSupported(Boolean(hasSpeech));
     }
-  }, []);
+  }, [refreshHealthStatus]);
 
-  // Scroll to bottom when messages update
+  // Auto-resize composer textarea cleanly (44px min up to 160px)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isGenerating]);
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [inputText]);
 
-  // Handle Image Upload & Validation (<4MB, JPEG/PNG/WebP)
+  // Keep latest message visible while chatting
+  useEffect(() => {
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages.length, isGenerating]);
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      setErrorMessage("Please select a valid image file (JPEG, PNG, or WebP).");
+      setComposerNotice("Please attach a JPEG, PNG, or WebP image.");
       return;
     }
 
-    const maxBytes = 4 * 1024 * 1024; // 4MB
-    if (file.size > maxBytes) {
-      setErrorMessage("Image is larger than 4 MB. Please upload a smaller crop.");
+    if (file.size > 4 * 1024 * 1024) {
+      setComposerNotice("Image must be smaller than 4 MB.");
       return;
     }
 
-    setErrorMessage(null);
+    setComposerNotice(null);
     const reader = new FileReader();
     reader.onloadend = () => {
       const resultStr = reader.result as string;
@@ -175,7 +250,6 @@ export default function AIPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Voice dictation toggle
   const toggleVoiceInput = () => {
     if (!speechSupported) return;
 
@@ -196,8 +270,10 @@ export default function AIPage() {
 
       recognition.onstart = () => setIsRecording(true);
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInputText((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        const transcript = event.results?.[0]?.[0]?.transcript || "";
+        if (transcript) {
+          setInputText((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
         setIsRecording(false);
       };
       recognition.onerror = () => setIsRecording(false);
@@ -208,133 +284,217 @@ export default function AIPage() {
     }
   };
 
-  // Submit message
-  const handleSendMessage = async (customPrompt?: string) => {
-    const textToSend = (customPrompt !== undefined ? customPrompt : inputText).trim();
-
-    if (!textToSend && !attachedImage) return;
-    if (isGenerating) return;
-
-    setErrorMessage(null);
-
-    const userMessage: AIChatMessage = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      role: "user",
-      content: textToSend || "Please solve the question in this textbook diagram step-by-step.",
-      timestamp: Date.now(),
-      image: attachedImage || undefined,
-      subject: selectedSubject,
-    };
-
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInputText("");
-    const currentAttachment = attachedImage;
-    setAttachedImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-
-    // Create placeholder for assistant response
-    const assistantPlaceholderId = `msg-ai-${Date.now()}`;
-    const assistantPlaceholder: AIChatMessage = {
-      id: assistantPlaceholderId,
-      role: "assistant",
-      content: "",
-      timestamp: Date.now(),
-      subject: selectedSubject,
-    };
-
-    setMessages([...newMessages, assistantPlaceholder]);
-    setIsGenerating(true);
-
+  const executeGeneration = async ({
+    historyForRequest,
+    placeholderId,
+    subjectOverride,
+    imagePayload,
+  }: {
+    historyForRequest: AIChatMessage[];
+    placeholderId: string;
+    subjectOverride: string;
+    imagePayload: { mimeType: string; base64: string } | null;
+  }) => {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
     try {
       const fullAnswer = await sendAIMessage({
-        messages: newMessages,
-        image: currentAttachment
-          ? { mimeType: currentAttachment.mimeType, base64: currentAttachment.base64 }
-          : null,
+        messages: historyForRequest,
+        image: imagePayload,
         language: languageMode,
+        subject: subjectOverride,
         signal: abortController.signal,
         onChunk: (partialText) => {
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantPlaceholderId ? { ...m, content: partialText } : m
+              m.id === placeholderId
+                ? { ...m, content: partialText, error: false, errorKind: undefined }
+                : m
             )
           );
         },
       });
 
-      // Update final message and persist to local storage
-      const finalMessages = newMessages.concat({
-        ...assistantPlaceholder,
-        content: fullAnswer,
+      const resolvedContent =
+        fullAnswer.trim() ||
+        (languageMode === "ur"
+          ? "معذرت، مکمل جواب موصول نہیں ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔"
+          : "No response text was returned. Please try sending your question again.");
+
+      setMessages((prev) => {
+        const updated = prev.map((m) =>
+          m.id === placeholderId
+            ? {
+                ...m,
+                content: resolvedContent,
+                timestamp: Date.now(),
+                error: false,
+                errorKind: undefined,
+              }
+            : m
+        );
+        saveLocalChatHistory(updated);
+        return updated;
       });
 
-      setMessages(finalMessages);
-      saveLocalChatHistory(finalMessages);
-
-      // Award study XP
-      addXP(15, "Engaged with Matric Mastery AI");
+      addXP(15, "Solved question with Matric Mastery AI");
     } catch (err: any) {
-      if (err.name === "AbortError") {
-        setMessages((prev) => prev.filter((m) => m.id !== assistantPlaceholderId));
+      if (err?.name === "AbortError") {
+        setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
         return;
       }
 
-      const isQuota = (err as any)?.code === "QUOTA_EXHAUSTED" || err.message?.includes("10,000");
-      if (isQuota) {
-        setIsQuotaExhausted(true);
+      const friendly = getStudentFriendlyError(err, languageMode);
+      if (friendly.kind === "rate_limit") {
+        setStatus((prev) => ({ ...prev, state: "quota_exhausted" }));
       }
 
-      // Handle unconfigured or live error state honestly
-      const isUnconfigured = (err as any)?.code === "UNCONFIGURED";
-      const displayError = isUnconfigured
-        ? "Matric Mastery AI is currently in Preview Mode. The Cloudflare Workers AI backend is prepared in worker/index.ts with @cf/meta/llama-3.1-8b-instruct-fast (~563 daily free queries). Vision inference (@cf/meta/llama-3.2-11b-vision-instruct) remains separated and paused until parent/guardian Meta license approval. Connecting the live service requires separate adult-supervised Cloudflare account deployment and VITE_AI_WORKER_URL. In the meantime, explore our verified study playbooks, paper presentation hacks, and past papers below."
-        : err?.message || "Failed to complete AI response. Please try again.";
-
-      setErrorMessage(displayError);
-
-      // Mark the placeholder with honest explanation
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === assistantPlaceholderId
+          m.id === placeholderId
             ? {
                 ...m,
-                content: `⚠️ **Notice:** ${displayError}`,
+                content: friendly.message,
                 error: true,
+                errorKind: friendly.kind,
+                resetsAt: friendly.resetsAt,
               }
             : m
         )
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsGenerating(false);
       abortControllerRef.current = null;
     }
   };
 
+  const handleSendMessage = async (
+    customPrompt?: string,
+    subjectOverride?: string
+  ) => {
+    if (isSubmittingRef.current || isGenerating) return;
+
+    const textToSend = (customPrompt !== undefined ? customPrompt : inputText).trim();
+    const activeAttachment = status.visionEnabled ? attachedImage : null;
+    if (!textToSend && !activeAttachment) return;
+
+    if (textToSend.length > 2000) {
+      setComposerNotice("Keep your question under 2,000 characters.");
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    setComposerNotice(null);
+    setConfirmClear(false);
+
+    const activeSubject = subjectOverride || selectedSubject;
+    if (subjectOverride) {
+      setSelectedSubject(subjectOverride);
+    }
+
+    const userMessage: AIChatMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      role: "user",
+      content: textToSend || "Solve this question step by step.",
+      timestamp: Date.now(),
+      image: activeAttachment || undefined,
+      subject: activeSubject,
+    };
+
+    const placeholderId = `msg-ai-${Date.now()}`;
+    const assistantPlaceholder: AIChatMessage = {
+      id: placeholderId,
+      role: "assistant",
+      content: "",
+      timestamp: Date.now(),
+      subject: activeSubject,
+    };
+
+    const nextHistory = [...messages, userMessage];
+    setMessages([...nextHistory, assistantPlaceholder]);
+    if (customPrompt === undefined) {
+      setInputText("");
+    }
+    setAttachedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setIsGenerating(true);
+
+    await executeGeneration({
+      historyForRequest: nextHistory,
+      placeholderId,
+      subjectOverride: activeSubject,
+      imagePayload: activeAttachment
+        ? { mimeType: activeAttachment.mimeType, base64: activeAttachment.base64 }
+        : null,
+    });
+  };
+
+  const handleRetryTurn = async (assistantMessageId: string) => {
+    if (isSubmittingRef.current || isGenerating) return;
+
+    const targetIndex = messages.findIndex((m) => m.id === assistantMessageId);
+    if (targetIndex <= 0) return;
+
+    const precedingMessages = messages
+      .slice(0, targetIndex)
+      .filter((m) => !m.error);
+    if (precedingMessages.length === 0) return;
+
+    const lastUser = precedingMessages[precedingMessages.length - 1];
+    if (lastUser.role !== "user") return;
+
+    isSubmittingRef.current = true;
+    setComposerNotice(null);
+    setIsGenerating(true);
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === assistantMessageId
+          ? { ...m, content: "", error: false, errorKind: undefined }
+          : m
+      )
+    );
+
+    await executeGeneration({
+      historyForRequest: precedingMessages,
+      placeholderId: assistantMessageId,
+      subjectOverride: lastUser.subject || selectedSubject,
+      imagePayload: lastUser.image
+        ? { mimeType: lastUser.image.mimeType, base64: lastUser.image.base64 }
+        : null,
+    });
+  };
+
+  const handleStopGeneration = () => {
+    abortControllerRef.current?.abort();
+  };
+
+  const handleStartNewChat = () => {
+    if (isGenerating) {
+      abortControllerRef.current?.abort();
+    }
+    clearLocalChatHistory();
+    setMessages([]);
+    setConfirmClear(false);
+    setComposerNotice(null);
+    textareaRef.current?.focus();
+  };
+
   const handleCopyMessage = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
   };
 
   const handleShareWhatsApp = (text: string) => {
     const encoded = encodeURIComponent(
-      `*Matric Mastery AI Solution:*\n\n${text.slice(0, 800)}...\n\n👉 Study free at Matric Mastery!`
+      `*Matric Mastery AI Solution:*\n\n${text.slice(0, 800)}${text.length > 800 ? "..." : ""}\n\nStudy free at Matric Mastery PK`
     );
-    window.open(`https://wa.me/?text=${encoded}`, "_blank");
-  };
-
-  const handleClearChat = () => {
-    if (messages.length === 0) return;
-    const confirmed = window.confirm("Clear all messages from this session? Your local chat history will be emptied.");
-    if (confirmed) {
-      clearLocalChatHistory();
-      setMessages([]);
-      setErrorMessage(null);
-    }
+    window.open(`https://wa.me/?text=${encoded}`, "_blank", "noopener,noreferrer");
   };
 
   const handleExportJSON = () => {
@@ -349,403 +509,488 @@ export default function AIPage() {
     URL.revokeObjectURL(url);
   };
 
+  const isUrduUI = languageMode === "ur";
+
   return (
-    <div className="relative min-h-[calc(100dvh-66px)] w-full bg-[#0A0A0A] text-white py-6 sm:py-10 px-3 sm:px-6 lg:px-8">
-      {/* Background Ambience */}
-      <div className="absolute top-10 left-1/4 h-[420px] w-[420px] rounded-full bg-[#FFD60A]/[0.03] blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-10 right-1/4 h-[420px] w-[420px] rounded-full bg-blue-500/[0.02] blur-[160px] pointer-events-none" />
-
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-6">
-        {/* Top Header Card */}
-        <div className="rounded-[24px] border border-white/10 bg-[#121216]/90 p-5 sm:p-7 backdrop-blur-xl shadow-soft">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-accent text-black font-black shadow-glow shrink-0">
-                <Sparkles size={22} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="font-heading text-xl sm:text-2xl font-black text-white">
-                    Matric Mastery AI
-                  </h1>
-                  <span className="rounded-lg border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-mono font-bold text-accent">
-                    Dedicated Workspace
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted leading-relaxed">
-                  Academic problem solver &amp; conceptual tutor for Punjab Boards (BISE Lahore, Multan, Faisalabad, Rawalpindi) &amp; FBISE.
-                </p>
-              </div>
+    <section
+      aria-label="Matric Mastery AI Tutoring Workspace"
+      className="relative flex min-h-[calc(100dvh-68px)] w-full flex-col bg-[#0A0A0A] text-white"
+    >
+      {/* A. Compact Workspace Header */}
+      <header className="w-full border-b border-white/[0.08] bg-[#0A0A0A]">
+        <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFD60A] text-black">
+              <GraduationCap size={19} strokeWidth={2.2} />
             </div>
-
-            {/* Provider & Quota Status Badge */}
-            <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
-              <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-mono">
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    status.state === "ready"
-                      ? "bg-emerald-400 animate-pulse"
-                      : status.state === "quota_exhausted"
-                      ? "bg-red-400"
-                      : "bg-amber-400"
-                  }`}
-                />
-                <span className="text-white/90">
-                  {status.state === "ready"
-                    ? `Live: ${status.model}`
-                    : status.state === "quota_exhausted"
-                    ? "Quota Exhausted (429)"
-                    : `Backend: ${status.model}`}
-                </span>
+            <div className="min-w-0">
+              <h1 className="font-heading text-base sm:text-lg font-bold tracking-tight text-white truncate">
+                Matric Mastery AI
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-400">
+                <span>Class 9–10 Punjab Board &amp; FBISE Tutor</span>
+                <span aria-hidden="true">·</span>
+                {statusLoading ? (
+                  <span>Checking availability...</span>
+                ) : status.state === "ready" ? (
+                  <span className="inline-flex items-center gap-1 text-emerald-400">
+                    <CheckCircle2 size={12} aria-hidden="true" />
+                    <span>Free Tier Active</span>
+                  </span>
+                ) : status.state === "quota_exhausted" ? (
+                  <span className="inline-flex items-center gap-1 text-amber-300">
+                    <AlertCircle size={12} aria-hidden="true" />
+                    <span>Usage Limit Reached</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={refreshHealthStatus}
+                    className="inline-flex items-center gap-1 text-red-300 hover:text-red-200 underline-offset-2 hover:underline cursor-pointer"
+                  >
+                    <WifiOff size={12} aria-hidden="true" />
+                    <span>Connection Check Failed · Retry</span>
+                  </button>
+                )}
               </div>
-              <span className="text-[10px] font-mono text-muted">
-                Cloudflare Free Tier · 10,000 Neurons/Day · 0 Tracking
-              </span>
             </div>
           </div>
 
-          {/* Student Privacy & Ethics Banner */}
-          {showPrivacyBanner && (
-            <div className="mt-5 rounded-2xl border border-white/10 bg-black/40 p-3.5 sm:p-4 text-xs text-muted flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <ShieldCheck size={18} className="text-emerald-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-heading font-bold text-white text-xs">
-                    Student Privacy Notice &amp; Zero-Telemetry Directive
-                  </p>
-                  <p className="text-[11px] leading-relaxed">
-                    Student queries and textbook diagram attachments are processed in-flight and are <strong>never stored on remote servers, logged to analytics, or shared with commercial entities</strong>.
-                    Please do not upload personal documents (CNIC, B-form, phone numbers, or roll number slips). Matric Mastery AI is a study aid, not an official board examiner.
-                  </p>
-                </div>
-              </div>
+          {/* Workspace Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            {messages.length > 0 && (
               <button
                 type="button"
-                onClick={() => setShowPrivacyBanner(false)}
-                className="text-muted hover:text-white p-1"
-                title="Dismiss notice"
+                onClick={handleExportJSON}
+                className="inline-flex min-h-[40px] sm:min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                title="Download this study session as JSON"
               >
-                <X size={14} />
+                <Download size={14} aria-hidden="true" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+            )}
+
+            {messages.length > 0 && confirmClear ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleStartNewChat}
+                  className="inline-flex min-h-[40px] sm:min-h-[36px] items-center rounded-lg bg-[#FFD60A] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#FFD60A]/90 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  Confirm Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmClear(false)}
+                  className="inline-flex min-h-[40px] sm:min-h-[36px] items-center rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-medium text-neutral-300 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (messages.length > 0) {
+                    setConfirmClear(true);
+                  } else {
+                    textareaRef.current?.focus();
+                  }
+                }}
+                disabled={messages.length === 0 && !isGenerating}
+                className="inline-flex min-h-[40px] sm:min-h-[36px] items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white hover:border-[#FFD60A]/50 hover:text-[#FFD60A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <Plus size={14} aria-hidden="true" />
+                <span>New Chat</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* B. Main Conversation Center Stage */}
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 sm:px-6">
+        {messages.length === 0 ? (
+          /* First-Visit Welcome Screen */
+          <div className="my-auto py-8 sm:py-12 space-y-8">
+            <div className="space-y-3" dir={isUrduUI ? "rtl" : "ltr"}>
+              <h2
+                className={`font-bold text-white tracking-tight text-balance ${
+                  isUrduUI
+                    ? "font-urdu text-2xl sm:text-3xl leading-[1.9] text-right"
+                    : "font-heading text-2xl sm:text-3xl"
+                }`}
+              >
+                {isUrduUI
+                  ? "آج کون سا سوال یا تصور سمجھنا چاہتے ہیں؟"
+                  : "What would you like to solve today?"}
+              </h2>
+              <p
+                className={`text-neutral-400 max-w-xl ${
+                  isUrduUI
+                    ? "font-urdu text-[15px] leading-[2] text-right"
+                    : "text-sm sm:text-[15px] leading-relaxed"
+                }`}
+              >
+                {isUrduUI
+                  ? "پنجاب بورڈ اور فیڈرل بورڈ (کلاس 9 اور 10) کے مطابق ریاضی، فزکس، کیمسٹری اور بائیولوجی کی مرحلہ وار رہنمائی حاصل کریں۔"
+                  : "Get clear, step-by-step explanations aligned with Punjab Board and FBISE Class 9–10 textbooks."}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-neutral-400">
+                {isUrduUI ? "مثال کے سوالات (فوری حل کے لیے کلک کریں)" : "Try an example question"}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {STARTER_QUESTIONS.map((item) => {
+                  const questionText = isUrduUI ? item.ur : item.en;
+                  return (
+                    <button
+                      key={item.subject}
+                      type="button"
+                      disabled={isGenerating}
+                      onClick={() => handleSendMessage(questionText, item.subject)}
+                      dir={isUrduUI ? "rtl" : "ltr"}
+                      className={`group flex flex-col justify-between gap-2 rounded-xl border border-white/10 bg-[#121216] p-4 transition-colors hover:border-[#FFD60A]/50 hover:bg-[#16161B] disabled:opacity-50 cursor-pointer ${
+                        isUrduUI ? "text-right" : "text-left"
+                      }`}
+                    >
+                      <span className="text-xs font-semibold text-[#FFD60A]">
+                        {item.subject}
+                      </span>
+                      <span
+                        className={`text-neutral-200 group-hover:text-white ${
+                          isUrduUI
+                            ? "font-urdu text-[14px] leading-[1.95]"
+                            : "text-sm leading-snug"
+                        }`}
+                      >
+                        {questionText}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Active Conversation Thread */
+          <div className="flex-1 py-6 space-y-6">
+            {messages.map((msg, idx) => {
+              const isUser = msg.role === "user";
+              const urduContent = isUrduText(msg.content);
+              const isLastMessage = idx === messages.length - 1;
+              const showThinkState = !isUser && !msg.content && isGenerating && isLastMessage;
+              const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+
+              if (isUser) {
+                return (
+                  <div key={msg.id} className="flex flex-col items-end gap-1.5">
+                    <div
+                      dir="auto"
+                      className={`max-w-[88%] sm:max-w-[78%] rounded-2xl border border-white/10 bg-[#18181E] px-4 py-3 text-[15px] text-white ${
+                        urduContent ? "font-urdu leading-[2] text-right" : "leading-relaxed"
+                      }`}
+                    >
+                      {msg.image && (
+                        <img
+                          src={msg.image.previewUrl}
+                          alt="Attached question"
+                          className="mb-2.5 max-h-52 rounded-lg border border-white/15 object-contain bg-black"
+                        />
+                      )}
+                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-1 text-[11px] text-neutral-500 tabular-nums">
+                      <span>{msg.subject && msg.subject !== "General" ? msg.subject : "Student"}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{formattedTime}</span>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <article
+                  key={msg.id}
+                  className="w-full border-b border-white/[0.06] pb-6 last:border-b-0 space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white">Matric Mastery AI</span>
+                      {msg.subject && msg.subject !== "General" && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span className="text-[#FFD60A]">{msg.subject}</span>
+                        </>
+                      )}
+                    </div>
+                    <span className="tabular-nums text-[11px] text-neutral-500">
+                      {formattedTime}
+                    </span>
+                  </div>
+
+                  {showThinkState ? (
+                    <div className="flex items-center gap-2.5 py-2 text-sm text-neutral-300">
+                      <Loader2 size={15} className="animate-spin text-[#FFD60A]" aria-hidden="true" />
+                      <span className={isUrduUI ? "font-urdu" : ""}>
+                        {isUrduUI
+                          ? "مرحلہ وار جواب تیار کیا جا رہا ہے..."
+                          : "Working through the steps..."}
+                      </span>
+                    </div>
+                  ) : msg.error ? (
+                    <div
+                      dir={urduContent ? "rtl" : "ltr"}
+                      className={`rounded-xl border p-4 space-y-3 ${
+                        msg.errorKind === "rate_limit"
+                          ? "border-amber-500/35 bg-amber-500/[0.07] text-amber-100"
+                          : "border-red-500/35 bg-red-500/[0.07] text-red-100"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        {msg.errorKind === "network" ? (
+                          <WifiOff size={18} className="shrink-0 mt-0.5 text-red-300" aria-hidden="true" />
+                        ) : (
+                          <AlertCircle
+                            size={18}
+                            className={`shrink-0 mt-0.5 ${
+                              msg.errorKind === "rate_limit" ? "text-amber-300" : "text-red-300"
+                            }`}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <p
+                            className={`text-sm font-medium ${
+                              urduContent ? "font-urdu leading-[2] text-right" : "leading-relaxed"
+                            }`}
+                          >
+                            {msg.content}
+                          </p>
+                          {msg.errorKind === "rate_limit" && msg.resetsAt && (
+                            <p className="text-xs text-amber-200/80">
+                              Daily free server allocation resets at {msg.resetsAt}.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          disabled={isGenerating}
+                          onClick={() => handleRetryTurn(msg.id)}
+                          className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg bg-white text-black px-3 py-1.5 text-xs font-semibold hover:bg-neutral-200 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          <RotateCcw size={13} aria-hidden="true" />
+                          <span>Retry Question</span>
+                        </button>
+
+                        {msg.errorKind === "rate_limit" && (
+                          <>
+                            <Link
+                              href="/strategies"
+                              className="inline-flex min-h-[38px] items-center rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:border-[#FFD60A]/60 transition-colors"
+                            >
+                              Exam Strategies
+                            </Link>
+                            <Link
+                              href="/past-papers"
+                              className="inline-flex min-h-[38px] items-center rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:border-[#FFD60A]/60 transition-colors"
+                            >
+                              Past Papers
+                            </Link>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <AIMarkdownRenderer content={msg.content} />
+
+                      {!(isGenerating && isLastMessage) && msg.content && (
+                        <div className="flex flex-wrap items-center gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyMessage(msg.id, msg.content)}
+                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors cursor-pointer"
+                          >
+                            {copiedId === msg.id ? (
+                              <>
+                                <Check size={13} className="text-emerald-400" aria-hidden="true" />
+                                <span className="text-emerald-400">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={13} aria-hidden="true" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleShareWhatsApp(msg.content)}
+                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors cursor-pointer"
+                          >
+                            <Share2 size={13} aria-hidden="true" />
+                            <span>Share</span>
+                          </button>
+
+                          {isLastMessage && (
+                            <button
+                              type="button"
+                              disabled={isGenerating}
+                              onClick={() => handleRetryTurn(msg.id)}
+                              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white disabled:opacity-40 transition-colors cursor-pointer"
+                            >
+                              <RotateCcw size={13} aria-hidden="true" />
+                              <span>Regenerate</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </article>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* C. Sticky Mobile-First Input Composer */}
+      <div className="sticky bottom-0 z-20 w-full border-t border-white/[0.08] bg-[#0A0A0A]/95 backdrop-blur-md">
+        <div className="mx-auto w-full max-w-3xl px-3 sm:px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {composerNotice && (
+            <div
+              role="status"
+              className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+            >
+              <span>{composerNotice}</span>
+              <button
+                type="button"
+                onClick={() => setComposerNotice(null)}
+                className="text-amber-200/80 hover:text-white p-0.5"
+                aria-label="Dismiss notice"
+              >
+                <X size={13} />
               </button>
             </div>
           )}
-        </div>
 
-        {/* Quota Exhausted Warning State */}
-        {isQuotaExhausted && (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-xs text-red-200">
-            <div className="flex items-start gap-3">
-              <AlertCircle size={20} className="text-red-400 shrink-0 mt-0.5" />
-              <div className="space-y-2">
-                <h3 className="font-heading font-black text-sm text-white">
-                  Daily Free Allocation of 10,000 Cloudflare Neurons Reached
-                </h3>
-                <p className="leading-relaxed">
-                  To protect our zero-cost access policy and prevent student credit-card charges or hidden fees, automated AI inference is paused until the next daily reset at <strong>00:00 UTC</strong>.
-                </p>
-                <div className="pt-2 flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/strategies"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 py-1.5 font-heading text-xs font-black text-black hover:bg-accent/90"
-                  >
-                    <BookOpen size={13} />
-                    <span>Browse 30+ Exam Strategies</span>
-                  </Link>
-                  <Link
-                    href="/paper-hacks"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 font-heading text-xs font-bold text-white hover:bg-white/10"
-                  >
-                    <span>Paper Presentation Hacks &rarr;</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Unconfigured / Preview Notice Card */}
-        {status.state === "unconfigured" && !isQuotaExhausted && (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-4 sm:p-5 text-xs text-amber-100">
-            <div className="flex items-start gap-3">
-              <Cpu size={18} className="text-amber-400 shrink-0 mt-0.5" />
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <h4 className="font-heading font-black text-xs sm:text-sm text-white">
-                    Cloudflare Workers AI Infrastructure Prepared
-                  </h4>
-                  <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] text-amber-300 font-bold">
-                    worker/index.ts Ready · Pending Adult Approval
-                  </span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-amber-200/90">
-                  The standalone Cloudflare Workers AI backend is configured with <code>@cf/meta/llama-3.1-8b-instruct-fast</code> for sustainable text problem solving (~563 queries/day within the 10,000 daily free Neurons limit). Image analysis (<code>@cf/meta/llama-3.2-11b-vision-instruct</code>) is kept separate and disabled until a parent/guardian reviews and accepts Meta&apos;s license terms. Connecting the live service requires adult-supervised Wrangler deployment and setting <code>VITE_AI_WORKER_URL</code>. No paid billing or credit card is required.
-                </p>
-                <div className="pt-2 flex flex-wrap gap-2 text-[11px] font-mono">
-                  <span className="rounded border border-amber-500/30 bg-black/40 px-2 py-1 text-amber-300">
-                    Text: @cf/meta/llama-3.1-8b-instruct-fast
-                  </span>
-                  <span className="rounded border border-white/15 bg-black/40 px-2 py-1 text-neutral-300">
-                    Vision: @cf/meta/llama-3.2-11b-vision-instruct (Paused · License Pending)
-                  </span>
-                  <span className="rounded border border-white/10 bg-black/40 px-2 py-1 text-muted">
-                    Allocation: 10,000 Neurons / Day Free
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main Workspace Area (Conversation Container) */}
-        <div className="relative flex flex-col rounded-[24px] border border-white/10 bg-[#0E0E12] shadow-2xl overflow-hidden min-h-[500px]">
-          {/* Workspace Top Toolbar */}
-          <div className="flex items-center justify-between border-b border-white/10 bg-[#141418] px-4 sm:px-6 py-3 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-heading text-xs font-bold text-white uppercase tracking-wider">
-                Conversation
-              </span>
-              {messages.length > 0 && (
-                <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[10px] text-muted">
-                  {messages.length} {messages.length === 1 ? "message" : "messages"}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {messages.length > 0 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleExportJSON}
-                    className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-mono text-muted hover:text-white hover:bg-white/10 transition-colors"
-                    title="Export study session as JSON"
-                  >
-                    <Download size={12} />
-                    <span className="hidden sm:inline">Export</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearChat}
-                    className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-mono text-red-400 hover:bg-red-500/10 transition-colors"
-                    title="Clear local session"
-                  >
-                    <Trash2 size={12} />
-                    <span className="hidden sm:inline">Clear</span>
-                  </button>
-                </>
-              )}
-
-              {/* Language Mode Selector */}
-              <select
-                value={languageMode}
-                onChange={(e) => setLanguageMode(e.target.value as "en" | "ur")}
-                className="rounded-lg border border-white/15 bg-black/60 px-2.5 py-1 text-xs text-white/90 font-mono focus:border-accent focus:outline-none"
+          {status.visionEnabled && attachedImage && (
+            <div className="mb-2 inline-flex items-center gap-2.5 rounded-xl border border-[#FFD60A]/40 bg-[#141418] p-1.5 pr-3">
+              <img
+                src={attachedImage.previewUrl}
+                alt="Attached textbook problem"
+                className="h-11 w-11 rounded-lg object-cover"
+              />
+              <span className="text-xs text-neutral-300">Image attached</span>
+              <button
+                type="button"
+                onClick={removeAttachedImage}
+                className="ml-1 rounded-full bg-white/10 p-1 text-neutral-300 hover:text-white"
+                aria-label="Remove attached image"
               >
-                <option value="en">English Mode</option>
-                <option value="ur">اردو / Roman Urdu</option>
-              </select>
+                <X size={12} />
+              </button>
             </div>
-          </div>
+          )}
 
-          {/* Chat Messages Scrollable Feed */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-h-[580px]">
-            {/* Empty State Welcome Arena */}
-            {messages.length === 0 && (
-              <div className="relative py-8 sm:py-12 text-center max-w-xl mx-auto space-y-6">
-                <div className="relative h-28 w-full flex items-center justify-center overflow-hidden">
-                  <DoubtOrb3D isTyping={Boolean(inputText)} isGenerating={isGenerating} />
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="font-heading text-lg sm:text-xl font-black text-white">
-                    What concept or question can we solve today?
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted leading-relaxed">
-                    Ask any question across Math, Physics, Chemistry, Biology, or English. You can also upload a clear photo of your textbook numerical or diagram.
-                  </p>
-                </div>
-
-                {/* High-Yield Question Starters */}
-                <div className="space-y-2.5 text-left pt-2">
-                  <span className="font-heading text-[11px] font-bold uppercase tracking-wider text-muted">
-                    High-Yield Punjab Board Starters (1-Click Solve):
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {HIGH_YIELD_PROMPTS.map((item, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleSendMessage(item.query)}
-                        className="flex flex-col text-left rounded-xl border border-white/10 bg-white/[0.02] p-3 hover:border-accent hover:bg-white/[0.04] transition-all group"
-                      >
-                        <span className="font-mono text-[10px] font-bold text-accent uppercase">
-                          {item.topic}
-                        </span>
-                        <span className="mt-1 text-xs text-white/85 group-hover:text-white line-clamp-2">
-                          {item.query}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Rendered Messages */}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${
-                  msg.role === "user" ? "items-end" : "items-start"
-                }`}
-              >
-                {/* Message Container */}
-                <div
-                  className={`relative max-w-full sm:max-w-2xl rounded-2xl p-4 sm:p-5 shadow-sm text-left ${
-                    msg.role === "user"
-                      ? "bg-accent/15 border border-accent/30 text-white rounded-br-xs"
-                      : "bg-[#16161C] border border-white/15 text-white/95 rounded-bl-xs"
-                  }`}
-                >
-                  {/* Top Message Meta */}
-                  <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-2 mb-3 text-[11px] font-mono text-muted">
-                    <span className="font-heading font-black text-white flex items-center gap-1.5">
-                      {msg.role === "user" ? (
-                        <>
-                          <span>You (Student)</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={12} className="text-accent" />
-                          <span>Matric Mastery AI</span>
-                        </>
-                      )}
-                    </span>
-                    <span>
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-
-                  {/* Attached Image Preview if User Uploaded */}
-                  {msg.image && (
-                    <div className="mb-3">
-                      <img
-                        src={msg.image.previewUrl}
-                        alt="Attached problem diagram"
-                        className="max-h-60 rounded-xl border border-white/20 object-contain bg-black/60"
-                      />
-                    </div>
-                  )}
-
-                  {/* Message Content */}
-                  {msg.role === "assistant" && !msg.content && isGenerating ? (
-                    <div className="flex items-center gap-2 py-3 text-xs text-accent font-mono animate-pulse">
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Thinking and preparing step-by-step solution...</span>
-                    </div>
-                  ) : (
-                    <AIMarkdownRenderer content={msg.content} />
-                  )}
-
-                  {/* Assistant Action Buttons */}
-                  {msg.role === "assistant" && msg.content && !isGenerating && (
-                    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyMessage(msg.id, msg.content)}
-                        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-mono text-muted hover:text-white hover:bg-white/10 transition-colors"
-                      >
-                        {copiedId === msg.id ? (
-                          <>
-                            <Check size={12} className="text-emerald-400" />
-                            <span className="text-emerald-400">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={12} />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleShareWhatsApp(msg.content)}
-                        className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-mono text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                      >
-                        <Share2 size={12} />
-                        <span>Share</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Bottom Question Input Area */}
-          <div className="border-t border-white/10 bg-[#121216] p-3 sm:p-4">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendMessage();
+            }}
+            className="rounded-2xl border border-white/15 bg-[#121216] focus-within:border-[#FFD60A]/70 transition-colors"
+          >
+            <textarea
+              ref={textareaRef}
+              id="ai-prompt-input"
+              aria-label="Ask a Class 9 or 10 study question"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder={
+                isUrduUI
+                  ? "اپنا سوال لکھیں (ریاضی، فزکس، کیمسٹری، بائیولوجی)..."
+                  : "Ask a Class 9–10 Math, Physics, Chemistry, or Biology question..."
+              }
+              dir={isUrduUI && !inputText ? "rtl" : "auto"}
+              rows={1}
+              maxLength={2000}
+              disabled={isGenerating}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  !(e.nativeEvent as KeyboardEvent).isComposing
+                ) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
               }}
-              className="space-y-3"
-            >
-              {/* Attached Image Thumbnail Bar */}
-              {attachedImage && (
-                <div className="relative inline-flex items-center gap-2.5 rounded-xl border border-accent/40 bg-black/80 p-1.5 pr-8">
-                  <img
-                    src={attachedImage.previewUrl}
-                    alt="Problem attachment"
-                    className="h-12 w-12 rounded-lg object-cover"
-                  />
-                  <div className="text-[11px] font-mono text-muted">
-                    <p className="text-white font-medium">Textbook Problem Attached</p>
-                    <p className="text-[10px] text-accent">
-                      {status.visionEnabled
-                        ? "Ready for multimodal analysis"
-                        : "Vision paused pending adult Meta license review"}
-                    </p>
-                  </div>
+              className={`w-full resize-none bg-transparent px-4 pt-3 pb-2 text-base sm:text-[15px] text-white placeholder-neutral-500 focus:outline-none disabled:opacity-60 ${
+                isUrduUI || isUrduText(inputText) ? "font-urdu leading-[1.9]" : "leading-relaxed"
+              }`}
+            />
+
+            {/* Bottom Controls Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-2.5 py-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {/* Subject selector */}
+                <select
+                  aria-label="Select subject"
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="min-h-[40px] sm:min-h-[36px] rounded-lg border border-white/10 bg-[#18181D] px-2.5 text-xs font-medium text-neutral-200 focus:border-[#FFD60A] focus:outline-none cursor-pointer"
+                >
+                  {SUBJECT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Language toggle (English default | Urdu) */}
+                <div
+                  role="group"
+                  aria-label="Response language"
+                  className="inline-flex rounded-lg border border-white/10 bg-[#18181D] p-0.5"
+                >
                   <button
                     type="button"
-                    onClick={removeAttachedImage}
-                    className="absolute right-2 top-2 rounded-full bg-red-500/80 p-0.5 text-white hover:bg-red-500"
-                    title="Remove attachment"
+                    onClick={() => setLanguageMode("en")}
+                    className={`min-h-[36px] sm:min-h-[32px] rounded-md px-2.5 text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
+                      languageMode === "en"
+                        ? "bg-white text-black font-semibold"
+                        : "text-neutral-300 hover:text-white"
+                    }`}
                   >
-                    <X size={12} />
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguageMode("ur")}
+                    className={`min-h-[36px] sm:min-h-[32px] rounded-md px-2.5 text-xs font-urdu transition-colors whitespace-nowrap cursor-pointer ${
+                      languageMode === "ur"
+                        ? "bg-white text-black font-semibold"
+                        : "text-neutral-300 hover:text-white"
+                    }`}
+                  >
+                    اردو
                   </button>
                 </div>
-              )}
 
-              {/* Textarea Input with Character Counter */}
-              <div className="relative rounded-2xl border border-white/15 bg-black/50 p-3 focus-within:border-accent transition-colors">
-                <textarea
-                  ref={textareaRef}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Ask a Punjab Board math problem, physics derivation, or chemistry concept..."
-                  rows={2}
-                  maxLength={2000}
-                  className="w-full resize-none bg-transparent text-sm text-white placeholder-white/40 focus:outline-none"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                />
-
-                {/* Sub-toolbar Controls */}
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    {/* Attach Photo Button */}
+                {/* Image attachment: strictly rendered ONLY if backend reports visionEnabled === true */}
+                {status.visionEnabled && (
+                  <>
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -756,116 +1001,73 @@ export default function AIPage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs transition-colors ${
-                        attachedImage
-                          ? "border-accent bg-accent/15 text-accent font-bold"
-                          : "border-white/10 bg-white/5 text-muted hover:text-white"
-                      }`}
-                      title="Attach diagram or textbook photo (JPEG, PNG, WebP < 4MB)"
+                      className="inline-flex min-h-[40px] sm:min-h-[36px] items-center gap-1.5 rounded-lg border border-white/10 bg-[#18181D] px-2.5 text-xs font-medium text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                      aria-label="Attach question image"
                     >
-                      <ImageIcon size={14} />
-                      <span className="hidden sm:inline">Attach Problem</span>
+                      <ImageIcon size={14} aria-hidden="true" />
+                      <span className="hidden sm:inline">Image</span>
                     </button>
+                  </>
+                )}
 
-                    {/* Voice Dictation Button */}
-                    {speechSupported && (
-                      <button
-                        type="button"
-                        onClick={toggleVoiceInput}
-                        className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs transition-colors ${
-                          isRecording
-                            ? "border-red-500 bg-red-500/20 text-red-400 animate-pulse font-bold"
-                            : "border-white/10 bg-white/5 text-muted hover:text-white"
-                        }`}
-                        title="Voice dictation (Web Speech API)"
-                      >
-                        {isRecording ? <MicOff size={14} /> : <Mic size={14} />}
-                        <span className="hidden sm:inline">
-                          {isRecording ? "Listening..." : "Voice"}
-                        </span>
-                      </button>
+                {/* Voice input (only when supported by browser) */}
+                {speechSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleVoiceInput}
+                    aria-label={isRecording ? "Stop voice dictation" : "Start voice dictation"}
+                    className={`inline-flex min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] items-center justify-center rounded-lg border px-2 text-xs transition-colors cursor-pointer ${
+                      isRecording
+                        ? "border-red-500/60 bg-red-500/20 text-red-300"
+                        : "border-white/10 bg-[#18181D] text-neutral-300 hover:text-white"
+                    }`}
+                  >
+                    {isRecording ? (
+                      <MicOff size={15} aria-hidden="true" />
+                    ) : (
+                      <Mic size={15} aria-hidden="true" />
                     )}
-
-                    {/* Subject Filter Tag */}
-                    <select
-                      value={selectedSubject}
-                      onChange={(e) => setSelectedSubject(e.target.value)}
-                      className="rounded-xl border border-white/10 bg-black/60 px-2 py-1 text-xs text-muted hover:text-white focus:outline-none"
-                    >
-                      <option value="General">All Subjects</option>
-                      <option value="Math">Mathematics</option>
-                      <option value="Physics">Physics</option>
-                      <option value="Chemistry">Chemistry</option>
-                      <option value="Biology">Biology</option>
-                      <option value="Computer">Computer Science</option>
-                      <option value="English">English</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-mono text-muted">
-                      {inputText.length}/2000
-                    </span>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={isGenerating || (!inputText.trim() && !attachedImage)}
-                      className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 font-heading text-xs font-black text-black shadow-glow transition-all hover:bg-accent/90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 size={13} className="animate-spin text-black" />
-                          <span>Solving...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Ask AI</span>
-                          <Send size={12} />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                  </button>
+                )}
               </div>
-            </form>
-          </div>
-        </div>
 
-        {/* Educational Resources & Alternatives Footer */}
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-5 sm:p-6 text-xs text-muted">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="font-heading font-bold text-white text-sm">
-                Need Topper-Verified Answers While You Study?
-              </p>
-              <p className="mt-1 text-xs leading-relaxed">
-                Explore our manually written, examiner-checked subject blueprints, 605 marker presentation hacks, and solved past papers.
-              </p>
+              <div className="flex items-center gap-2.5 ml-auto">
+                {inputText.length > 0 && (
+                  <span className="text-[11px] font-mono tabular-nums text-neutral-500">
+                    {inputText.length}/2000
+                  </span>
+                )}
+
+                {isGenerating ? (
+                  <button
+                    type="button"
+                    onClick={handleStopGeneration}
+                    aria-label="Stop generating response"
+                    className="inline-flex min-h-[40px] sm:min-h-[36px] items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 text-xs font-semibold text-white hover:bg-white/15 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <Square size={12} className="fill-current" aria-hidden="true" />
+                    <span>Stop</span>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={!inputText.trim() && !(status.visionEnabled && attachedImage)}
+                    aria-label="Send question"
+                    className="inline-flex min-h-[40px] min-w-[44px] sm:min-h-[36px] items-center justify-center gap-1.5 rounded-xl bg-[#FFD60A] px-3.5 text-xs font-bold text-black hover:bg-[#FFD60A]/90 active:scale-[0.98] disabled:opacity-35 disabled:cursor-not-allowed transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <Send size={14} aria-hidden="true" />
+                    <span>Send</span>
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2.5 shrink-0">
-              <Link
-                href="/strategies"
-                className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white font-heading font-bold hover:border-accent hover:text-accent transition-colors"
-              >
-                Subject Strategies &rarr;
-              </Link>
-              <Link
-                href="/paper-hacks"
-                className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white font-heading font-bold hover:border-accent hover:text-accent transition-colors"
-              >
-                Paper Hacks &rarr;
-              </Link>
-              <Link
-                href="/past-papers"
-                className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white font-heading font-bold hover:border-accent hover:text-accent transition-colors"
-              >
-                Past Papers &rarr;
-              </Link>
-            </div>
-          </div>
+          </form>
+
+          <p className="mt-2 text-center text-[11px] text-neutral-500">
+            Chat history stays on this device · Please do not share personal IDs or phone numbers
+          </p>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

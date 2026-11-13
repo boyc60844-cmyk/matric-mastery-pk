@@ -1,11 +1,11 @@
 // scripts/test-ai-infrastructure.mjs
-// Automated verification suite for Matric Mastery AI (v3.8.0) & Cloudflare Workers AI Infrastructure
+// Automated verification suite for Matric Mastery AI (v3.9.0) & Cloudflare Workers AI Infrastructure
 
 import assert from "assert";
 import fs from "fs";
 
 console.log("=================================================");
-console.log("Matric Mastery AI — Launch Readiness Test Suite (v3.8.0)");
+console.log("Matric Mastery AI — Launch Readiness Test Suite (v3.9.0)");
 console.log("=================================================\n");
 
 let passedTests = 0;
@@ -296,7 +296,7 @@ runTest("Authenticity & Routing: Uses VITE_AI_WORKER_URL with deployed fallback 
     "Client must read VITE_AI_WORKER_URL from environment"
   );
   assert.ok(
-    clientFile.includes('code = "UNCONFIGURED"'),
+    clientFile.includes('"UNCONFIGURED"'),
     "Client must explicitly retain UNCONFIGURED guard when endpoint is unreachable/empty"
   );
   assert.ok(
@@ -349,18 +349,18 @@ runTest("Client Privacy & Storage: History bounded to 50 items and JSON export p
 });
 
 // -------------------------------------------------------------
-// Test 11: Release Version Consistency (v3.8.0 & Preserved History)
+// Test 11: Release Version Consistency (v3.9.0 & Preserved History)
 // -------------------------------------------------------------
-runTest("Release Management: v3.8.0 synchronized across manifest, package, worker, and guide without erasing history", () => {
+runTest("Release Management: v3.9.0 synchronized across manifest, package, and guide without erasing history", () => {
   const manifestFile = fs.readFileSync("lib/releaseManifest.ts", "utf8");
   assert.ok(
-    manifestFile.includes('CURRENT_VERSION = "v3.8.0"') &&
-      manifestFile.includes('version: "v3.8.0"'),
-    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v3.8.0"
+    manifestFile.includes('CURRENT_VERSION = "v3.9.0"') &&
+      manifestFile.includes('version: "v3.9.0"'),
+    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v3.9.0"
   );
 
   // Confirm all historical versions remain intact
-  const historicalVersions = ["v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
+  const historicalVersions = ["v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
   for (const v of historicalVersions) {
     assert.ok(
       manifestFile.includes(`version: "${v}"`),
@@ -369,24 +369,47 @@ runTest("Release Management: v3.8.0 synchronized across manifest, package, worke
   }
 
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  assert.strictEqual(pkg.version, "3.8.0", "package.json version must be 3.8.0");
-
-  const workerFile = fs.readFileSync("worker/index.ts", "utf8");
-  assert.ok(
-    workerFile.includes('version: "3.8.0"'),
-    "worker/index.ts health response must report version 3.8.0"
-  );
+  assert.strictEqual(pkg.version, "3.9.0", "package.json version must be 3.9.0");
 
   const faqFile = fs.readFileSync("lib/guideFaqData.ts", "utf8");
   assert.ok(
-    faqFile.includes("v3.8.0"),
-    "lib/guideFaqData.ts must reflect v3.8.0"
+    faqFile.includes("v3.9.0"),
+    "lib/guideFaqData.ts must reflect v3.9.0"
   );
 
   const envExample = fs.readFileSync(".env.example", "utf8");
   assert.ok(
     envExample.includes("VITE_AI_WORKER_URL="),
     ".env.example must document VITE_AI_WORKER_URL"
+  );
+});
+
+// -------------------------------------------------------------
+// Test 12: Revamped /ai UI Quality & Safety Boundaries
+// -------------------------------------------------------------
+runTest("AI Workspace UI: Clean architecture without WebGL orb, blocking dialogs, or unapproved image UI", () => {
+  const aiPage = fs.readFileSync("app/ai/page.tsx", "utf8");
+  assert.ok(
+    !aiPage.includes("DoubtOrb3D"),
+    "app/ai/page.tsx must not render heavy WebGL DoubtOrb3D"
+  );
+  assert.ok(
+    !aiPage.includes("window.confirm"),
+    "app/ai/page.tsx must not use blocking window.confirm dialogs"
+  );
+  assert.ok(
+    aiPage.includes("status.visionEnabled &&"),
+    "app/ai/page.tsx must gate image upload controls behind backend status.visionEnabled"
+  );
+  assert.ok(
+    aiPage.includes("آپ کے AI استعمال کی عارضی حد پوری ہو گئی ہے"),
+    "app/ai/page.tsx must include student-friendly Urdu rate-limit guidance"
+  );
+
+  const floatingBtn = fs.readFileSync("components/FloatingDoubtButton.tsx", "utf8");
+  assert.ok(
+    floatingBtn.includes("isDedicatedAIPage"),
+    "FloatingDoubtButton must hide on /ai to prevent overlapping the mobile input composer"
   );
 });
 

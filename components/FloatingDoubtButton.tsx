@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
+import { usePathname } from "@/src/context/RouterContext";
 import DoubtSolverModal from "./DoubtSolverModal";
 
 export default function FloatingDoubtButton() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isHiddenByOverlay, setIsHiddenByOverlay] = useState(false);
+
+  const normalizedPath = pathname.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+  const isDedicatedAIPage =
+    normalizedPath === "/ai" ||
+    normalizedPath === "/matric-ai" ||
+    normalizedPath === "/doubt-solver";
 
   useEffect(() => {
     const checkOverlay = () => {
@@ -39,6 +47,10 @@ export default function FloatingDoubtButton() {
       window.removeEventListener("mm:menu-toggle", handleMenuToggle);
     };
   }, []);
+
+  if (isDedicatedAIPage) {
+    return null;
+  }
 
   return (
     <>

@@ -22,9 +22,9 @@ export interface WeeklyUpgradePolicy {
   verificationStandard: string;
 }
 
-export const CURRENT_VERSION = "v3.8.0";
+export const CURRENT_VERSION = "v3.9.0";
 export const CURRENT_RELEASE_DATE = "November 2026";
-export const CURRENT_RELEASE_CODENAME = "Matric Mastery AI & Free-First Workers Infrastructure";
+export const CURRENT_RELEASE_CODENAME = "Matric Mastery AI Workspace Revamp";
 
 export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
   cycle: "Targeted Weekly Iterations During Active Academic Cycles",
@@ -73,6 +73,29 @@ export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: "v3.9.0",
+    codename: "Matric Mastery AI Workspace Revamp",
+    releaseDate: "November 2026",
+    status: "released",
+    category: "Major System",
+    summary:
+      "Redesigned the dedicated /ai workspace into a distraction-free, mobile-first tutoring interface connected live to Cloudflare Workers AI, featuring curated Class 9–10 starter questions, improved math and Urdu RTL rendering, and student-friendly error handling.",
+    features: [
+      "Redesigned /ai with a compact header showing real backend availability from /api/ai/health, a centered conversation workspace, and a sticky mobile-safe input composer.",
+      "Added curated Class 9–10 starter prompts across Mathematics, Physics, Chemistry, and Biology in both English (default) and Pakistani Urdu.",
+      "Upgraded AIMarkdownRenderer with isolated LTR mathematical expressions inside Urdu RTL text, fenced C/code blocks, and horizontally scrollable comparison tables.",
+      "Added explicit student-friendly handling for HTTP 429 rate limits (including Pakistani Urdu guidance), network drops, server errors, and prompt-length bounds without exposing raw technical traces.",
+      "Configured VITE_AI_WORKER_URL fallback to the deployed Worker endpoint (https://matric-mastery-ai-worker.boyc60844.workers.dev) with automatic multi-turn history bounding (last 10 non-error messages, <=2000 chars per turn).",
+    ],
+    improvements: [
+      "Removed WebGL DoubtOrb3D from /ai, duplicate status banners, raw model-ID badges, and blocking window.confirm dialogs in favor of inline reset confirmation and stop-generation controls.",
+      "Gated image attachment UI behind live backend visionEnabled === true status so unapproved vision paths are not exposed in /ai.",
+      "Hid the floating bottom-right Ask AI Doubt button while viewing /ai so it never overlaps the mobile Send button.",
+    ],
+    notes:
+      "Live text inference verified against the deployed Cloudflare Worker (@cf/meta/llama-3.1-8b-instruct-fast); multimodal image inference remains paused until parent/guardian license approval.",
+  },
   {
     version: "v3.8.0",
     codename: "Matric Mastery AI & Free-First Workers Infrastructure",

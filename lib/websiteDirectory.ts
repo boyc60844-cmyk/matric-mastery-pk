@@ -229,27 +229,26 @@ export const DIRECTORY_MODULES: DirectoryModule[] = [
   },
   {
     id: "ai",
-    name: "Matric Mastery AI — Academic Companion",
+    name: "Matric Mastery AI — Study Tutor",
     urduName: "میٹرک ماسٹری اے آئی",
     href: "/ai",
     category: "intelligence",
     badge: "Free-First AI",
-    tagline: "Dedicated AI tutor workspace for step-by-step problem solving, derivations, and local study history.",
+    tagline: "Focused AI tutoring workspace with Math/Science formatting, Pakistani Urdu RTL support, and local chat history.",
     purpose:
-      "A dedicated, privacy-first academic workspace prepared for Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast for text queries; @cf/meta/llama-3.2-11b-vision-instruct kept separate pending adult license approval) without commercial tracking or subscription fees.",
+      "A distraction-free academic tutoring workspace connected to Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast for text queries) without commercial tracking, subscriptions, or paid upsells.",
     whatYouWillFind: [
-      "Text academic solver configured for Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast) when connected via VITE_AI_WORKER_URL.",
-      "Separated multimodal image interface (@cf/meta/llama-3.2-11b-vision-instruct) gated off by default until parent/guardian Meta license approval.",
-      "Strict student privacy: zero server retention of prompts, no tracking cookies, and zero commercial telemetry.",
-      "Free-First architecture: engineered for Cloudflare's 10,000 daily free Neurons allocation (~563 realistic daily queries) without credit cards or paid fallbacks.",
-      "Transparent status indicators: distinguishes between connected streaming, quota exhaustion (HTTP 429), vision pending approval, and unconfigured states.",
-      "Local-only session storage: save and export your study conversations as JSON without cloud leaks.",
+      "Clean, mobile-first tutoring workspace with live backend availability checks, New Chat reset, and Stop/Retry controls.",
+      "Curated Class 9–10 example prompts for Mathematics, Physics, Chemistry, and Biology in English (default) and Pakistani Urdu.",
+      "Accurate academic Urdu RTL rendering with isolated LTR formulas, C code blocks, and scrollable comparison tables.",
+      "Strict student privacy: zero server retention of prompts, no tracking cookies, and local-only JSON session exports.",
+      "Image/diagram inference remains disabled by default unless enabled after parent/guardian license review.",
     ],
     whenToUse:
-      "When stuck on a challenging numerical, derivation, or diagram late at night while studying at home.",
+      "Whenever you need a clear, step-by-step syllabus explanation, derivation, or balanced chemical equation while studying.",
     proTips: [
-      "Use the Subject filter tag (Math, Physics, Chemistry) for more focused and concise board-standard steps.",
-      "Never upload personal identity documents (CNIC, roll number slips) — use the tool solely for academic textbook questions.",
+      "Choose your subject (Mathematics, Physics, Chemistry, Biology) and English/Urdu mode right inside the composer before sending.",
+      "Never enter personal identity numbers or phone numbers — keep questions focused on Class 9–10 syllabus concepts.",
     ],
     connectedPages: [
       { name: "Subject Strategies", href: "/strategies" },

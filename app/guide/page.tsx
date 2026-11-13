@@ -897,11 +897,15 @@ export default function WebsiteGuidePage() {
                 2. Matric Mastery AI Best Practices
               </span>
               <p className="text-neutral-300 leading-relaxed">
-                Ask specific questions (including your Class 9 or 10 board subject)
-                rather than vague chapter names. Always cross-check worked
+                Select your Class 9 or 10 subject and preferred language
+                (English or Urdu) in{" "}
+                <Link href="/ai" className="text-accent hover:underline">
+                  /ai
+                </Link>{" "}
+                before asking a specific question. Always cross-check worked
                 mathematical steps against your official Punjab Textbook Board
-                syllabus. Image diagram inference remains separated until adult
-                license approval is completed on deployment.
+                syllabus. Image diagram inference remains paused unless enabled
+                after adult license approval.
               </p>
             </div>
 
