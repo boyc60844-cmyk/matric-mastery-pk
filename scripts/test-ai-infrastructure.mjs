@@ -1,11 +1,11 @@
 // scripts/test-ai-infrastructure.mjs
-// Automated verification suite for Matric Mastery AI (v4.0.0) & Cloudflare Workers AI Infrastructure
+// Automated verification suite for Matric Mastery AI (v4.1.0) & Cloudflare Workers AI Infrastructure
 
 import assert from "assert";
 import fs from "fs";
 
 console.log("=================================================");
-console.log("Matric Mastery AI — Launch Readiness Test Suite (v4.0.0)");
+console.log("Matric Mastery AI — Launch Readiness Test Suite (v4.1.0)");
 console.log("=================================================\n");
 
 let passedTests = 0;
@@ -349,18 +349,18 @@ runTest("Client Privacy & Storage: History bounded to 50 items and JSON export p
 });
 
 // -------------------------------------------------------------
-// Test 11: Release Version Consistency (v4.0.0 & Preserved History)
+// Test 11: Release Version Consistency (v4.1.0 & Preserved History)
 // -------------------------------------------------------------
-runTest("Release Management: v4.0.0 synchronized across manifest, package, and guide without erasing history", () => {
+runTest("Release Management: v4.1.0 synchronized across manifest, package, and guide without erasing history", () => {
   const manifestFile = fs.readFileSync("lib/releaseManifest.ts", "utf8");
   assert.ok(
-    manifestFile.includes('CURRENT_VERSION = "v4.0.0"') &&
-      manifestFile.includes('version: "v4.0.0"'),
-    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v4.0.0"
+    manifestFile.includes('CURRENT_VERSION = "v4.1.0"') &&
+      manifestFile.includes('version: "v4.1.0"'),
+    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v4.1.0"
   );
 
   // Confirm all historical versions remain intact
-  const historicalVersions = ["v3.9.0", "v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
+  const historicalVersions = ["v4.0.0", "v3.9.0", "v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
   for (const v of historicalVersions) {
     assert.ok(
       manifestFile.includes(`version: "${v}"`),
@@ -369,12 +369,12 @@ runTest("Release Management: v4.0.0 synchronized across manifest, package, and g
   }
 
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  assert.strictEqual(pkg.version, "4.0.0", "package.json version must be 4.0.0");
+  assert.strictEqual(pkg.version, "4.1.0", "package.json version must be 4.1.0");
 
   const faqFile = fs.readFileSync("lib/guideFaqData.ts", "utf8");
   assert.ok(
-    faqFile.includes("v4.0.0"),
-    "lib/guideFaqData.ts must reflect v4.0.0"
+    faqFile.includes("v4.1.0"),
+    "lib/guideFaqData.ts must reflect v4.1.0"
   );
 
   const envExample = fs.readFileSync(".env.example", "utf8");
@@ -421,6 +421,52 @@ runTest("AI Workspace UI: Independent transcript scroll, educational guides, Fre
   assert.ok(
     floatingBtn.includes("isDedicatedAIPage"),
     "FloatingDoubtButton must hide on /ai to prevent overlapping the mobile input composer"
+  );
+});
+
+// -------------------------------------------------------------
+// Test 13: AI Experience 2.0 Modules (Conversations, Preferences, Voice, Rich Markdown)
+// -------------------------------------------------------------
+runTest("AI Experience 2.0: Multi-chat persistence, personalization, voice & rich markdown rendering", () => {
+  const clientFile = fs.readFileSync("lib/aiClient.ts", "utf8");
+  assert.ok(
+    clientFile.includes("loadConversationsState") &&
+      clientFile.includes("saveConversationsState") &&
+      clientFile.includes("MAX_LOCAL_CONVERSATIONS = 20"),
+    "lib/aiClient.ts must support bounded multi-conversation persistence and backward-compatible migration"
+  );
+  assert.ok(
+    clientFile.includes("getAIPreferences") &&
+      clientFile.includes("saveAIPreferences") &&
+      clientFile.includes("mm_ai_preferences_v1"),
+    "lib/aiClient.ts must persist tutor personalization preferences locally"
+  );
+
+  assert.ok(fs.existsSync("components/ai/AIChatHistoryDrawer.tsx"), "components/ai/AIChatHistoryDrawer.tsx must exist");
+  assert.ok(fs.existsSync("components/ai/AIPreferencesPopover.tsx"), "components/ai/AIPreferencesPopover.tsx must exist");
+
+  const drawerFile = fs.readFileSync("components/ai/AIChatHistoryDrawer.tsx", "utf8");
+  assert.ok(
+    drawerFile.includes("pinned") && drawerFile.includes("confirmDeleteId") && !drawerFile.includes("window.confirm"),
+    "AIChatHistoryDrawer must support pinning and inline delete confirmation without window.confirm"
+  );
+
+  const markdownFile = fs.readFileSync("components/AIMarkdownRenderer.tsx", "utf8");
+  assert.ok(
+    markdownFile.includes("Copy code") &&
+      markdownFile.includes("Copy section") &&
+      markdownFile.includes("unicode-bidi:isolate") &&
+      markdownFile.includes("isStreaming"),
+    "AIMarkdownRenderer must include Copy code, Copy section, RTL math isolation, and streaming guard"
+  );
+
+  const aiPage = fs.readFileSync("app/ai/page.tsx", "utf8");
+  assert.ok(
+    aiPage.includes('capture="environment"') &&
+      aiPage.includes("speechSynthesis") &&
+      aiPage.includes("voiceErrorRef") &&
+      aiPage.includes("Image understanding is paused until a parent/guardian accepts the Meta vision license"),
+    "app/ai/page.tsx must include camera capture, optional TTS, safe STT error handling, and honest disabled-vision preview"
   );
 });
 

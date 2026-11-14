@@ -22,10 +22,10 @@ export interface WeeklyUpgradePolicy {
   verificationStandard: string;
 }
 
-export const CURRENT_VERSION = "v4.0.0";
+export const CURRENT_VERSION = "v4.1.0";
 export const CURRENT_RELEASE_DATE = "November 2026";
 export const CURRENT_RELEASE_CODENAME =
-  "Matric Mastery AI Tutoring Destination & Independent Scroll";
+  "Matric Mastery AI Experience 2.0";
 
 export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
   cycle: "Targeted Weekly Iterations During Active Academic Cycles",
@@ -74,6 +74,28 @@ export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: "v4.1.0",
+    codename: "Matric Mastery AI Experience 2.0",
+    releaseDate: "November 2026",
+    status: "released",
+    category: "Major System",
+    summary:
+      "Upgraded the /ai tutoring workspace with local multi-conversation management, personalization settings, interactive voice dictation & Read-Aloud audio, enhanced math/code/section formatting, and local photo preview with transparent vision availability — while keeping the deployed Cloudflare Workers AI backend and @cf/meta/llama-3.1-8b-instruct-fast model unchanged.",
+    features: [
+      "Added local Multi-Conversation Manager drawer with title/message search, subject filtering, pinned-first sorting, inline Rename, Pin/Unpin, inline Delete confirmation, and lossless backward-compatible migration from v1 chat history.",
+      "Added Tutor Personalization Settings persisted locally on-device: Default Language (English / Urdu), Class Level (Class 9 / Class 10), Explanation Length (Short / Balanced / Detailed), and Answer Presentation (Step-by-step / Exam-style / Conceptual).",
+      "Added enhanced Voice Interaction: click-triggered Web Speech dictation with live editable transcript and Cancel control, plus optional per-answer Read Aloud (Stop/Listen) matching English or Urdu.",
+      "Upgraded AIMarkdownRenderer with stacked fractions, superscripts/subscripts, isolated LTR equations in Urdu RTL replies, syntax-highlighted code blocks with Copy code, structured section collapse/Copy section toggles, and long-answer collapse after streaming.",
+      "Added unified composer Tools menu supporting gallery upload and mobile camera capture previews (JPEG/PNG/WebP up to 4 MB) with Replace/Remove and honest status explaining vision remains paused until guardian Meta license acceptance.",
+    ],
+    improvements: [
+      "Preserved independent #ai-transcript-scroll containment, mobile keyboard alignment, 44px touch targets, JSON export, and protected Cloudflare Workers AI routing (@cf/meta/llama-3.1-8b-instruct-fast).",
+      "Bounded local storage to 20 saved chats and 50 messages per chat with automatic quota recovery prioritizing active and pinned sessions.",
+    ],
+    notes:
+      "Frontend experience upgrade verified against existing Cloudflare Workers AI architecture; multimodal vision inference (@cf/meta/llama-3.2-11b-vision-instruct) remains paused pending parent/guardian license approval.",
+  },
   {
     version: "v4.0.0",
     codename: "Matric Mastery AI Tutoring Destination & Independent Scroll",

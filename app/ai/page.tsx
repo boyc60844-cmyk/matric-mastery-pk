@@ -1,10 +1,11 @@
 /* ==========================================================================
-   MATRIC MASTERY AI — COMPLETE TUTORING DESTINATION (/ai) (v4.0.0)
-   - Genuine two-region independent scrolling (outer page vs transcript log)
-   - Smart transcript auto-scroll that preserves older-message reading position
-   - Structured subject coverage, 7-step guide, interactive prompt templates,
-     practical tips, and accurate "Free AI Access — Usage Information"
-   - Routes 100% of inference through Cloudflare Workers AI (lib/aiClient.ts)
+   MATRIC MASTERY AI — AI EXPERIENCE 2.0 (/ai) (v4.1.0)
+   - Preserves Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast)
+   - Independent outer-page & transcript scrolling (#ai-transcript-scroll)
+   - Local multi-conversation manager (search, filter, rename, pin, delete)
+   - Personalization settings (language, class 9/10, length, answer style)
+   - Browser STT with cancel/review + optional Read-Aloud TTS
+   - Unified composer attachment menu with honest disabled-vision preview
    ========================================================================== */
 
 "use client";
@@ -15,6 +16,7 @@ import {
   Square,
   Loader2,
   Image as ImageIcon,
+  Camera,
   X,
   Copy,
   Check,
@@ -31,20 +33,33 @@ import {
   ArrowDown,
   ArrowUpRight,
   RefreshCw,
+  History,
+  SlidersHorizontal,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import Link from "next/link";
 import AIMarkdownRenderer from "@/components/AIMarkdownRenderer";
+import AIChatHistoryDrawer from "@/components/ai/AIChatHistoryDrawer";
+import AIPreferencesPopover from "@/components/ai/AIPreferencesPopover";
 import {
   AIChatMessage,
+  AIConversation,
   AIErrorKind,
+  AIPreferences,
   AIRequestError,
   AIStatus,
+  DEFAULT_AI_PREFERENCES,
   checkAIStatus,
-  sendAIMessage,
-  getLocalChatHistory,
-  saveLocalChatHistory,
-  clearLocalChatHistory,
+  createConversationRecord,
+  deriveConversationSubject,
+  deriveConversationTitle,
   exportChatHistoryAsJSON,
+  getAIPreferences,
+  loadConversationsState,
+  saveAIPreferences,
+  saveConversationsState,
+  sendAIMessage,
 } from "@/lib/aiClient";
 import { addXP } from "@/lib/progress";
 
@@ -68,6 +83,8 @@ interface InteractivePromptTemplate {
   language?: "en" | "ur";
   helper: string;
 }
+
+type VoiceState = "idle" | "listening" | "processing" | "error";
 
 const STARTER_QUESTIONS: StarterQuestion[] = [
   {
@@ -219,18 +236,35 @@ const BETTER_ANSWER_TIPS = [
 
 const FREE_ACCESS_POINTS = [
   "Matric Mastery AI currently uses a free-tier AI service.",
-  "Usage is subject to provider limits and shared daily capacity.",
-  "The AI may occasionally respond slowly.",
-  "During heavy usage, students may temporarily encounter a usage-limit message.",
-  "Availability is not guaranteed at every moment.",
+  "Usage is subject to shared provider capacity and applicable free-tier limits.",
+  "The AI may occasionally respond slowly during busy hours.",
+  "During heavy demand, students may temporarily see a usage-limit message.",
+  "A healthy backend status does not always guarantee instant inference capacity.",
   "A temporary limit does not mean the website or student's account is broken.",
-  "Students should wait and try again later.",
+  "Students should wait and try again shortly.",
 ];
 
 const URDU_CHAR_REGEX = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
 
 function isUrduText(text: string): boolean {
   return URDU_CHAR_REGEX.test(text);
+}
+
+function stripMarkdownForSpeech(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, " Code example included on screen. ")
+    .replace(/\$\$([^$]+)\$\$/g, "$1")
+    .replace(/\$([^$]+)\$/g, "$1")
+    .replace(/[#*_`>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function getStudentFriendlyError(
@@ -282,10 +316,18 @@ function getStudentFriendlyError(
 }
 
 export default function AIPage() {
+  // Conversation collection & active conversation state
+  const [conversations, setConversations] = useState<AIConversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>("");
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
+
+  // Composer & preferences
   const [inputText, setInputText] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("General");
-  const [languageMode, setLanguageMode] = useState<"en" | "ur">("en");
+  const [preferences, setPreferences] = useState<AIPreferences>(DEFAULT_AI_PREFERENCES);
+  const languageMode = preferences.language;
+
+  // Network / Worker state
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
   const [status, setStatus] = useState<AIStatus>({
@@ -296,27 +338,42 @@ export default function AIPage() {
     visionEnabled: false,
   });
 
-  // Image attachment state (active only if backend genuinely reports visionEnabled === true)
+  // Attachment state (preview supported locally; image payload sent ONLY if status.visionEnabled === true)
   const [attachedImage, setAttachedImage] = useState<{
     previewUrl: string;
     mimeType: string;
     base64: string;
+    fileName: string;
+    fileSize: number;
   } | null>(null);
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
+  const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
+  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+
+  // Voice STT & TTS states
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [ttsSupported, setTtsSupported] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
 
   // UI interactions & independent transcript scroll tracking
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatWorkspaceRef = useRef<HTMLDivElement>(null);
   const composerDockRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const toolsMenuRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const voiceBaseTextRef = useRef<string>("");
+  const voiceCancelledRef = useRef<boolean>(false);
+  const voiceErrorRef = useRef<boolean>(false);
   const isSubmittingRef = useRef(false);
   const shouldAutoScrollRef = useRef(true);
 
@@ -330,23 +387,91 @@ export default function AIPage() {
     }
   }, []);
 
-  // Load status, local history, and browser speech support
+  // Load status, saved multi-conversation history (migrating v1 if present), preferences & Web Speech APIs
   useEffect(() => {
     refreshHealthStatus();
 
-    const savedHistory = getLocalChatHistory();
-    if (savedHistory.length > 0) {
-      setMessages(savedHistory);
+    const loadedPrefs = getAIPreferences();
+    setPreferences(loadedPrefs);
+
+    const loadedState = loadConversationsState();
+    setConversations(loadedState.conversations);
+    setActiveConversationId(loadedState.activeId);
+    const activeConv = loadedState.conversations.find(
+      (c) => c.id === loadedState.activeId
+    );
+    setMessages(activeConv?.messages || []);
+    if (activeConv?.subject) {
+      setSelectedSubject(activeConv.subject);
     }
 
     if (typeof window !== "undefined") {
       const hasSpeech =
         "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
       setSpeechSupported(Boolean(hasSpeech));
+      setTtsSupported("speechSynthesis" in window);
     }
+
+    return () => {
+      try {
+        recognitionRef.current?.abort?.();
+      } catch {
+        // ignore cleanup error
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, [refreshHealthStatus]);
 
-  // Auto-resize composer textarea cleanly (starts at 2 lines, grows up to ~6 lines, then scrolls)
+  // Close unified tools menu on outside click / Escape
+  useEffect(() => {
+    if (!toolsMenuOpen) return;
+    const handleOutside = (event: MouseEvent) => {
+      if (
+        toolsMenuRef.current &&
+        !toolsMenuRef.current.contains(event.target as Node)
+      ) {
+        setToolsMenuOpen(false);
+      }
+    };
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setToolsMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [toolsMenuOpen]);
+
+  // Persist helper keeping state & LocalStorage synchronized
+  const commitConversations = useCallback(
+    (nextConversations: AIConversation[], nextActiveId: string) => {
+      setConversations(nextConversations);
+      setActiveConversationId(nextActiveId);
+      saveConversationsState({
+        activeId: nextActiveId,
+        conversations: nextConversations,
+      });
+    },
+    []
+  );
+
+  const updatePreferences = useCallback((next: AIPreferences) => {
+    setPreferences(next);
+    saveAIPreferences(next);
+  }, []);
+
+  const setLanguageMode = useCallback(
+    (lang: "en" | "ur") => {
+      updatePreferences({ ...preferences, language: lang });
+    },
+    [preferences, updatePreferences]
+  );
+
+  // Auto-resize composer textarea cleanly
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -390,7 +515,7 @@ export default function AIPage() {
     []
   );
 
-  // Track user's scroll position inside the transcript to avoid interrupting reading older messages
+  // Preserve reading position when scrolling through older messages
   const handleTranscriptScroll = useCallback(() => {
     const el = transcriptRef.current;
     if (!el) return;
@@ -400,7 +525,6 @@ export default function AIPage() {
     setShowScrollToLatest(!nearBottom && messages.length > 0);
   }, [messages.length]);
 
-  // Update transcript scroll only when appropriate (student is near bottom or explicitly submitted)
   useEffect(() => {
     if (messages.length === 0) {
       setShowScrollToLatest(false);
@@ -417,18 +541,26 @@ export default function AIPage() {
     return () => window.cancelAnimationFrame(rafId);
   }, [messages, isGenerating, scrollTranscriptToBottom]);
 
+  // Attachment validation & preview
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    setToolsMenuOpen(false);
     if (!file) return;
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      setComposerNotice("Please attach a JPEG, PNG, or WebP image.");
+      setComposerNotice(
+        `Unsupported format (${file.type || "unknown"}). Please select a JPEG, PNG, or WebP image.`
+      );
+      e.target.value = "";
       return;
     }
 
     if (file.size > 4 * 1024 * 1024) {
-      setComposerNotice("Image must be smaller than 4 MB.");
+      setComposerNotice(
+        `Selected image is ${formatFileSize(file.size)}. Maximum allowed size is 4 MB.`
+      );
+      e.target.value = "";
       return;
     }
 
@@ -442,8 +574,13 @@ export default function AIPage() {
           mimeType: match[1],
           base64: match[2],
           previewUrl: resultStr,
+          fileName: file.name,
+          fileSize: file.size,
         });
       }
+    };
+    reader.onerror = () => {
+      setComposerNotice("Could not read the selected image file. Please try another photo.");
     };
     reader.readAsDataURL(file);
   };
@@ -451,41 +588,207 @@ export default function AIPage() {
   const removeAttachedImage = () => {
     setAttachedImage(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
-  const toggleVoiceInput = () => {
-    if (!speechSupported) return;
+  // Speech-to-Text with clear states & cancellation
+  const cancelVoiceInput = useCallback(() => {
+    voiceCancelledRef.current = true;
+    try {
+      recognitionRef.current?.abort?.();
+    } catch {
+      // ignore
+    }
+    recognitionRef.current = null;
+    setInputText(voiceBaseTextRef.current);
+    setVoiceState("idle");
+    setVoiceFeedback(null);
+  }, []);
 
-    if (isRecording) {
-      setIsRecording(false);
+  const toggleVoiceInput = () => {
+    if (!speechSupported) {
+      setVoiceState("error");
+      setVoiceFeedback(
+        languageMode === "ur"
+          ? "اس براؤزر میں وائس ٹائپنگ دستیاب نہیں ہے۔ براہ کرم اپنا سوال لکھیں۔"
+          : "Speech-to-text is not supported in this browser. Please type your question."
+      );
+      return;
+    }
+
+    if (voiceState === "listening" || voiceState === "processing") {
+      setVoiceState("processing");
+      try {
+        recognitionRef.current?.stop?.();
+      } catch {
+        setVoiceState("idle");
+      }
       return;
     }
 
     try {
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (!SpeechRecognition) return;
+      if (!SpeechRecognition) {
+        setVoiceState("error");
+        setVoiceFeedback("Speech recognition is unavailable in this browser.");
+        return;
+      }
 
       const recognition = new SpeechRecognition();
       recognition.lang = languageMode === "ur" ? "ur-PK" : "en-US";
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
 
-      recognition.onstart = () => setIsRecording(true);
-      recognition.onresult = (event: any) => {
-        const transcript = event.results?.[0]?.[0]?.transcript || "";
-        if (transcript) {
-          setInputText((prev) => (prev ? `${prev} ${transcript}` : transcript));
-        }
-        setIsRecording(false);
+      voiceCancelledRef.current = false;
+      voiceErrorRef.current = false;
+      voiceBaseTextRef.current = inputText.trim();
+      recognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setVoiceState("listening");
+        setVoiceFeedback(
+          languageMode === "ur"
+            ? "آواز سنی جا رہی ہے... بولنے کے بعد متن میں تبدیلی کر سکتے ہیں۔"
+            : "Listening... speak clearly, then review or edit before sending."
+        );
       };
-      recognition.onerror = () => setIsRecording(false);
-      recognition.onend = () => setIsRecording(false);
+
+      recognition.onresult = (event: any) => {
+        if (voiceCancelledRef.current) return;
+        let combined = "";
+        for (let i = 0; i < event.results.length; i++) {
+          combined += event.results[i][0]?.transcript || "";
+        }
+        const cleaned = combined.trim();
+        const base = voiceBaseTextRef.current;
+        if (cleaned) {
+          setInputText(base ? `${base} ${cleaned}` : cleaned);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        if (voiceCancelledRef.current) return;
+        const code = event?.error;
+        voiceErrorRef.current = true;
+        setVoiceState("error");
+        if (code === "not-allowed" || code === "service-not-allowed") {
+          setVoiceFeedback(
+            languageMode === "ur"
+              ? "مائیکروفون کی اجازت نہیں ملی۔ براؤزر سیٹنگز سے اجازت دیں یا سوال ٹائپ کریں۔"
+              : "Microphone permission was denied. Allow microphone access in browser settings or type your question."
+          );
+        } else if (code === "no-speech") {
+          setVoiceFeedback(
+            languageMode === "ur"
+              ? "کوئی آواز سنائی نہیں دی۔ دوبارہ کوشش کریں۔"
+              : "No speech detected. Try again closer to the microphone."
+          );
+        } else {
+          setVoiceFeedback("Voice recognition stopped unexpectedly. You can type or retry.");
+        }
+      };
+
+      recognition.onend = () => {
+        recognitionRef.current = null;
+        if (!voiceCancelledRef.current) {
+          if (voiceErrorRef.current) {
+            setVoiceState("error");
+          } else {
+            setVoiceState("idle");
+            setVoiceFeedback(null);
+          }
+          textareaRef.current?.focus();
+        }
+      };
+
       recognition.start();
     } catch {
-      setIsRecording(false);
+      setVoiceState("error");
+      setVoiceFeedback("Could not start microphone dictation on this device.");
     }
   };
+
+  // Optional Read-Aloud Text-to-Speech (never auto-plays)
+  const stopReadAloud = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingMessageId(null);
+  }, []);
+
+  const handleToggleReadAloud = (msgId: string, rawText: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || !ttsSupported) {
+      setComposerNotice("Read-aloud speech synthesis is unavailable in this browser.");
+      return;
+    }
+
+    if (speakingMessageId === msgId) {
+      stopReadAloud();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const spokenText = stripMarkdownForSpeech(rawText);
+    if (!spokenText) return;
+
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    utterance.lang = isUrduText(spokenText) ? "ur-PK" : "en-US";
+    utterance.rate = 0.98;
+    utterance.onend = () => setSpeakingMessageId(null);
+    utterance.onerror = () => setSpeakingMessageId(null);
+
+    setSpeakingMessageId(msgId);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Persist messages cleanly into active conversation record
+  const syncActiveMessages = useCallback(
+    (updatedMessages: AIChatMessage[], subjectForConv?: string) => {
+      setConversations((prevConvs) => {
+        const idx = prevConvs.findIndex((c) => c.id === activeConversationId);
+        const now = Date.now();
+        let nextConvs: AIConversation[];
+
+        if (idx >= 0) {
+          const current = prevConvs[idx];
+          const shouldAutoTitle =
+            current.title === "New Study Chat" ||
+            current.title === "Previous Study Session";
+          const nextTitle = shouldAutoTitle
+            ? deriveConversationTitle(updatedMessages, current.title)
+            : current.title;
+          const nextSubject =
+            updatedMessages.length > 0
+              ? deriveConversationSubject(updatedMessages)
+              : subjectForConv || current.subject;
+
+          const updatedConv: AIConversation = {
+            ...current,
+            title: nextTitle,
+            subject: nextSubject,
+            updatedAt: now,
+            messages: updatedMessages,
+          };
+          nextConvs = [...prevConvs];
+          nextConvs[idx] = updatedConv;
+        } else {
+          const created = createConversationRecord(
+            subjectForConv || "General",
+            updatedMessages
+          );
+          nextConvs = [created, ...prevConvs];
+        }
+
+        saveConversationsState({
+          activeId: activeConversationId,
+          conversations: nextConvs,
+        });
+        return nextConvs;
+      });
+    },
+    [activeConversationId]
+  );
 
   const executeGeneration = async ({
     historyForRequest,
@@ -507,6 +810,7 @@ export default function AIPage() {
         image: imagePayload,
         language: languageMode,
         subject: subjectOverride,
+        preferences,
         signal: abortController.signal,
         onChunk: (partialText) => {
           setMessages((prev) =>
@@ -537,14 +841,18 @@ export default function AIPage() {
               }
             : m
         );
-        saveLocalChatHistory(updated);
+        syncActiveMessages(updated, subjectOverride);
         return updated;
       });
 
       addXP(15, "Solved question with Matric Mastery AI");
     } catch (err: any) {
       if (err?.name === "AbortError") {
-        setMessages((prev) => prev.filter((m) => m.id !== placeholderId));
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => m.id !== placeholderId);
+          syncActiveMessages(filtered, subjectOverride);
+          return filtered;
+        });
         return;
       }
 
@@ -553,8 +861,8 @@ export default function AIPage() {
         setStatus((prev) => ({ ...prev, state: "quota_exhausted" }));
       }
 
-      setMessages((prev) =>
-        prev.map((m) =>
+      setMessages((prev) => {
+        const updated = prev.map((m) =>
           m.id === placeholderId
             ? {
                 ...m,
@@ -564,8 +872,10 @@ export default function AIPage() {
                 resetsAt: friendly.resetsAt,
               }
             : m
-        )
-      );
+        );
+        syncActiveMessages(updated, subjectOverride);
+        return updated;
+      });
     } finally {
       isSubmittingRef.current = false;
       setIsGenerating(false);
@@ -581,6 +891,14 @@ export default function AIPage() {
 
     const textToSend = (customPrompt !== undefined ? customPrompt : inputText).trim();
     const activeAttachment = status.visionEnabled ? attachedImage : null;
+
+    if (!textToSend && attachedImage && !status.visionEnabled) {
+      setComposerNotice(
+        "Image analysis is currently paused pending guardian Meta license approval. Please type your question in text or remove the photo preview."
+      );
+      return;
+    }
+
     if (!textToSend && !activeAttachment) return;
 
     if (textToSend.length > 2000) {
@@ -588,11 +906,13 @@ export default function AIPage() {
       return;
     }
 
+    stopReadAloud();
     isSubmittingRef.current = true;
     shouldAutoScrollRef.current = true;
     setShowScrollToLatest(false);
     setComposerNotice(null);
-    setConfirmClear(false);
+    setToolsMenuOpen(false);
+    setVoiceFeedback(null);
 
     const activeSubject = subjectOverride || selectedSubject;
     if (subjectOverride) {
@@ -604,7 +924,13 @@ export default function AIPage() {
       role: "user",
       content: textToSend || "Solve this question step by step.",
       timestamp: Date.now(),
-      image: activeAttachment || undefined,
+      image: activeAttachment
+        ? {
+            previewUrl: activeAttachment.previewUrl,
+            mimeType: activeAttachment.mimeType,
+            base64: activeAttachment.base64,
+          }
+        : undefined,
       subject: activeSubject,
     };
 
@@ -618,12 +944,18 @@ export default function AIPage() {
     };
 
     const nextHistory = [...messages, userMessage];
-    setMessages([...nextHistory, assistantPlaceholder]);
+    const nextWithPlaceholder = [...nextHistory, assistantPlaceholder];
+    setMessages(nextWithPlaceholder);
+    syncActiveMessages(nextHistory, activeSubject);
+
     if (customPrompt === undefined) {
       setInputText("");
     }
-    setAttachedImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (status.visionEnabled) {
+      setAttachedImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+    }
     setIsGenerating(true);
 
     await executeGeneration({
@@ -650,6 +982,7 @@ export default function AIPage() {
     const lastUser = precedingMessages[precedingMessages.length - 1];
     if (lastUser.role !== "user") return;
 
+    stopReadAloud();
     isSubmittingRef.current = true;
     shouldAutoScrollRef.current = targetIndex === messages.length - 1;
     setComposerNotice(null);
@@ -667,9 +1000,10 @@ export default function AIPage() {
       historyForRequest: precedingMessages,
       placeholderId: assistantMessageId,
       subjectOverride: lastUser.subject || selectedSubject,
-      imagePayload: lastUser.image
-        ? { mimeType: lastUser.image.mimeType, base64: lastUser.image.base64 }
-        : null,
+      imagePayload:
+        status.visionEnabled && lastUser.image
+          ? { mimeType: lastUser.image.mimeType, base64: lastUser.image.base64 }
+          : null,
     });
   };
 
@@ -677,17 +1011,81 @@ export default function AIPage() {
     abortControllerRef.current?.abort();
   };
 
+  // Multi-conversation handlers
   const handleStartNewChat = () => {
     if (isGenerating) {
       abortControllerRef.current?.abort();
     }
-    clearLocalChatHistory();
+    stopReadAloud();
+
+    // If current chat is already empty, just focus composer
+    if (messages.length === 0) {
+      textareaRef.current?.focus();
+      return;
+    }
+
+    const fresh = createConversationRecord(selectedSubject);
+    const nonEmptyOthers = conversations.filter((c) => c.messages.length > 0);
+    const nextList = [fresh, ...nonEmptyOthers];
+    commitConversations(nextList, fresh.id);
     setMessages([]);
-    setConfirmClear(false);
     setComposerNotice(null);
     setShowScrollToLatest(false);
     shouldAutoScrollRef.current = true;
     textareaRef.current?.focus();
+  };
+
+  const handleSelectConversation = (id: string) => {
+    if (isGenerating) {
+      abortControllerRef.current?.abort();
+    }
+    stopReadAloud();
+
+    const target = conversations.find((c) => c.id === id);
+    if (!target) return;
+
+    // Drop stale completely empty unsaved placeholder threads except selected
+    const cleaned = conversations.filter((c) => c.id === id || c.messages.length > 0);
+    commitConversations(cleaned, id);
+    setMessages(target.messages);
+    if (target.subject) setSelectedSubject(target.subject);
+    setComposerNotice(null);
+    setShowScrollToLatest(false);
+    shouldAutoScrollRef.current = true;
+  };
+
+  const handleRenameConversation = (id: string, nextTitle: string) => {
+    const next = conversations.map((c) =>
+      c.id === id ? { ...c, title: nextTitle } : c
+    );
+    commitConversations(next, activeConversationId);
+  };
+
+  const handleTogglePinConversation = (id: string) => {
+    const next = conversations.map((c) =>
+      c.id === id ? { ...c, pinned: !c.pinned } : c
+    );
+    commitConversations(next, activeConversationId);
+  };
+
+  const handleDeleteConversation = (id: string) => {
+    const remaining = conversations.filter((c) => c.id !== id);
+    if (id === activeConversationId) {
+      stopReadAloud();
+      if (remaining.length === 0) {
+        const fresh = createConversationRecord();
+        commitConversations([fresh], fresh.id);
+        setMessages([]);
+      } else {
+        const nextActive = remaining[0];
+        commitConversations(remaining, nextActive.id);
+        setMessages(nextActive.messages);
+      }
+      shouldAutoScrollRef.current = true;
+      setShowScrollToLatest(false);
+    } else {
+      commitConversations(remaining, activeConversationId);
+    }
   };
 
   const handleCopyMessage = (id: string, text: string) => {
@@ -707,7 +1105,11 @@ export default function AIPage() {
 
   const handleExportJSON = () => {
     if (messages.length === 0) return;
-    const jsonStr = exportChatHistoryAsJSON(messages);
+    const activeConv = conversations.find((c) => c.id === activeConversationId);
+    const jsonStr = exportChatHistoryAsJSON(
+      messages,
+      activeConv?.title || "Matric Mastery AI Study Session"
+    );
     const blob = new Blob([jsonStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -740,6 +1142,7 @@ export default function AIPage() {
   };
 
   const isUrduUI = languageMode === "ur";
+  const savedNonEmptyCount = conversations.filter((c) => c.messages.length > 0).length;
 
   const statusDisplay = statusLoading
     ? {
@@ -754,7 +1157,7 @@ export default function AIPage() {
           shortLabel: "Backend Available · Free-Tier Operational",
           tone: "text-emerald-400",
           detail:
-            "Backend available and operating on shared free-tier capacity (subject to provider limits).",
+            "Backend reachable on shared free-tier capacity (availability depends on provider capacity).",
         }
       : status.state === "quota_exhausted"
         ? {
@@ -771,6 +1174,17 @@ export default function AIPage() {
             detail:
               "Unable to reach the AI backend right now. Use Refresh Status or Retry to check again.",
           };
+
+  const prefSummaryLabel = `Class ${preferences.classLevel} · ${
+    preferences.explanationLength.charAt(0).toUpperCase() +
+    preferences.explanationLength.slice(1)
+  } · ${
+    preferences.presentationStyle === "step-by-step"
+      ? "Step-by-step"
+      : preferences.presentationStyle === "exam-style"
+        ? "Exam-style"
+        : "Conceptual"
+  }`;
 
   return (
     <div className="w-full bg-[#0A0A0A] text-white">
@@ -837,11 +1251,11 @@ export default function AIPage() {
         <div
           ref={chatWorkspaceRef}
           id="ai-chat-workspace"
-          className="scroll-mt-20 mx-auto flex h-[90dvh] min-h-[300px] w-full max-w-[760px] flex-col overflow-hidden bg-[#0A0A0A]"
+          className="scroll-mt-20 mx-auto flex h-[90dvh] min-h-[420px] w-full max-w-[760px] flex-col overflow-hidden bg-[#0A0A0A]"
         >
           {/* A. Clean Chat Top Bar */}
-          <header className="shrink-0 w-full border-b border-white/[0.06] bg-[#0A0A0A] px-4 py-3 sm:px-6 sm:py-3.5">
-            <div className="flex items-center justify-between gap-3">
+          <header className="shrink-0 w-full border-b border-white/[0.06] bg-[#0A0A0A] px-3 sm:px-6 py-3">
+            <div className="flex items-center justify-between gap-2 sm:gap-3">
               <div className="flex items-start gap-2.5 min-w-0 flex-1">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFD60A] text-black">
                   <GraduationCap size={18} strokeWidth={2.2} />
@@ -851,8 +1265,6 @@ export default function AIPage() {
                     Matric Mastery AI
                   </h1>
                   <div className="mt-0.5 flex flex-wrap items-start gap-x-1.5 text-xs leading-snug text-neutral-400">
-                    <span className="hidden sm:inline shrink-0">Class 9–10 Study Tutor</span>
-                    <span className="hidden sm:inline shrink-0" aria-hidden="true">·</span>
                     {statusLoading ? (
                       <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                     ) : status.state === "ready" ? (
@@ -875,12 +1287,43 @@ export default function AIPage() {
                         <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                       </button>
                     )}
+                    <span className="hidden sm:inline text-neutral-600" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="hidden sm:inline text-neutral-400">{prefSummaryLabel}</span>
                   </div>
                 </div>
               </div>
 
               {/* Workspace Actions */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setHistoryDrawerOpen(true)}
+                  aria-label="Open saved chat history"
+                  title="Saved study chats"
+                  className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <History size={15} aria-hidden="true" />
+                  <span className="hidden sm:inline">Chats</span>
+                  {savedNonEmptyCount > 0 && (
+                    <span className="font-mono text-[11px] tabular-nums text-[#FFD60A]">
+                      {savedNonEmptyCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPreferencesOpen(true)}
+                  aria-label="Open tutor preferences"
+                  title="Tutor personalization settings"
+                  className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <SlidersHorizontal size={15} aria-hidden="true" />
+                  <span className="hidden md:inline">Preferences</span>
+                </button>
+
                 {messages.length > 0 && (
                   <button
                     type="button"
@@ -890,48 +1333,22 @@ export default function AIPage() {
                     className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     <Download size={15} aria-hidden="true" />
-                    <span className="hidden sm:inline">Download</span>
+                    <span className="hidden md:inline">Download</span>
                   </button>
                 )}
 
-                {messages.length > 0 && confirmClear ? (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={handleStartNewChat}
-                      className="inline-flex min-h-[40px] items-center rounded-xl bg-[#FFD60A] px-2.5 sm:px-3 text-xs font-semibold text-black hover:bg-[#FFD60A]/90 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                    >
-                      <span className="min-[380px]:hidden">Reset</span>
-                      <span className="hidden min-[380px]:inline">Confirm Reset</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmClear(false)}
-                      className="inline-flex min-h-[40px] items-center rounded-xl border border-white/15 px-2.5 text-xs font-medium text-neutral-300 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (messages.length > 0) {
-                        setConfirmClear(true);
-                      } else {
-                        textareaRef.current?.focus();
-                      }
-                    }}
-                    disabled={messages.length === 0 && !isGenerating}
-                    aria-label="New Chat"
-                    title="New Chat"
-                    className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-2.5 sm:px-3 text-xs font-medium text-white hover:border-[#FFD60A]/50 hover:text-[#FFD60A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    <Plus size={15} aria-hidden="true" />
-                    <span className="min-[380px]:hidden">New</span>
-                    <span className="hidden min-[380px]:inline">New Chat</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleStartNewChat}
+                  disabled={messages.length === 0 && !isGenerating}
+                  aria-label="New Chat"
+                  title="Start a new conversation"
+                  className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-2.5 sm:px-3 text-xs font-medium text-white hover:border-[#FFD60A]/50 hover:text-[#FFD60A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <Plus size={15} aria-hidden="true" />
+                  <span className="min-[390px]:hidden">New</span>
+                  <span className="hidden min-[390px]:inline">New Chat</span>
+                </button>
               </div>
             </div>
           </header>
@@ -945,11 +1362,11 @@ export default function AIPage() {
             aria-live="polite"
             aria-label="AI conversation transcript"
             style={{ overscrollBehaviorY: "contain", WebkitOverflowScrolling: "touch" }}
-            className="relative flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y px-4 sm:px-6"
+            className="relative flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y px-3.5 sm:px-6"
           >
             {messages.length === 0 ? (
               /* First-Visit Spacious Empty State & Big Tappable Suggestion Cards */
-              <div className="py-6 sm:py-10 pb-10 space-y-6">
+              <div className="py-5 sm:py-9 pb-10 space-y-6">
                 <div className="space-y-2.5" dir={isUrduUI ? "rtl" : "ltr"}>
                   <div className={`flex ${isUrduUI ? "justify-end" : "justify-start"}`}>
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFD60A] text-black shadow-[0_6px_24px_rgba(255,214,10,0.2)]">
@@ -1025,8 +1442,9 @@ export default function AIPage() {
                   const isUser = msg.role === "user";
                   const urduContent = isUrduText(msg.content);
                   const isLastMessage = idx === messages.length - 1;
-                  const showThinkState =
-                    !isUser && !msg.content && isGenerating && isLastMessage;
+                  const isStreamingMsg = !isUser && isGenerating && isLastMessage;
+                  const showThinkState = isStreamingMsg && !msg.content;
+                  const isSpeakingThis = speakingMessageId === msg.id;
                   const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -1138,7 +1556,7 @@ export default function AIPage() {
                               </p>
                               {msg.errorKind === "rate_limit" && msg.resetsAt && (
                                 <p className="text-xs text-amber-200/80">
-                                  Daily free server allocation resets at {msg.resetsAt}.
+                                  Shared daily allocation resets around {msg.resetsAt}.
                                 </p>
                               )}
                             </div>
@@ -1176,11 +1594,14 @@ export default function AIPage() {
                       ) : (
                         <>
                           <div className="w-full min-w-0">
-                            <AIMarkdownRenderer content={msg.content} />
+                            <AIMarkdownRenderer
+                              content={msg.content}
+                              isStreaming={isStreamingMsg}
+                            />
                           </div>
 
-                          {!(isGenerating && isLastMessage) && msg.content && (
-                            <div className="flex items-center gap-2 pt-1">
+                          {!isStreamingMsg && msg.content && (
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
                               <button
                                 type="button"
                                 onClick={() => handleCopyMessage(msg.id, msg.content)}
@@ -1200,6 +1621,30 @@ export default function AIPage() {
                                 <span className="sr-only">
                                   {copiedId === msg.id ? "Copied" : "Copy"}
                                 </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleReadAloud(msg.id, msg.content)}
+                                aria-label={isSpeakingThis ? "Stop reading aloud" : "Read aloud"}
+                                title={isSpeakingThis ? "Stop reading" : "Read answer aloud"}
+                                className={`inline-flex h-10 min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-xl border px-2.5 text-xs font-medium active:scale-[0.97] transition-[transform,color,border-color] duration-150 cursor-pointer ${
+                                  isSpeakingThis
+                                    ? "border-[#FFD60A]/60 bg-[#FFD60A]/15 text-[#FFD60A]"
+                                    : "border-white/10 bg-white/[0.03] text-neutral-300 hover:border-white/25 hover:text-white"
+                                }`}
+                              >
+                                {isSpeakingThis ? (
+                                  <>
+                                    <VolumeX size={16} aria-hidden="true" />
+                                    <span>Stop</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 size={16} aria-hidden="true" />
+                                    <span className="hidden sm:inline">Listen</span>
+                                  </>
+                                )}
                               </button>
 
                               <button
@@ -1236,7 +1681,7 @@ export default function AIPage() {
               </div>
             )}
 
-            {/* Floating "Latest" pill inside transcript ONLY when student scrolled up */}
+            {/* Floating "Jump to latest" inside transcript ONLY when student scrolled up */}
             {showScrollToLatest && (
               <div className="sticky bottom-4 z-10 flex justify-center pointer-events-none">
                 <button
@@ -1255,7 +1700,7 @@ export default function AIPage() {
             )}
           </div>
 
-          {/* C. Bottom Pinned Dock with Soft Gradient Fade + Slim Controls + Floating 24px Composer */}
+          {/* C. Bottom Pinned Dock with Soft Fade + Subject/Language Row + Unified Composer */}
           <div
             ref={composerDockRef}
             className="relative shrink-0 w-full bg-[#0A0A0A] px-3 sm:px-6 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
@@ -1283,77 +1728,177 @@ export default function AIPage() {
               </div>
             )}
 
-            {status.visionEnabled && attachedImage && (
-              <div className="mb-2 inline-flex items-center gap-2.5 rounded-xl border border-[#FFD60A]/40 bg-[#141418] p-1.5 pr-3">
-                <img
-                  src={attachedImage.previewUrl}
-                  alt="Attached textbook problem"
-                  className="h-10 w-10 rounded-lg object-cover"
-                />
-                <span className="text-xs text-neutral-300">Image attached</span>
-                <button
-                  type="button"
-                  onClick={removeAttachedImage}
-                  className="ml-1 rounded-full bg-white/10 p-1 text-neutral-300 hover:text-white"
-                  aria-label="Remove attached image"
-                >
-                  <X size={12} />
-                </button>
+            {/* Voice listening / processing / error inline status bar with Cancel button */}
+            {(voiceState !== "idle" || voiceFeedback) && (
+              <div
+                role="status"
+                className={`mb-2 flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs ${
+                  voiceState === "error"
+                    ? "border-red-500/35 bg-red-500/10 text-red-200"
+                    : "border-[#FFD60A]/40 bg-[#FFD60A]/10 text-[#FFD60A]"
+                }`}
+              >
+                <span className="leading-snug flex-1 min-w-0">
+                  {voiceFeedback ||
+                    (voiceState === "processing"
+                      ? "Processing speech..."
+                      : "Listening...")}
+                </span>
+                {voiceState === "listening" || voiceState === "processing" ? (
+                  <button
+                    type="button"
+                    onClick={cancelVoiceInput}
+                    className="min-h-[30px] rounded-lg border border-white/20 bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-black/60 shrink-0 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVoiceState("idle");
+                      setVoiceFeedback(null);
+                    }}
+                    aria-label="Dismiss voice notice"
+                    className="p-1 text-current opacity-80 hover:opacity-100 shrink-0 cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
             )}
 
-            {/* Slim row above floating input: Subject dropdown & English/اردو toggle, equal height */}
-            <div className="mb-2.5 grid grid-cols-2 sm:flex sm:items-center gap-2.5">
-              <select
-                aria-label="Select subject"
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="h-10 w-full sm:w-auto sm:min-w-[175px] rounded-xl border border-white/12 bg-[#14141A] px-3 text-[13px] font-medium text-neutral-100 focus:border-[#FFD60A] focus:outline-none cursor-pointer"
-              >
-                {SUBJECT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+            {/* Attached Image Preview Card (Honest disabled-vision notice when !status.visionEnabled) */}
+            {attachedImage && (
+              <div className="mb-2 rounded-xl border border-white/15 bg-[#14141B] p-2.5 space-y-2">
+                <div className="flex items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <img
+                      src={attachedImage.previewUrl}
+                      alt="Selected textbook problem preview"
+                      className="h-12 w-12 shrink-0 rounded-lg border border-white/10 object-cover bg-black"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium text-white">
+                        {attachedImage.fileName}
+                      </p>
+                      <p className="text-[11px] text-neutral-400 tabular-nums">
+                        {formatFileSize(attachedImage.fileSize)} ·{" "}
+                        {status.visionEnabled
+                          ? "Ready for analysis"
+                          : "Preview only · Vision unavailable"}
+                      </p>
+                    </div>
+                  </div>
 
-              <div
-                role="group"
-                aria-label="Response language"
-                className="grid grid-cols-2 h-10 w-full sm:w-auto sm:min-w-[164px] rounded-xl border border-white/12 bg-[#14141A] p-1 shrink-0"
-              >
-                <button
-                  type="button"
-                  onClick={() => setLanguageMode("en")}
-                  className={`h-full rounded-lg px-2 text-[13px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                    languageMode === "en"
-                      ? "bg-white text-black font-semibold"
-                      : "text-neutral-300 hover:text-white"
-                  }`}
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLanguageMode("ur")}
-                  className={`h-full rounded-lg px-2 text-[13px] font-urdu transition-colors whitespace-nowrap cursor-pointer ${
-                    languageMode === "ur"
-                      ? "bg-white text-black font-semibold"
-                      : "text-neutral-300 hover:text-white"
-                  }`}
-                >
-                  اردو
-                </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="min-h-[34px] rounded-lg border border-white/15 bg-white/[0.04] px-2.5 text-[11px] font-medium text-neutral-200 hover:text-white cursor-pointer"
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={removeAttachedImage}
+                      aria-label="Remove attached image"
+                      className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-white/15 bg-white/[0.04] text-neutral-300 hover:border-red-400/50 hover:text-red-300 cursor-pointer"
+                    >
+                      <X size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                {!status.visionEnabled && (
+                  <p className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] leading-snug text-amber-200">
+                    Image understanding is paused until a parent/guardian accepts the Meta vision license. Your photo is previewed locally only and will not be sent — please type your question in text.
+                  </p>
+                )}
               </div>
+            )}
+
+            {/* Slim row above floating input: Subject dropdown & English/اردو toggle */}
+            <div className="mb-2 grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-2">
+              <div className="contents sm:flex sm:items-center sm:gap-2">
+                <select
+                  aria-label="Select subject"
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="h-10 w-full sm:w-auto sm:min-w-[175px] rounded-xl border border-white/12 bg-[#14141A] px-3 text-[13px] font-medium text-neutral-100 focus:border-[#FFD60A] focus:outline-none cursor-pointer"
+                >
+                  {SUBJECT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                <div
+                  role="group"
+                  aria-label="Response language"
+                  className="grid grid-cols-2 h-10 w-full sm:w-auto sm:min-w-[164px] rounded-xl border border-white/12 bg-[#14141A] p-1 shrink-0"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setLanguageMode("en")}
+                    className={`h-full rounded-lg px-2 text-[13px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
+                      languageMode === "en"
+                        ? "bg-white text-black font-semibold"
+                        : "text-neutral-300 hover:text-white"
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguageMode("ur")}
+                    className={`h-full rounded-lg px-2 text-[13px] font-urdu transition-colors whitespace-nowrap cursor-pointer ${
+                      languageMode === "ur"
+                        ? "bg-white text-black font-semibold"
+                        : "text-neutral-300 hover:text-white"
+                    }`}
+                  >
+                    اردو
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPreferencesOpen(true)}
+                className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-[#FFD60A] transition-colors cursor-pointer"
+              >
+                <span>{prefSummaryLabel}</span>
+              </button>
             </div>
 
-            {/* Large Floating 24px Rounded Composer with soft shadow + yellow glow on focus */}
+            {/* Hidden File & Camera Inputs */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              aria-label="Upload image from gallery"
+            />
+            <input
+              type="file"
+              ref={cameraInputRef}
+              onChange={handleImageSelect}
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              className="hidden"
+              aria-label="Take photo with camera"
+            />
+
+            {/* Floating 24px Rounded Composer */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="rounded-[24px] border border-white/15 bg-[#14141A] px-3.5 pt-3 pb-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.7)] focus-within:border-[#FFD60A]/75 focus-within:shadow-[0_12px_36px_rgba(0,0,0,0.75),0_0_24px_rgba(255,214,10,0.22)] transition-[border-color,box-shadow] duration-200"
+              className="relative rounded-[24px] border border-white/15 bg-[#14141A] px-3.5 pt-3 pb-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.7)] focus-within:border-[#FFD60A]/75 focus-within:shadow-[0_12px_36px_rgba(0,0,0,0.75),0_0_24px_rgba(255,214,10,0.22)] transition-[border-color,box-shadow] duration-200"
             >
               <textarea
                 ref={textareaRef}
@@ -1397,51 +1942,120 @@ export default function AIPage() {
                 }`}
               />
 
-              {/* Bottom Action Row inside composer: Mic (+ Image) on left, Send on right */}
-              <div className="mt-1 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  {speechSupported && (
+              {/* Bottom Action Row: Unified Attachment/Tools Menu + Mic on left, Send/Stop on right */}
+              <div className="mt-1 flex items-center justify-between gap-2.5 border-t border-white/[0.06] pt-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {/* Unified Attachment & Tools Menu */}
+                  <div ref={toolsMenuRef} className="relative">
                     <button
                       type="button"
-                      onClick={toggleVoiceInput}
-                      aria-label={isRecording ? "Stop voice dictation" : "Start voice dictation"}
-                      title={isRecording ? "Stop voice dictation" : "Start voice dictation"}
-                      className={`inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border transition-colors cursor-pointer shrink-0 ${
-                        isRecording
-                          ? "border-red-500/60 bg-red-500/20 text-red-300"
+                      onClick={() => setToolsMenuOpen((prev) => !prev)}
+                      aria-expanded={toolsMenuOpen}
+                      aria-label="Attachments and tutor tools"
+                      title="Attach photo or adjust preferences"
+                      className={`inline-flex h-11 min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-2xl border px-3 text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+                        toolsMenuOpen || attachedImage
+                          ? "border-[#FFD60A]/55 bg-[#FFD60A]/12 text-[#FFD60A]"
                           : "border-white/12 bg-white/[0.04] text-neutral-200 hover:border-white/25 hover:text-white"
                       }`}
                     >
-                      {isRecording ? (
-                        <MicOff size={18} aria-hidden="true" />
-                      ) : (
-                        <Mic size={18} aria-hidden="true" />
-                      )}
+                      <ImageIcon size={17} aria-hidden="true" />
+                      <span className="hidden sm:inline">Tools</span>
                     </button>
-                  )}
 
-                  {/* Image attachment: rendered strictly when backend reports visionEnabled === true */}
-                  {status.visionEnabled && (
-                    <>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageSelect}
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-2xl border border-white/12 bg-white/[0.04] px-3 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white transition-colors cursor-pointer shrink-0"
-                        aria-label="Attach question image"
-                        title="Attach question image"
+                    {toolsMenuOpen && (
+                      <div
+                        role="menu"
+                        aria-label="Attachment and tool options"
+                        className="absolute bottom-13 left-0 z-30 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/15 bg-[#14141B] p-2.5 shadow-2xl space-y-1.5"
                       >
-                        <ImageIcon size={17} aria-hidden="true" />
-                        <span className="hidden sm:inline">Image</span>
-                      </button>
-                    </>
-                  )}
+                        <div className="px-2 py-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02]">
+                          <p className="text-[11px] font-semibold text-white">
+                            {status.visionEnabled
+                              ? "Image Understanding Active"
+                              : "Vision Analysis Unavailable"}
+                          </p>
+                          <p className="mt-0.5 text-[11px] leading-snug text-neutral-400">
+                            {status.visionEnabled
+                              ? "Attach a textbook photo (JPEG, PNG, WebP · max 4 MB)."
+                              : "Image analysis is paused pending guardian Meta license approval. You can preview photos locally, while live solving stays text-only."}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setToolsMenuOpen(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                        >
+                          <ImageIcon size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
+                          <span>
+                            {attachedImage ? "Replace Photo (Gallery)" : "Choose Photo (Gallery)"}
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setToolsMenuOpen(false);
+                            cameraInputRef.current?.click();
+                          }}
+                          className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                        >
+                          <Camera size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
+                          <span>Take Photo (Camera)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setToolsMenuOpen(false);
+                            setPreferencesOpen(true);
+                          }}
+                          className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                        >
+                          <SlidersHorizontal size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
+                          <span>Tutor Preferences ({preferences.classLevel} · {preferences.explanationLength})</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Microphone Speech-to-Text */}
+                  <button
+                    type="button"
+                    onClick={toggleVoiceInput}
+                    aria-label={
+                      voiceState === "listening"
+                        ? "Stop voice dictation"
+                        : "Start voice dictation"
+                    }
+                    title={
+                      speechSupported
+                        ? voiceState === "listening"
+                          ? "Finish voice dictation"
+                          : "Speak your question"
+                        : "Voice dictation unavailable in this browser"
+                    }
+                    className={`inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border transition-colors cursor-pointer shrink-0 ${
+                      voiceState === "listening" || voiceState === "processing"
+                        ? "border-red-500/60 bg-red-500/20 text-red-300"
+                        : !speechSupported
+                          ? "border-white/10 bg-white/[0.02] text-neutral-500 hover:text-neutral-300"
+                          : "border-white/12 bg-white/[0.04] text-neutral-200 hover:border-white/25 hover:text-white"
+                    }`}
+                  >
+                    {voiceState === "listening" || voiceState === "processing" ? (
+                      <MicOff size={18} aria-hidden="true" />
+                    ) : (
+                      <Mic size={18} aria-hidden="true" />
+                    )}
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2.5 shrink-0">
@@ -1488,6 +2102,26 @@ export default function AIPage() {
           </div>
         </div>
       </section>
+
+      {/* Saved Conversations Drawer & Tutor Personalization Dialog */}
+      <AIChatHistoryDrawer
+        isOpen={historyDrawerOpen}
+        onClose={() => setHistoryDrawerOpen(false)}
+        conversations={conversations}
+        activeId={activeConversationId}
+        onSelectConversation={handleSelectConversation}
+        onCreateNewChat={handleStartNewChat}
+        onRenameConversation={handleRenameConversation}
+        onTogglePinConversation={handleTogglePinConversation}
+        onDeleteConversation={handleDeleteConversation}
+      />
+
+      <AIPreferencesPopover
+        isOpen={preferencesOpen}
+        onClose={() => setPreferencesOpen(false)}
+        preferences={preferences}
+        onUpdatePreferences={updatePreferences}
+      />
 
       {/* =====================================================================
           3. TUTORING OVERVIEW, SUBJECTS, USAGE GUIDE & FREE-TIER TRANSPARENCY
@@ -1606,7 +2240,6 @@ export default function AIPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* 7 Numbered Steps */}
             <ol className="lg:col-span-6 space-y-2.5">
               {HOW_TO_USE_STEPS.map((step, index) => (
                 <li
@@ -1621,7 +2254,6 @@ export default function AIPage() {
               ))}
             </ol>
 
-            {/* Interactive Example Prompt Templates */}
             <div className="lg:col-span-6 space-y-3 rounded-xl border border-white/10 bg-[#111116] p-4 sm:p-5">
               <div className="space-y-1">
                 <h3 className="font-heading text-sm sm:text-base font-bold text-white">
@@ -1728,7 +2360,6 @@ export default function AIPage() {
             </button>
           </div>
 
-          {/* Live Health Status Card (Distinct operational vs usage-limit vs unavailable states) */}
           <div className="rounded-xl border border-white/10 bg-[#111116] p-4 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold">
               {statusLoading ? (
@@ -1760,7 +2391,6 @@ export default function AIPage() {
             ))}
           </ul>
 
-          {/* Concise & Friendly Pakistani Urdu Reminder */}
           <div
             dir="rtl"
             className="rounded-xl border border-white/10 bg-[#111116] p-4 sm:p-5 text-right space-y-1.5"
