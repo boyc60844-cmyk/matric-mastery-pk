@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": "Matric Mastery",
+  "sourceLabel": "Matric Mastery Project Roadmap (/roadmap.json)",
+  "lastUpdated": "2026-11-14T00:00:00Z",
+  "items": [
+    {
+      "id": "ai-experience-2-0",
+      "title": "AI Experience 2.0",
+      "description": "An upgrade to the existing Matric Mastery AI tutoring experience.",
+      "category": "AI Workspace",
+      "status": "planned",
+      "details": [
+        "Image attachment and image-based question support, conditional on approved vision capability.",
+        "Voice input and optional spoken responses.",
+        "Advanced conversation management.",
+        "Search, rename and pin conversations.",
+        "Personalization preferences.",
+        "Improved mathematical and structured answer presentation."
+      ],
+      "lastUpdated": "2026-11-14",
+      "notes": "Vision remains disabled unless the required model approval and technical compatibility checks are completed."
+    },
+    {
+      "id": "premium-ai-interface-polish",
+      "title": "Premium AI Interface Polish",
+      "description": "A dedicated frontend refinement to improve the speed, responsiveness and smoothness of the existing AI workspace.",
+      "category": "Frontend UX",
+      "status": "upcoming",
+      "details": [
+        "Smooth message streaming.",
+        "Intelligent conversation scrolling.",
+        "Preserved reading positions.",
+        "Responsive composer interactions.",
+        "Smooth chat navigation.",
+        "Better loading states.",
+        "Refined animations and transitions.",
+        "Reduced layout shifts and unnecessary re-renders.",
+        "Improved Android/mobile performance."
+      ],
+      "lastUpdated": "2026-11-14",
+      "notes": "This is a frontend-focused improvement. The existing AI model and Cloudflare Worker are protected."
+    },
+    {
+      "id": "continuous-platform-improvements",
+      "title": "Continuous Platform Improvements",
+      "description": "Ongoing quality, accessibility, and study-resource maintenance across the platform.",
+      "category": "Platform Maintenance",
+      "status": "ongoing",
+      "details": [
+        "Reliability.",
+        "Performance.",
+        "Accessibility.",
+        "Mobile usability.",
+        "Student experience.",
+        "Study-resource refinements."
+      ],
+      "lastUpdated": "2026-11-14"
+    },
+    {
+      "id": "ai-text-only-maintenance",
+      "title": "AI Text-Only Maintenance Update",
+      "description": "Temporarily disabled image upload controls across the AI chat interfaces behind a centralized frontend flag while preserving text-based tutoring, voice dictation, and Cloudflare Workers AI routing.",
+      "category": "AI Workspace",
+      "status": "released",
+      "details": [
+        "Hid image attachment buttons, file pickers, and preview cards behind AI_IMAGE_INPUT_ENABLED.",
+        "Enforced frontend submission protection so stale image payloads cannot be sent.",
+        "Updated composer placeholder and Website Guide accuracy for text-based questions."
+      ],
+      "lastUpdated": "2026-11-14",
+      "releaseVersion": "v4.1.1",
+      "releaseDate": "November 2026",
+      "changelogRef": "v4.1.1"
+    },
+    {
+      "id": "ai-workspace-workers-routing",
+      "title": "Dedicated /ai Tutoring Workspace & Workers AI Routing",
+      "description": "Launched the distraction-free /ai workspace connected to the deployed Cloudflare Worker (@cf/meta/llama-3.1-8b-instruct-fast) with English and Urdu RTL math rendering.",
+      "category": "AI Infrastructure",
+      "status": "released",
+      "details": [
+        "Centered conversation workspace with curated Class 9–10 starter prompts.",
+        "Student-friendly HTTP 429 rate-limit, network, and retry error handling.",
+        "Local-only conversation storage with JSON session export."
+      ],
+      "lastUpdated": "2026-11-14",
+      "releaseVersion": "v3.9.0",
+      "releaseDate": "November 2026",
+      "changelogRef": "v3.9.0"
+    }
+  ]
+}

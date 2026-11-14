@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Compass,
@@ -51,6 +51,7 @@ import {
 } from "@/lib/releaseManifest";
 import { GUIDE_FAQS, generateFaqJsonLd } from "@/lib/guideFaqData";
 import { whatsappLink } from "@/lib/utils";
+import DevelopmentRoadmapSection from "@/components/guide/DevelopmentRoadmapSection";
 
 const CATEGORY_TABS: { id: DirectoryCategory; label: string; count: number }[] = [
   { id: "all", label: "All Modules", count: DIRECTORY_MODULES.length },
@@ -98,6 +99,31 @@ export default function WebsiteGuidePage() {
 
   // Version History state
   const [versionTab, setVersionTab] = useState<"all" | "major" | "recent">("all");
+  const [highlightedReleaseAnchor, setHighlightedReleaseAnchor] = useState<string | null>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
+
+  const handleNavigateToRelease = useCallback((anchorId: string) => {
+    setHighlightedReleaseAnchor(anchorId);
+    const target = document.getElementById(anchorId);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    if (highlightTimeoutRef.current !== null) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightedReleaseAnchor(null);
+      highlightTimeoutRef.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current !== null) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Filtered Directory
   const filteredModules = useMemo(() => {
@@ -275,10 +301,16 @@ export default function WebsiteGuidePage() {
               8. Weekly Upgrades &amp; Changelog
             </a>
             <a
+              href="#roadmap"
+              className="rounded-lg border border-white/10 bg-[#101014] px-3 py-1.5 text-neutral-400 hover:text-white hover:border-accent/40 whitespace-nowrap transition-colors"
+            >
+              9. Development Roadmap
+            </a>
+            <a
               href="#faqs"
               className="rounded-lg border border-white/10 bg-[#101014] px-3 py-1.5 text-neutral-400 hover:text-white hover:border-accent/40 whitespace-nowrap transition-colors"
             >
-              9. Comprehensive FAQ
+              10. Comprehensive FAQ
             </a>
           </div>
         </header>
@@ -1185,10 +1217,19 @@ export default function WebsiteGuidePage() {
             </h3>
 
             <div className="space-y-4">
-              {RELEASE_HISTORY.map((rel) => (
+              {RELEASE_HISTORY.map((rel) => {
+                const anchorId = `release-${rel.version}`;
+                const isHighlighted = highlightedReleaseAnchor === anchorId;
+
+                return (
                 <div
                   key={rel.version}
-                  className="rounded-2xl border border-white/10 bg-[#0E0E12] p-5 sm:p-6 shadow-md"
+                  id={anchorId}
+                  className={`rounded-2xl border bg-[#0E0E12] p-5 sm:p-6 shadow-md scroll-mt-24 transition-all duration-300 ${
+                    isHighlighted
+                      ? "border-[#FFD60A] ring-2 ring-[#FFD60A]/40"
+                      : "border-white/10"
+                  }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                     <div className="flex items-center gap-2.5">
@@ -1244,20 +1285,26 @@ export default function WebsiteGuidePage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* =========================================================================
-            SECTION I: COMPREHENSIVE FREQUENTLY ASKED QUESTIONS (FAQ)
+            SECTION I: CONNECTED DEVELOPMENT ROADMAP (WHAT'S COMING NEXT)
+            ========================================================================= */}
+        <DevelopmentRoadmapSection onNavigateToRelease={handleNavigateToRelease} />
+
+        {/* =========================================================================
+            SECTION J: COMPREHENSIVE FREQUENTLY ASKED QUESTIONS (FAQ)
             ========================================================================= */}
         <section id="faqs" className="py-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
             <div>
               <div className="flex items-center gap-2 text-xs font-mono font-bold text-accent uppercase tracking-wider mb-2">
                 <HelpCircle size={14} />
-                <span>Section I · Visitor Knowledge Base</span>
+                <span>Section J · Visitor Knowledge Base</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-heading font-black text-white">
                 Frequently Asked Questions
