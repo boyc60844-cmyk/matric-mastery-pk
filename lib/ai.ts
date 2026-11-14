@@ -2,7 +2,7 @@
 // Matric Mastery AI — Educational Doubt Solver Engine
 // Powered by Cloudflare Workers AI with Free-First student safeguards.
 
-import { sendAIMessage, getWorkerEndpoint } from "./aiClient";
+import { AI_IMAGE_INPUT_ENABLED, sendAIMessage, getWorkerEndpoint } from "./aiClient";
 
 export type LanguageMode = "english" | "urdu";
 
@@ -73,7 +73,13 @@ export async function streamSolveWithAI({
   uploadedImage?: UploadedImageData | null;
   onChunk: (text: string) => void;
 }): Promise<string> {
-  const userText = question.trim() || "Solve this question in image completely step by step.";
+  const activeImage = AI_IMAGE_INPUT_ENABLED ? uploadedImage || null : null;
+  const userText =
+    question.trim() ||
+    (activeImage ? "Solve this question in image completely step by step." : "");
+  if (!userText && !activeImage) {
+    throw new Error("Please enter a text question.");
+  }
   const workerUrl = getWorkerEndpoint();
 
   // If Cloudflare Worker backend is configured, invoke live streaming inference
@@ -86,17 +92,17 @@ export async function streamSolveWithAI({
             role: "user",
             content: userText,
             timestamp: Date.now(),
-            image: uploadedImage
+            image: activeImage
               ? {
-                  previewUrl: uploadedImage.previewUrl,
-                  mimeType: uploadedImage.mimeType,
-                  base64: uploadedImage.base64,
+                  previewUrl: activeImage.previewUrl,
+                  mimeType: activeImage.mimeType,
+                  base64: activeImage.base64,
                 }
               : undefined,
           },
         ],
-        image: uploadedImage
-          ? { mimeType: uploadedImage.mimeType, base64: uploadedImage.base64 }
+        image: activeImage
+          ? { mimeType: activeImage.mimeType, base64: activeImage.base64 }
           : null,
         language: language === "urdu" ? "ur" : "en",
         onChunk,
@@ -112,7 +118,7 @@ export async function streamSolveWithAI({
   }
 
   // When live worker is not yet configured, stream honest educational notice instead of fake answers
-  const notice = getOfflineEducationalNotice(language, Boolean(uploadedImage));
+  const notice = getOfflineEducationalNotice(language, Boolean(activeImage));
   let accumulated = "";
   const tokens = notice.split(/(\s+)/);
 

@@ -1,11 +1,11 @@
 // scripts/test-ai-infrastructure.mjs
-// Automated verification suite for Matric Mastery AI (v4.1.0) & Cloudflare Workers AI Infrastructure
+// Automated verification suite for Matric Mastery AI (v4.1.1) & Cloudflare Workers AI Infrastructure
 
 import assert from "assert";
 import fs from "fs";
 
 console.log("=================================================");
-console.log("Matric Mastery AI — Launch Readiness Test Suite (v4.1.0)");
+console.log("Matric Mastery AI — Launch Readiness Test Suite (v4.1.1)");
 console.log("=================================================\n");
 
 let passedTests = 0;
@@ -349,18 +349,18 @@ runTest("Client Privacy & Storage: History bounded to 50 items and JSON export p
 });
 
 // -------------------------------------------------------------
-// Test 11: Release Version Consistency (v4.1.0 & Preserved History)
+// Test 11: Release Version Consistency (v4.1.1 & Preserved History)
 // -------------------------------------------------------------
-runTest("Release Management: v4.1.0 synchronized across manifest, package, and guide without erasing history", () => {
+runTest("Release Management: v4.1.1 synchronized across manifest, package, and guide without erasing history", () => {
   const manifestFile = fs.readFileSync("lib/releaseManifest.ts", "utf8");
   assert.ok(
-    manifestFile.includes('CURRENT_VERSION = "v4.1.0"') &&
-      manifestFile.includes('version: "v4.1.0"'),
-    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v4.1.0"
+    manifestFile.includes('CURRENT_VERSION = "v4.1.1"') &&
+      manifestFile.includes('version: "v4.1.1"'),
+    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v4.1.1"
   );
 
   // Confirm all historical versions remain intact
-  const historicalVersions = ["v4.0.0", "v3.9.0", "v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
+  const historicalVersions = ["v4.1.0", "v4.0.0", "v3.9.0", "v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
   for (const v of historicalVersions) {
     assert.ok(
       manifestFile.includes(`version: "${v}"`),
@@ -369,12 +369,12 @@ runTest("Release Management: v4.1.0 synchronized across manifest, package, and g
   }
 
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  assert.strictEqual(pkg.version, "4.1.0", "package.json version must be 4.1.0");
+  assert.strictEqual(pkg.version, "4.1.1", "package.json version must be 4.1.1");
 
   const faqFile = fs.readFileSync("lib/guideFaqData.ts", "utf8");
   assert.ok(
-    faqFile.includes("v4.1.0"),
-    "lib/guideFaqData.ts must reflect v4.1.0"
+    faqFile.includes("v4.1.1"),
+    "lib/guideFaqData.ts must reflect v4.1.1"
   );
 
   const envExample = fs.readFileSync(".env.example", "utf8");
@@ -385,10 +385,14 @@ runTest("Release Management: v4.1.0 synchronized across manifest, package, and g
 });
 
 // -------------------------------------------------------------
-// Test 12: Revamped /ai UI Quality, Independent Scroll & Free Access Transparency
+// Test 12: Revamped /ai UI Quality, Independent Scroll & Text-Only Image Disablement
 // -------------------------------------------------------------
-runTest("AI Workspace UI: Independent transcript scroll, educational guides, Free AI Access & safety guards", () => {
+runTest("AI Workspace UI: Independent transcript scroll, educational guides, Free AI Access & image disablement guards", () => {
   const aiPage = fs.readFileSync("app/ai/page.tsx", "utf8");
+  const clientFile = fs.readFileSync("lib/aiClient.ts", "utf8");
+  const aiLib = fs.readFileSync("lib/ai.ts", "utf8");
+  const modalFile = fs.readFileSync("components/DoubtSolverModal.tsx", "utf8");
+
   assert.ok(
     !aiPage.includes("DoubtOrb3D"),
     "app/ai/page.tsx must not render heavy WebGL DoubtOrb3D"
@@ -398,8 +402,15 @@ runTest("AI Workspace UI: Independent transcript scroll, educational guides, Fre
     "app/ai/page.tsx must not use blocking window.confirm dialogs"
   );
   assert.ok(
-    aiPage.includes("status.visionEnabled &&"),
-    "app/ai/page.tsx must gate image upload controls behind backend status.visionEnabled"
+    clientFile.includes("export const AI_IMAGE_INPUT_ENABLED = false;") &&
+      aiPage.includes("AI_IMAGE_INPUT_ENABLED &&") &&
+      aiLib.includes("AI_IMAGE_INPUT_ENABLED") &&
+      modalFile.includes("AI_IMAGE_INPUT_ENABLED &&"),
+    "All AI composer and request helpers must enforce centralized AI_IMAGE_INPUT_ENABLED = false"
+  );
+  assert.ok(
+    aiPage.includes('placeholder="Ask a text-based Class 9-10 question..."'),
+    'app/ai/page.tsx must use exact placeholder "Ask a text-based Class 9-10 question..."'
   );
   assert.ok(
     aiPage.includes("آپ کے AI استعمال کی عارضی حد پوری ہو گئی ہے"),

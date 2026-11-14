@@ -242,7 +242,7 @@ export const DIRECTORY_MODULES: DirectoryModule[] = [
       "Personalization Settings persisted on-device for Class Level (Class 9 / 10), Explanation Length, Answer Presentation style, and English / Urdu mode.",
       "Click-triggered Web Speech dictation with editable review & Cancel, plus optional per-answer Read Aloud (Stop / Listen).",
       "Upgraded response rendering with stacked fractions/exponents, isolated LTR math inside Urdu RTL, syntax-highlighted code blocks with Copy code, and collapsible structured sections.",
-      "Unified composer Tools menu supporting JPEG/PNG/WebP preview & camera capture (<=4 MB) with honest status when vision (@cf/meta/llama-3.2-11b-vision-instruct) is paused pending guardian license approval.",
+      "Text-first composer with subject tagging, English/Urdu switch, and speech dictation (image upload is temporarily disabled in the UI pending an appropriate, policy-compliant provider).",
       "Independent #ai-transcript-scroll containment, structured Class 9–10 guides, prompt templates, and transparent Free AI Access guidance.",
     ],
     whenToUse:
@@ -534,7 +534,7 @@ export const DIRECTORY_MODULES: DirectoryModule[] = [
       "Connects via VITE_AI_WORKER_URL to Cloudflare Workers AI (displays honest preview notice when unconfigured).",
       "Dual language support: English and اردو / Roman Urdu.",
       "Voice dictation via Web Speech API (speak your question naturally).",
-      "Photo attachment UI prepared alongside adult-gated vision backend support.",
+      "Text-based doubt solving active (image upload controls are temporarily disabled pending a policy-compliant vision provider).",
       "1-Click Copy, WhatsApp Share, and 'Ask Follow-up' prompts.",
       "Cross-references to related Punjab Board past paper questions.",
       "Local query history stored privately on your device.",
@@ -728,7 +728,7 @@ export const STUDENT_JOURNEYS: StudentJourney[] = [
     title: "Instant Concept & Numerical Problem Solving",
     targetAudience: "Students stuck on a difficult textbook problem, derivation, or grammar rule",
     description:
-      "Get unstuck in under 60 seconds with step-by-step textbook-compliant explanations, voice dictation, and photo upload.",
+      "Get unstuck in under 60 seconds with step-by-step textbook-compliant explanations and voice dictation.",
     estimatedTime: "5 Minutes",
     iconName: "Zap",
     steps: [
@@ -743,12 +743,12 @@ export const STUDENT_JOURNEYS: StudentJourney[] = [
       },
       {
         stepNumber: 2,
-        title: "Type, Speak, or Snap a Photo of the Problem",
+        title: "Type or Speak Your Question",
         moduleId: "ai-doubt-solver",
         href: "#doubt-solver",
-        actionText: "Attach Question Photo",
+        actionText: "Ask a Text or Voice Question",
         rationale:
-          "Upload a textbook picture or speak using Web Speech voice dictation in English or Urdu.",
+          "Type your textbook problem or speak using Web Speech voice dictation in English or Urdu.",
       },
       {
         stepNumber: 3,

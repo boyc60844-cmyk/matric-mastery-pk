@@ -111,6 +111,8 @@ export const DEFAULT_AI_PREFERENCES: AIPreferences = {
   presentationStyle: "step-by-step",
 };
 
+export const AI_IMAGE_INPUT_ENABLED = false;
+
 export const DEFAULT_AI_WORKER_URL =
   "https://matric-mastery-ai-worker.boyc60844.workers.dev";
 
@@ -154,7 +156,7 @@ export async function checkAIStatus(): Promise<AIStatus> {
         const data = await res.json();
         const textM = data.models?.text || "@cf/meta/llama-3.1-8b-instruct-fast";
         const visionM = data.models?.vision || "@cf/meta/llama-3.2-11b-vision-instruct";
-        const visionEnabled = Boolean(data.visionEnabled);
+        const visionEnabled = AI_IMAGE_INPUT_ENABLED && Boolean(data.visionEnabled);
 
         return {
           state: data.bindingConfigured ? "ready" : "unconfigured",
@@ -321,8 +323,11 @@ export async function sendAIMessage({
     });
   }
 
+  // Enforce text-only submission protection while image input is temporarily disabled
+  const effectiveImage = AI_IMAGE_INPUT_ENABLED ? image || undefined : undefined;
+
   // Request streaming when onChunk is provided and no image is attached
-  const shouldStream = Boolean(onChunk) && !image;
+  const shouldStream = Boolean(onChunk) && !effectiveImage;
 
   let response: Response;
   try {
@@ -333,7 +338,7 @@ export async function sendAIMessage({
       },
       body: JSON.stringify({
         messages: formattedMessages,
-        image: image || undefined,
+        ...(effectiveImage ? { image: effectiveImage } : {}),
         stream: shouldStream,
       }),
       signal,

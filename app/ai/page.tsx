@@ -43,6 +43,7 @@ import AIMarkdownRenderer from "@/components/AIMarkdownRenderer";
 import AIChatHistoryDrawer from "@/components/ai/AIChatHistoryDrawer";
 import AIPreferencesPopover from "@/components/ai/AIPreferencesPopover";
 import {
+  AI_IMAGE_INPUT_ENABLED,
   AIChatMessage,
   AIConversation,
   AIErrorKind,
@@ -387,6 +388,16 @@ export default function AIPage() {
     }
   }, []);
 
+  // Clear any stale image selection when image input is temporarily disabled
+  useEffect(() => {
+    if (!AI_IMAGE_INPUT_ENABLED) {
+      setAttachedImage(null);
+      setToolsMenuOpen(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+    }
+  }, []);
+
   // Load status, saved multi-conversation history (migrating v1 if present), preferences & Web Speech APIs
   useEffect(() => {
     refreshHealthStatus();
@@ -543,8 +554,12 @@ export default function AIPage() {
 
   // Attachment validation & preview
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
     setToolsMenuOpen(false);
+    if (!AI_IMAGE_INPUT_ENABLED) {
+      e.target.value = "";
+      return;
+    }
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -890,9 +905,16 @@ export default function AIPage() {
     if (isSubmittingRef.current || isGenerating) return;
 
     const textToSend = (customPrompt !== undefined ? customPrompt : inputText).trim();
-    const activeAttachment = status.visionEnabled ? attachedImage : null;
+    const activeAttachment =
+      AI_IMAGE_INPUT_ENABLED && status.visionEnabled ? attachedImage : null;
 
-    if (!textToSend && attachedImage && !status.visionEnabled) {
+    if (!AI_IMAGE_INPUT_ENABLED && attachedImage) {
+      setAttachedImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+    }
+
+    if (AI_IMAGE_INPUT_ENABLED && !textToSend && attachedImage && !status.visionEnabled) {
       setComposerNotice(
         "Image analysis is currently paused pending guardian Meta license approval. Please type your question in text or remove the photo preview."
       );
@@ -951,7 +973,7 @@ export default function AIPage() {
     if (customPrompt === undefined) {
       setInputText("");
     }
-    if (status.visionEnabled) {
+    if (AI_IMAGE_INPUT_ENABLED && status.visionEnabled) {
       setAttachedImage(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (cameraInputRef.current) cameraInputRef.current.value = "";
@@ -1001,7 +1023,7 @@ export default function AIPage() {
       placeholderId: assistantMessageId,
       subjectOverride: lastUser.subject || selectedSubject,
       imagePayload:
-        status.visionEnabled && lastUser.image
+        AI_IMAGE_INPUT_ENABLED && status.visionEnabled && lastUser.image
           ? { mimeType: lastUser.image.mimeType, base64: lastUser.image.base64 }
           : null,
     });
@@ -1461,7 +1483,7 @@ export default function AIPage() {
                               : "leading-[1.65]"
                           }`}
                         >
-                          {msg.image && (
+                          {AI_IMAGE_INPUT_ENABLED && msg.image && (
                             <img
                               src={msg.image.previewUrl}
                               alt="Attached question"
@@ -1768,8 +1790,8 @@ export default function AIPage() {
               </div>
             )}
 
-            {/* Attached Image Preview Card (Honest disabled-vision notice when !status.visionEnabled) */}
-            {attachedImage && (
+            {/* Attached Image Preview Card (gated behind AI_IMAGE_INPUT_ENABLED) */}
+            {AI_IMAGE_INPUT_ENABLED && attachedImage && (
               <div className="mb-2 rounded-xl border border-white/15 bg-[#14141B] p-2.5 space-y-2">
                 <div className="flex items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -1873,24 +1895,28 @@ export default function AIPage() {
               </button>
             </div>
 
-            {/* Hidden File & Camera Inputs */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageSelect}
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              aria-label="Upload image from gallery"
-            />
-            <input
-              type="file"
-              ref={cameraInputRef}
-              onChange={handleImageSelect}
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              className="hidden"
-              aria-label="Take photo with camera"
-            />
+            {/* Hidden File & Camera Inputs (gated behind AI_IMAGE_INPUT_ENABLED) */}
+            {AI_IMAGE_INPUT_ENABLED && (
+              <>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  aria-label="Upload image from gallery"
+                />
+                <input
+                  type="file"
+                  ref={cameraInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="environment"
+                  className="hidden"
+                  aria-label="Take photo with camera"
+                />
+              </>
+            )}
 
             {/* Floating 24px Rounded Composer */}
             <form
@@ -1916,11 +1942,7 @@ export default function AIPage() {
                     }, 120);
                   }
                 }}
-                placeholder={
-                  isUrduUI
-                    ? "اپنا سوال لکھیں (ریاضی، فزکس، کیمسٹری، بائیولوجی)..."
-                    : "Ask a Class 9–10 Math, Physics, Chemistry, or Biology question..."
-                }
+                placeholder="Ask a text-based Class 9-10 question..."
                 dir={isUrduUI && !inputText ? "rtl" : "auto"}
                 rows={2}
                 maxLength={2000}
@@ -1945,86 +1967,88 @@ export default function AIPage() {
               {/* Bottom Action Row: Unified Attachment/Tools Menu + Mic on left, Send/Stop on right */}
               <div className="mt-1 flex items-center justify-between gap-2.5 border-t border-white/[0.06] pt-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  {/* Unified Attachment & Tools Menu */}
-                  <div ref={toolsMenuRef} className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setToolsMenuOpen((prev) => !prev)}
-                      aria-expanded={toolsMenuOpen}
-                      aria-label="Attachments and tutor tools"
-                      title="Attach photo or adjust preferences"
-                      className={`inline-flex h-11 min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-2xl border px-3 text-xs font-medium transition-colors cursor-pointer shrink-0 ${
-                        toolsMenuOpen || attachedImage
-                          ? "border-[#FFD60A]/55 bg-[#FFD60A]/12 text-[#FFD60A]"
-                          : "border-white/12 bg-white/[0.04] text-neutral-200 hover:border-white/25 hover:text-white"
-                      }`}
-                    >
-                      <ImageIcon size={17} aria-hidden="true" />
-                      <span className="hidden sm:inline">Tools</span>
-                    </button>
-
-                    {toolsMenuOpen && (
-                      <div
-                        role="menu"
-                        aria-label="Attachment and tool options"
-                        className="absolute bottom-13 left-0 z-30 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/15 bg-[#14141B] p-2.5 shadow-2xl space-y-1.5"
+                  {/* Unified Attachment & Tools Menu (gated behind AI_IMAGE_INPUT_ENABLED) */}
+                  {AI_IMAGE_INPUT_ENABLED && (
+                    <div ref={toolsMenuRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setToolsMenuOpen((prev) => !prev)}
+                        aria-expanded={toolsMenuOpen}
+                        aria-label="Attachments and tutor tools"
+                        title="Attach photo or adjust preferences"
+                        className={`inline-flex h-11 min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-2xl border px-3 text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+                          toolsMenuOpen || attachedImage
+                            ? "border-[#FFD60A]/55 bg-[#FFD60A]/12 text-[#FFD60A]"
+                            : "border-white/12 bg-white/[0.04] text-neutral-200 hover:border-white/25 hover:text-white"
+                        }`}
                       >
-                        <div className="px-2 py-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02]">
-                          <p className="text-[11px] font-semibold text-white">
-                            {status.visionEnabled
-                              ? "Image Understanding Active"
-                              : "Vision Analysis Unavailable"}
-                          </p>
-                          <p className="mt-0.5 text-[11px] leading-snug text-neutral-400">
-                            {status.visionEnabled
-                              ? "Attach a textbook photo (JPEG, PNG, WebP · max 4 MB)."
-                              : "Image analysis is paused pending guardian Meta license approval. You can preview photos locally, while live solving stays text-only."}
-                          </p>
+                        <ImageIcon size={17} aria-hidden="true" />
+                        <span className="hidden sm:inline">Tools</span>
+                      </button>
+
+                      {toolsMenuOpen && (
+                        <div
+                          role="menu"
+                          aria-label="Attachment and tool options"
+                          className="absolute bottom-13 left-0 z-30 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/15 bg-[#14141B] p-2.5 shadow-2xl space-y-1.5"
+                        >
+                          <div className="px-2 py-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02]">
+                            <p className="text-[11px] font-semibold text-white">
+                              {status.visionEnabled
+                                ? "Image Understanding Active"
+                                : "Vision Analysis Unavailable"}
+                            </p>
+                            <p className="mt-0.5 text-[11px] leading-snug text-neutral-400">
+                              {status.visionEnabled
+                                ? "Attach a textbook photo (JPEG, PNG, WebP · max 4 MB)."
+                                : "Image analysis is paused pending guardian Meta license approval. You can preview photos locally, while live solving stays text-only."}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setToolsMenuOpen(false);
+                              fileInputRef.current?.click();
+                            }}
+                            className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                          >
+                            <ImageIcon size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
+                            <span>
+                              {attachedImage ? "Replace Photo (Gallery)" : "Choose Photo (Gallery)"}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setToolsMenuOpen(false);
+                              cameraInputRef.current?.click();
+                            }}
+                            className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                          >
+                            <Camera size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
+                            <span>Take Photo (Camera)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setToolsMenuOpen(false);
+                              setPreferencesOpen(true);
+                            }}
+                            className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                          >
+                            <SlidersHorizontal size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
+                            <span>Tutor Preferences ({preferences.classLevel} · {preferences.explanationLength})</span>
+                          </button>
                         </div>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setToolsMenuOpen(false);
-                            fileInputRef.current?.click();
-                          }}
-                          className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                        >
-                          <ImageIcon size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
-                          <span>
-                            {attachedImage ? "Replace Photo (Gallery)" : "Choose Photo (Gallery)"}
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setToolsMenuOpen(false);
-                            cameraInputRef.current?.click();
-                          }}
-                          className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                        >
-                          <Camera size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
-                          <span>Take Photo (Camera)</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setToolsMenuOpen(false);
-                            setPreferencesOpen(true);
-                          }}
-                          className="flex w-full min-h-[42px] items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-neutral-100 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                        >
-                          <SlidersHorizontal size={16} className="text-[#FFD60A] shrink-0" aria-hidden="true" />
-                          <span>Tutor Preferences ({preferences.classLevel} · {preferences.explanationLength})</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Microphone Speech-to-Text */}
                   <button
@@ -2079,11 +2103,15 @@ export default function AIPage() {
                   ) : (
                     <button
                       type="submit"
-                      disabled={!inputText.trim() && !(status.visionEnabled && attachedImage)}
+                      disabled={
+                        !inputText.trim() &&
+                        !(AI_IMAGE_INPUT_ENABLED && status.visionEnabled && attachedImage)
+                      }
                       aria-label="Send question"
                       title="Send"
                       className={`inline-flex h-11 min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-2xl bg-[#FFD60A] px-4 text-xs font-bold text-black whitespace-nowrap shrink-0 transition-[transform,opacity,box-shadow] duration-150 cursor-pointer ${
-                        !inputText.trim() && !(status.visionEnabled && attachedImage)
+                        !inputText.trim() &&
+                        !(AI_IMAGE_INPUT_ENABLED && status.visionEnabled && attachedImage)
                           ? "opacity-35 cursor-not-allowed"
                           : "opacity-100 shadow-[0_0_16px_rgba(255,214,10,0.3)] hover:bg-[#FFD60A]/90 active:scale-[0.98]"
                       }`}

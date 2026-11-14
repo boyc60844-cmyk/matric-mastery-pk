@@ -22,10 +22,10 @@ export interface WeeklyUpgradePolicy {
   verificationStandard: string;
 }
 
-export const CURRENT_VERSION = "v4.1.0";
+export const CURRENT_VERSION = "v4.1.1";
 export const CURRENT_RELEASE_DATE = "November 2026";
 export const CURRENT_RELEASE_CODENAME =
-  "Matric Mastery AI Experience 2.0";
+  "Matric Mastery AI Text-Only Maintenance Update";
 
 export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
   cycle: "Targeted Weekly Iterations During Active Academic Cycles",
@@ -74,6 +74,28 @@ export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: "v4.1.1",
+    codename: "Matric Mastery AI Text-Only Maintenance Update",
+    releaseDate: "November 2026",
+    status: "released",
+    category: "Performance",
+    summary:
+      "Frontend maintenance patch temporarily disabling image upload controls across the AI chat interfaces behind a centralized AI_IMAGE_INPUT_ENABLED flag while preserving the entire text-based AI tutoring experience, voice dictation, and protected Cloudflare Workers AI backend.",
+    features: [
+      "Temporarily hid image attachment buttons, camera/gallery file pickers, and preview cards behind AI_IMAGE_INPUT_ENABLED = false across /ai and the quick Doubt Solver modal.",
+      "Updated the /ai composer placeholder to \"Ask a text-based Class 9-10 question...\" with clean layout spacing across Android and desktop.",
+    ],
+    improvements: [
+      "Added frontend submission protection across lib/aiClient.ts, lib/ai.ts, app/ai/page.tsx, and components/DoubtSolverModal.tsx so stale image selections or image payloads cannot be submitted.",
+      "Updated /guide directory descriptions and FAQ documentation to accurately reflect text-based AI usage while image understanding remains disabled pending an appropriate, policy-compliant provider.",
+    ],
+    fixes: [
+      "Eliminated unused attachment-control gaps and stale image notice prompts in the composer while keeping speech dictation, subject selection, Preferences, History, Read-Aloud, and Stop/Retry controls unchanged.",
+    ],
+    notes:
+      "Frontend-only maintenance update; deployed Cloudflare Worker backend (worker/index.ts), endpoint fallback, and text model (@cf/meta/llama-3.1-8b-instruct-fast) remain unchanged.",
+  },
   {
     version: "v4.1.0",
     codename: "Matric Mastery AI Experience 2.0",

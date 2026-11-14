@@ -31,6 +31,7 @@ import {
   AIHistoryEntry,
   UploadedImageData,
 } from "@/lib/ai";
+import { AI_IMAGE_INPUT_ENABLED } from "@/lib/aiClient";
 import { addXP } from "@/lib/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import AIMarkdownRenderer from "./AIMarkdownRenderer";
@@ -90,6 +91,10 @@ export default function DoubtSolverModal({
   useEffect(() => {
     if (isOpen) {
       refreshHistoryList();
+      if (!AI_IMAGE_INPUT_ENABLED) {
+        setUploadedImage(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
       if (typeof window !== "undefined") {
         const hasSpeech =
           "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
@@ -111,8 +116,10 @@ export default function DoubtSolverModal({
     const inputElement = document.getElementById("doubtInput") as HTMLTextAreaElement | null;
     const userText = (explicitText !== undefined ? explicitText : (inputElement?.value || question)).trim();
 
+    const effectiveImage = AI_IMAGE_INPUT_ENABLED ? uploadedImage : null;
+
     // 2. If empty and no image, shake input and return
-    if (!userText && !uploadedImage) {
+    if (!userText && !effectiveImage) {
       setInputShaking(true);
       setTimeout(() => setInputShaking(false), 500);
       if (doubtInputRef.current) doubtInputRef.current.focus();
@@ -130,7 +137,7 @@ export default function DoubtSolverModal({
       const fullAnswer = await streamSolveWithAI({
         question: userText,
         language,
-        uploadedImage,
+        uploadedImage: effectiveImage,
         onChunk: (chunk) => {
           setAnswer(chunk);
         },
@@ -172,6 +179,10 @@ export default function DoubtSolverModal({
 
   // Image Upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!AI_IMAGE_INPUT_ENABLED) {
+      e.target.value = "";
+      return;
+    }
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -523,7 +534,7 @@ export default function DoubtSolverModal({
               className="space-y-2.5"
             >
               {/* Image Preview Thumbnail */}
-              {uploadedImage && (
+              {AI_IMAGE_INPUT_ENABLED && uploadedImage && (
                 <div className="relative inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-black/60 p-1.5">
                   <img
                     src={uploadedImage.previewUrl}
@@ -584,27 +595,31 @@ export default function DoubtSolverModal({
                       <option value="urdu">اردو / Roman Urdu</option>
                     </select>
 
-                    {/* Image Upload Button */}
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`flex items-center gap-1 rounded-lg border px-2 py-1 transition-colors ${
-                        uploadedImage
-                          ? "border-accent bg-accent/15 text-accent"
-                          : "border-white/10 bg-white/5 text-muted hover:text-white"
-                      }`}
-                      title="Attach photo of question or textbook diagram"
-                    >
-                      <ImageIcon size={13} />
-                      <span className="hidden sm:inline">Attach Photo</span>
-                    </button>
+                    {/* Image Upload Button (gated behind AI_IMAGE_INPUT_ENABLED) */}
+                    {AI_IMAGE_INPUT_ENABLED && (
+                      <>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`flex items-center gap-1 rounded-lg border px-2 py-1 transition-colors ${
+                            uploadedImage
+                              ? "border-accent bg-accent/15 text-accent"
+                              : "border-white/10 bg-white/5 text-muted hover:text-white"
+                          }`}
+                          title="Attach photo of question or textbook diagram"
+                        >
+                          <ImageIcon size={13} />
+                          <span className="hidden sm:inline">Attach Photo</span>
+                        </button>
+                      </>
+                    )}
 
                     {/* Voice Input Button */}
                     {speechSupported && (
