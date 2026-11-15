@@ -1,10 +1,30 @@
+export type BoardWatchTopic =
+  | "matric-2027"
+  | "inter-2027"
+  | "historical-2026"
+  | "paper-patterns"
+  | "smart-syllabus"
+  | "passing-grading"
+  | "admissions"
+  | "practical-exams"
+  | "policies-reforms"
+  | "fbise";
+
+export type BoardWatchStatusLabel =
+  | "CONFIRMED"
+  | "REPORTED"
+  | "AWAITING OFFICIAL CONFIRMATION"
+  | "PLANNED / APPROVED INITIATIVE"
+  | "HISTORICAL"
+  | "UNVERIFIED";
+
 export type BoardWatchCategory =
   | "confirmed"
   | "reported"
-  | "expected"
-  | "rumor"
-  | "pattern"
-  | "deadline";
+  | "awaiting"
+  | "planned"
+  | "historical"
+  | "rumor";
 
 export type ExamClass = "9th" | "10th" | "11th" | "12th";
 
@@ -18,31 +38,44 @@ export type BoardId =
   | "sargodha"
   | "bahawalpur"
   | "dgkhan"
-  | "sahiwal";
+  | "sahiwal"
+  | "fbise";
 
 export type VerificationStatus =
   | "officially-confirmed"
   | "credibly-reported"
-  | "historically-expected"
-  | "unverified-rumor"
-  | "superseded"
-  | "archived";
+  | "awaiting-confirmation"
+  | "planned-initiative"
+  | "historical-record"
+  | "unverified-rumor";
 
 export interface BoardInfo {
-  id: BoardId;
+  id: Exclude<BoardId, "all" | "fbise">;
   name: string;
   shortName: string;
   urduName: string;
   website: string;
   notificationsUrl: string;
-  dateSheetUrl: string;
-  modelPapersUrl: string;
-  onlineServicesUrl: string;
+  admissionPortalUrl: string;
+  portalObservation?: string;
   headquarters: string;
   districts: string[];
   helpline: string;
   code: string;
   jurisdictionSummary: string;
+}
+
+export interface BoardWatchSourceLink {
+  label: string;
+  url: string;
+  sourceKind: "official" | "news" | "reproduced-copy";
+}
+
+export interface BoardWatchGradeDetail {
+  grade: string;
+  notification: string;
+  date: string;
+  notes: string;
 }
 
 export interface BoardWatchEntry {
@@ -51,6 +84,9 @@ export interface BoardWatchEntry {
   summary: string;
   category: BoardWatchCategory;
   status: VerificationStatus;
+  statusDisplayLabel: BoardWatchStatusLabel;
+  topics: BoardWatchTopic[];
+  isHistorical?: boolean;
   affectedClasses: ExamClass[];
   affectedBoards: BoardId[];
   affectedBoardNames: string[];
@@ -61,15 +97,16 @@ export interface BoardWatchEntry {
   lastVerifiedDate: string;
   sourceUrl: string;
   sourceName: string;
-  sourceType: "official_board" | "pbcc_government" | "news_outlet" | "historical_archive";
+  sources: BoardWatchSourceLink[];
+  sourceType: "official_board" | "pbcc_government" | "ibcc_federal" | "news_outlet" | "historical_archive";
   whatItMeans: string;
+  keyFacts?: string[];
+  gradeBreakdown?: BoardWatchGradeDetail[];
+  limitationNote?: string;
   evidenceNotes: string;
   actionRequired?: string;
   isDeadline?: boolean;
   deadlineDate?: string;
-  isExpired?: boolean;
-  supersededBy?: string;
-  supersedes?: string;
   tags: string[];
   rumorDebunk?: {
     circulatingClaim: string;
@@ -93,28 +130,44 @@ export interface ExpectedTimelineStage {
 
 export interface SubjectPattern {
   id: string;
+  grade: ExamClass;
   subject: string;
-  classes: ("9th" | "10th" | "11th" | "12th")[];
-  theoryMarks: number;
-  practicalMarks: number;
-  totalMarks: number;
-  objectiveMcqsMarks: number;
+  notificationRef: string;
+  totalTheoryMarks: number;
+  objectiveMarks: number;
+  mcqCount: string;
   subjectiveMarks: number;
-  passingMarks: number;
-  timeAllowed: string;
-  sloBreakdown: {
-    knowledge: string;
-    understanding: string;
-    application: string;
-  };
-  keyComponents: string[];
-  pairingSchemeStatus: "structural-blueprint" | "officially-modeled";
-  pairingNote: string;
+  practicalMarks: string;
+  passingRequirement: string;
+  totalDuration: string;
+  objectiveDuration: string;
+  subjectiveDuration: string;
+  questionDistribution: string[];
+  attemptRules: string;
+  internalChoices: string;
+  pairingScheme: string[];
+  modelPaperAvailable: string;
+  deletedContent: string;
+  paperSetterInstructions: string;
   officialModelPaperUrl: string;
 }
 
+export const BOARD_WATCH_TOPIC_FILTERS: { id: BoardWatchTopic | "all"; label: string }[] = [
+  { id: "all", label: "Latest Updates" },
+  { id: "matric-2027", label: "Matric 2027" },
+  { id: "inter-2027", label: "Intermediate 2027" },
+  { id: "historical-2026", label: "2026 Exam Updates (Historical)" },
+  { id: "paper-patterns", label: "Paper Patterns & Pairing Schemes" },
+  { id: "smart-syllabus", label: "Smart Syllabus / ALP" },
+  { id: "passing-grading", label: "Passing Marks & Grading" },
+  { id: "admissions", label: "Admissions & Registration" },
+  { id: "practical-exams", label: "Practical Exams" },
+  { id: "policies-reforms", label: "Board Policies & Reforms" },
+  { id: "fbise", label: "FBISE Updates" },
+];
+
 // ---------------------------------------------------------------------------
-// 9 PUNJAB BOARDS DIRECTORY + PBCC
+// 9 PUNJAB BOARDS DIRECTORY + PBCC + FBISE REFERENCE
 // ---------------------------------------------------------------------------
 export const PUNJAB_BOARDS: BoardInfo[] = [
   {
@@ -123,10 +176,10 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     shortName: "BISE Lahore",
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، لاہور",
     website: "https://www.biselahore.com",
-    notificationsUrl: "https://www.biselahore.com",
-    dateSheetUrl: "https://www.biselahore.com",
-    modelPapersUrl: "https://www.biselahore.com",
-    onlineServicesUrl: "https://www.biselahore.com",
+    notificationsUrl: "https://www.biselahore.com/notifications",
+    admissionPortalUrl: "https://www.biselahore.com/notifications",
+    portalObservation:
+      "Verified 15 Nov 2026: Live notifications page hosts 9th Private Registration Schedule 1st Annual 2027 and Computer Science (OSM) Answer Book pattern.",
     headquarters: "86-Mozang Road, Lahore",
     districts: ["Lahore", "Kasur", "Sheikhupura", "Nankana Sahib"],
     helpline: "+92 42 99200192-97",
@@ -140,9 +193,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، راولپنڈی",
     website: "https://biserawalpindi.edu.pk",
     notificationsUrl: "https://biserawalpindi.edu.pk",
-    dateSheetUrl: "https://biserawalpindi.edu.pk",
-    modelPapersUrl: "https://biserawalpindi.edu.pk",
-    onlineServicesUrl: "https://eservices.biserawalpindi.edu.pk",
+    admissionPortalUrl: "https://eservices.biserawalpindi.edu.pk",
     headquarters: "Morgah, Near Attock Oil Refinery, Rawalpindi",
     districts: ["Rawalpindi", "Attock", "Chakwal", "Jhelum", "Murree", "Talagang"],
     helpline: "+92 51 5450915",
@@ -155,10 +206,10 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     shortName: "BISE Multan",
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، ملتان",
     website: "https://web.bisemultan.edu.pk",
-    notificationsUrl: "https://web.bisemultan.edu.pk",
-    dateSheetUrl: "https://web.bisemultan.edu.pk",
-    modelPapersUrl: "https://web.bisemultan.edu.pk",
-    onlineServicesUrl: "https://web.bisemultan.edu.pk",
+    notificationsUrl: "https://web.bisemultan.edu.pk/admission-matric/",
+    admissionPortalUrl: "https://student.bisemultan.edu.pk/",
+    portalObservation:
+      'Verified 15 Nov 2026: Online admission portal showed "No Active Schedule Available !" for 10th / Combined, 9th Fresh, 11th Fresh, and 12th / Combined despite published PBCC schedule — check portal activation directly.',
     headquarters: "Gol Bagh, Gulgasht Colony, Multan",
     districts: ["Multan", "Khanewal", "Vehari", "Lodhran"],
     helpline: "+92 61 9210125",
@@ -172,9 +223,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، فیصل آباد",
     website: "https://www.bisefsd.edu.pk",
     notificationsUrl: "https://www.bisefsd.edu.pk",
-    dateSheetUrl: "https://www.bisefsd.edu.pk",
-    modelPapersUrl: "https://www.bisefsd.edu.pk",
-    onlineServicesUrl: "https://www.bisefsd.edu.pk",
+    admissionPortalUrl: "https://www.bisefsd.edu.pk",
     headquarters: "Jhang Road, Faisalabad",
     districts: ["Faisalabad", "Jhang", "Toba Tek Singh", "Chiniot"],
     helpline: "+92 41 9330366",
@@ -188,9 +237,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، گوجرانوالہ",
     website: "https://www.bisegrw.edu.pk",
     notificationsUrl: "https://www.bisegrw.edu.pk",
-    dateSheetUrl: "https://www.bisegrw.edu.pk",
-    modelPapersUrl: "https://www.bisegrw.edu.pk",
-    onlineServicesUrl: "https://www.bisegrw.edu.pk",
+    admissionPortalUrl: "https://www.bisegrw.edu.pk",
     headquarters: "Faisal Town, Gujranwala",
     districts: ["Gujranwala", "Gujrat", "Mandi Bahauddin", "Hafizabad", "Narowal", "Sialkot"],
     helpline: "+92 55 9200752",
@@ -204,9 +251,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، سرگودھا",
     website: "https://www.bisesargodha.edu.pk",
     notificationsUrl: "https://www.bisesargodha.edu.pk",
-    dateSheetUrl: "https://www.bisesargodha.edu.pk",
-    modelPapersUrl: "https://www.bisesargodha.edu.pk",
-    onlineServicesUrl: "https://www.bisesargodha.edu.pk",
+    admissionPortalUrl: "https://www.bisesargodha.edu.pk",
     headquarters: "Near 49-Tail, Defence View, Sargodha",
     districts: ["Sargodha", "Khushab", "Mianwali", "Bhakkar"],
     helpline: "+92 48 3250041",
@@ -220,9 +265,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، بہاولپور",
     website: "https://www.bisebwp.edu.pk",
     notificationsUrl: "https://www.bisebwp.edu.pk",
-    dateSheetUrl: "https://www.bisebwp.edu.pk",
-    modelPapersUrl: "https://www.bisebwp.edu.pk",
-    onlineServicesUrl: "https://www.bisebwp.edu.pk",
+    admissionPortalUrl: "https://www.bisebwp.edu.pk",
     headquarters: "Cheema Town, Bahawalpur",
     districts: ["Bahawalpur", "Bahawalnagar", "Rahim Yar Khan"],
     helpline: "+92 62 9255280",
@@ -236,9 +279,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، ڈیرہ غازی خان",
     website: "https://www.bisedgkhan.edu.pk",
     notificationsUrl: "https://www.bisedgkhan.edu.pk",
-    dateSheetUrl: "https://www.bisedgkhan.edu.pk",
-    modelPapersUrl: "https://www.bisedgkhan.edu.pk",
-    onlineServicesUrl: "https://www.bisedgkhan.edu.pk",
+    admissionPortalUrl: "https://www.bisedgkhan.edu.pk",
     headquarters: "Board Complex, Airport Road, D.G. Khan",
     districts: ["Dera Ghazi Khan", "Muzaffargarh", "Layyah", "Rajanpur", "Kot Addu", "Taunsa"],
     helpline: "+92 64 2460114",
@@ -250,11 +291,9 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     name: "Board of Intermediate & Secondary Education, Sahiwal",
     shortName: "BISE Sahiwal",
     urduName: "بورڈ آف انٹرمیڈیٹ اینڈ سیکنڈری ایجوکیشن، ساہیوال",
-    website: "https://www.bisesahiwal.edu.pk",
-    notificationsUrl: "https://www.bisesahiwal.edu.pk",
-    dateSheetUrl: "https://www.bisesahiwal.edu.pk",
-    modelPapersUrl: "https://www.bisesahiwal.edu.pk",
-    onlineServicesUrl: "https://www.bisesahiwal.edu.pk",
+    website: "https://bisesahiwal.edu.pk",
+    notificationsUrl: "https://bisesahiwal.edu.pk",
+    admissionPortalUrl: "https://bisesahiwal.edu.pk",
     headquarters: "Farid Town, Sahiwal",
     districts: ["Sahiwal", "Okara", "Pakpattan"],
     helpline: "+92 40 9200100",
@@ -263,649 +302,2198 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
   },
 ];
 
-// PBCC Overview Information
 export const PBCC_INFO = {
-  name: "Punjab Boards Committee of Chairmen (PBCC)",
+  name: "Punjab Boards Committee of Chairpersons (PBCC)",
   urduName: "پنجاب بورڈز کمیٹی آف چیئرمین",
   website: "https://pbcc.edu.pk",
-  role: "Statutory coordinating body for all nine Boards of Intermediate & Secondary Education in Punjab. Standardizes academic calendars, datesheets, admission schedules, grading frameworks, and exam rules across Punjab.",
+  role: "Coordinating body for all nine Boards of Intermediate & Secondary Education in Punjab. Standardizes academic calendars, datesheets, admission schedules, grading frameworks, and exam rules across Punjab.",
   office: "Hosted at BISE Lahore, 86-Mozang Road, Lahore",
 };
 
+export const FBISE_PORTAL_INFO = {
+  name: "Federal Board of Intermediate & Secondary Education (FBISE)",
+  website: "https://www.fbise.edu.pk/",
+  modelPapersUrl: "https://www.fbise.edu.pk/curriculum_model_paper.php",
+  allPapersUrl: "https://www.fbise.edu.pk/allpaper.php",
+  eSheetsUrl: "https://www.fbise.edu.pk/screen_marking.php",
+  scopeNote:
+    "Separate federal examination authority. FBISE policies, SLO papers, and E-Sheet templates apply to FBISE-affiliated institutions only—not Punjab provincial BISE boards unless separately adopted.",
+};
+
 // ---------------------------------------------------------------------------
-// EXPECTED 2027 EXAMINATION TIMELINE (HISTORICAL BASELINE: PBCC 2023-2026)
+// 2027 EXAMINATION TIMELINE (CONFIRMED MATRIC CLASS 10 DATES + AWAITING STAGES)
 // ---------------------------------------------------------------------------
 export const EXPECTED_TIMELINE_2027: ExpectedTimelineStage[] = [
   {
     id: "stage-1-admissions",
-    phase: "Admission & Registration Window",
-    targetGroup: "Class 9, 10, 11 & 12 (Regular & Private)",
-    expectedWindow: "November 2026 – January 2027",
-    baselineYears: "2023, 2024, 2025, 2026 Annual PBCC Notification Schedules",
-    description: "Online registration and admission forms submission. Conducted in three fee tiers: Single Fee (first 4 weeks), Double Fee (following 2 weeks), and Triple Fee (final window). Private candidates submit online via board portal bank challans.",
-    status: "upcoming",
-    studentAction: "Ensure B-Form / NADRA Smart Card details match school enrollment records exactly. Prepare passport-sized photographs on blue/white background.",
-    officialSourceToCheck: "Respective BISE Online Admission Portal (e.g., biselahore.com / biserawalpindi.edu.pk)",
+    phase: "Matric 2027 Admission & Registration Windows (Confirmed Schedule)",
+    targetGroup: "SSC Part-II (Class 10) • Punjab BISEs",
+    expectedWindow: "10 Nov 2026 – 11 Jan 2027",
+    baselineYears: "PBCC Notification dated 10 November 2026",
+    description:
+      "PBCC fee schedule for Matric Annual 2027: Single fee (10 November – 11 December 2026), Double fee (12 – 28 December 2026), Triple fee (29 December 2026 – 11 January 2027). Portal activation varies by board (e.g., BISE Multan private portal showed 'No Active Schedule Available !' on 15 Nov 2026).",
+    status: "active",
+    studentAction:
+      "Regular students submit via schools; private students check their district BISE portal directly and complete single-fee forms before 11 December 2026.",
+    officialSourceToCheck: "Respective Punjab BISE Online Admission Portal",
   },
   {
     id: "stage-2-datesheets",
-    phase: "Tentative & Final Date Sheet Publication",
-    targetGroup: "Matric (Class 9 & 10) followed by Inter (Class 11 & 12)",
-    expectedWindow: "Late January – Mid February 2027",
-    baselineYears: "PBCC Unified Date Sheet Gazettes (2022–2026)",
-    description: "PBCC issues unified master date sheet for all 9 boards. Individual boards publish identical dates on their gazettes. Morning shift starts 8:30 AM; Evening shift starts 1:30 PM (Friday evening shift 2:30 PM).",
+    phase: "Subject-Wise 2027 Date Sheets (Awaiting Release)",
+    targetGroup: "Matric (Class 9 & 10) & Inter (Class 11 & 12)",
+    expectedWindow: "Awaiting Official Board Release",
+    baselineYears: "PBCC / BISE Official Date Sheet Gazettes",
+    description:
+      "Subject-by-subject theory and practical date sheets are published separately by PBCC and the nine Punjab BISEs closer to exam commencement.",
     status: "planning-estimate",
-    studentAction: "Download official PDF only from verified board websites. Beware of forged social media date sheets.",
-    officialSourceToCheck: "PBCC Official Gazette and individual BISE notification pages",
+    studentAction:
+      "Wait for the signed PDF on your own board domain. Ignore viral date sheets on social media.",
+    officialSourceToCheck: "PBCC & Individual Punjab BISE Notification Pages",
   },
   {
-    id: "stage-3-rollslips",
-    phase: "Roll Number Slips & Center Allocation",
-    targetGroup: "All Matric & Intermediate Candidates",
-    expectedWindow: "Mid to Late February 2027 (10-14 days before paper 1)",
-    baselineYears: "Annual Roll Number Slip distribution protocol",
-    description: "Regular students receive stamped slips from school/college principals. Private candidates download watermarked PDF slips directly using B-Form / Token Number from their board's portal.",
-    status: "planning-estimate",
-    studentAction: "Inspect center address, photo, subject codes, and shift timing immediately. Report spelling or subject clashes to board one-window cell within 72 hours.",
-    officialSourceToCheck: "BISE Portal Online Roll Number Slip Generator",
+    id: "stage-3-matric-class10-exam",
+    phase: "SSC Part-II (Class 10) First Annual Exam 2027 (Confirmed)",
+    targetGroup: "Class 10 (SSC Part-II) across 9 Punjab BISEs",
+    expectedWindow: "Starts 16 March 2027",
+    baselineYears: "PBCC Notification dated 10 November 2026",
+    description:
+      "Class 10 First Annual Examination 2027 starts on 16 March 2027 across Punjab's nine boards under the 40% passing threshold (IBCC Phase 2) and PECTAA ALP No. 1257.",
+    status: "upcoming",
+    studentAction:
+      "Align preparation with PECTAA Grade 10 ALP (No. 1257) and ensure at least 40% marks in every subject.",
+    officialSourceToCheck: "Your Own BISE Portal & PECTAA ALP No. 1257",
   },
   {
-    id: "stage-4-matric-exams",
-    phase: "Matric Theory Examinations (Class 10 then Class 9)",
-    targetGroup: "SSC Part II (10th) followed by SSC Part I (9th)",
-    expectedWindow: "March 2027 (10th early March; 9th late March)",
-    baselineYears: "PBCC Annual Examinations Calendar 2022–2026",
-    description: "Class 10 examinations commence first (typically first Tuesday of March). Class 9 theory papers commence immediately upon conclusion of 10th class papers. OMR bubble sheets used for 20-minute objective papers.",
+    id: "stage-4-matric-class9-exam",
+    phase: "SSC Part-I (Class 9) First Annual Exam 2027 (Awaiting Date)",
+    targetGroup: "Class 9 (SSC Part-I)",
+    expectedWindow: "Awaiting Official Confirmation",
+    baselineYears: "Not confirmed in 10 Nov 2026 Class 10 schedule reporting",
+    description:
+      "No verified Class 9 (SSC Part-I) 2027 commencement date has been confirmed yet. Students must NOT assume Class 9 starts on 16 March 2027.",
     status: "planning-estimate",
-    studentAction: "Adhere to strict 8:15 AM gate closure for morning shift. Carry black/blue ballpoint pens and transparent ruler.",
-    officialSourceToCheck: "Official PBCC Examination Gazette",
+    studentAction:
+      "Follow PECTAA Grade 9 ALP notifications (No. 1238 & No. 1255) and watch your board's official notifications for SSC Part-I dates.",
+    officialSourceToCheck: "PBCC & Respective BISE Official Notifications",
   },
   {
-    id: "stage-5-practicals-matric",
-    phase: "Matric Science Practical Examinations",
-    targetGroup: "Class 10 Science Students (Physics, Chemistry, Biology, Computer)",
-    expectedWindow: "Mid April – Early May 2027",
-    baselineYears: "Post-theory laboratory evaluation cycles",
-    description: "Conducted in designated science laboratories across secondary schools. Practical batches scheduled in 3 shifts daily. Separate practical roll number slips issued.",
+    id: "stage-5-inter-2027",
+    phase: "Intermediate (Class 11 & 12) Annual 2027 Exams & Admissions (Awaiting)",
+    targetGroup: "Class 11 & Class 12 (HSSC Parts I & II)",
+    expectedWindow: "Awaiting Official 2027 HSSC Schedule",
+    baselineYears: "PECTAA 2026–27 ALP No. 1239 / No. 1258 issued; exam dates pending",
+    description:
+      "PECTAA has issued the 2026–27 paper patterns and ALP documents for Grades 11 and 12, but official 2027 HSSC exam start dates and admission form fee windows await PBCC announcement.",
     status: "planning-estimate",
-    studentAction: "Keep signed practical notebook and laboratory instrument kit prepared.",
-    officialSourceToCheck: "Respective board practical schedule gazette",
+    studentAction:
+      "Do NOT assume the historical 20 May 2026 date applies to 2027. Prepare using Grade 11 (No. 1239) & Grade 12 (No. 1258) ALPs.",
+    officialSourceToCheck: "PBCC, PECTAA & Respective Punjab BISE Portals",
   },
   {
-    id: "stage-6-inter-exams",
-    phase: "Intermediate Theory Examinations (Class 12 then Class 11)",
-    targetGroup: "HSSC Part II (12th) followed by HSSC Part I (11th)",
-    expectedWindow: "Late April – June 2027",
-    baselineYears: "PBCC HSSC Annual schedule 2022–2026",
-    description: "Class 12 papers commence late April / early May. Class 11 papers follow in late May / early June. 3-hour papers with non-programmable scientific calculator permissions in Physics/Math/Stats.",
-    status: "planning-estimate",
-    studentAction: "Focus on conceptual questions and numerical practice under timed conditions.",
-    officialSourceToCheck: "PBCC Unified Intermediate Gazette",
-  },
-  {
-    id: "stage-7-results",
-    phase: "Annual Results Declaration & Gazette",
-    targetGroup: "Class 10 (July/Aug), Class 12 (Sept), Class 9 (Aug/Sept), Class 11 (Oct)",
-    expectedWindow: "July – October 2027",
-    baselineYears: "PBCC standard 90-day post-exam marking cycle",
-    description: "Online result search via board web portal, SMS short-codes, and downloadable CD gazette. Marks sheets display subject-wise marks and updated 40% passing benchmark.",
-    status: "planning-estimate",
-    studentAction: "Download digital e-result card immediately; original result card dispatched to school/postal address within 3 weeks.",
-    officialSourceToCheck: "Official BISE Result Portals",
-  },
-  {
-    id: "stage-8-second-annual",
-    phase: "Second Annual Examinations (Supplementary)",
-    targetGroup: "Improvement & Re-appearing candidates",
-    expectedWindow: "October – November 2027",
-    baselineYears: "PBCC 2nd Annual Examination Statutory Policy",
-    description: "Replaces the older 'Supplementary' exam nomenclature. Open to students looking to improve marks or clear failed subjects within the same academic year.",
-    status: "planning-estimate",
-    studentAction: "Submit admission within 20 days of 1st annual result declaration.",
-    officialSourceToCheck: "BISE 2nd Annual Notification Notice",
+    id: "stage-6-matric-result-2027",
+    phase: "Class 10 Annual Exam 2027 Result Declaration (Confirmed)",
+    targetGroup: "SSC Part-II (Class 10)",
+    expectedWindow: "20 July 2027",
+    baselineYears: "PBCC Notification dated 10 November 2026",
+    description:
+      "PBCC's 10 November 2026 schedule fixes 20 July 2027 as the result declaration date for SSC Part-II (Class 10) First Annual Examination 2027.",
+    status: "upcoming",
+    studentAction:
+      "Check your board's official result portal on 20 July 2027 using your roll number.",
+    officialSourceToCheck: "Official Punjab BISE Result Portals",
   },
 ];
 
 // ---------------------------------------------------------------------------
-// INITIAL VERIFIED RESEARCH ENTRIES (SOURCED, FACT-CHECKED & CLASSIFIED)
+// BOARD WATCH ENTRIES (MEGA REFRESH AS OF 15 NOVEMBER 2026)
+// Ordered cleanly by current relevance & publication recency.
 // ---------------------------------------------------------------------------
 export const INITIAL_BOARD_WATCH_ENTRIES: BoardWatchEntry[] = [
-  // 1. CONFIRMED: 40% Passing Marks Standard
+  // =========================================================================
+  // PART 1 — 2027 MATRIC EXAMINATION SCHEDULE
+  // =========================================================================
   {
-    id: "pbcc-passing-marks-40-percent",
-    headline: "PBCC Unified 40% Minimum Passing Marks Policy Across All 9 Punjab Boards",
+    id: "punjab-matric-annual-2027-schedule",
+    headline: "Punjab Announces Matric Annual Examination 2027 Schedule",
     summary:
-      "Under IBCC national harmonization directives adopted uniformly by PBCC, minimum passing marks have officially transitioned from 33% to 40% per subject. Candidates scoring below 40% receive an 'Unsatisfactory' (U) category rather than immediate fail, qualifying for the Second Annual exam window.",
+      "PBCC notification dated 10 November 2026 confirms Class 10 (SSC Part-II) First Annual exams start on 16 March 2027, results release on 20 July 2027, and admission forms run from 10 November 2026 to 11 January 2027 across all 9 Punjab BISEs.",
     category: "confirmed",
     status: "officially-confirmed",
-    affectedClasses: ["9th", "10th", "11th", "12th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "Annual 2026 & Annual 2027",
-    issuingAuthority: "Punjab Boards Committee of Chairmen (PBCC) / IBCC",
-    originalDate: "August 14, 2024",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://pbcc.edu.pk",
-    sourceName: "PBCC Official Policy Circular & IBCC Unified Assessment Gazette",
-    sourceType: "pbcc_government",
-    whatItMeans:
-      "In a 75-mark paper (e.g. Mathematics or English), you must obtain at least 30 marks to pass (previously 25). In a 60-mark science theory paper (Physics, Chemistry, Biology), you need 24 marks (previously 20). In 50-mark papers (Pak Studies, Islamiat), you need 20 marks.",
-    evidenceNotes:
-      "Directly verified against PBCC notifications and adopted across BISE Lahore, Gujranwala, Multan, Faisalabad, Rawalpindi, Sargodha, Bahawalpur, DG Khan, and Sahiwal result gazettes.",
-    actionRequired:
-      "Adjust target passing thresholds in self-assessments. Target at least 50%+ in mock tests to maintain a safe margin above 40%.",
-    tags: ["Passing Marks", "PBCC Policy", "Grading System", "All Boards", "Matric & Inter"],
-  },
-
-  // 2. CONFIRMED: HSSC & SSC Second Annual 2026 Conduct Windows
-  {
-    id: "pbcc-second-annual-2026-cycle",
-    headline: "Second Annual 2026 Examination Schedule for Matric & Intermediate Sessions",
-    summary:
-      "PBCC has officially scheduled and initiated the Second Annual 2026 examination cycle. Intermediate 2nd Annual examinations commence in late October / November, followed by practical assessments. This provides students with an immediate opportunity to improve grades without losing an academic year.",
-    category: "confirmed",
-    status: "officially-confirmed",
-    affectedClasses: ["10th", "12th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "2nd Annual 2026",
-    issuingAuthority: "PBCC & Respective Divisional BISEs",
-    originalDate: "September 2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://www.biselahore.com",
-    sourceName: "BISE Lahore / PBCC 2nd Annual Examination Gazette Notification",
-    sourceType: "official_board",
-    whatItMeans:
-      "Second Annual is the official statutory title for supplementary examinations. Results are typically finalized by January, allowing qualifying students to meet spring and fall higher education admission criteria.",
-    evidenceNotes:
-      "Circulars published on official BISE portals (Lahore, Multan, Rawalpindi) confirming exam commencement dates and center allocations.",
-    actionRequired:
-      "Registered candidates must download their updated Second Annual Roll Number Slips with verified examination centers.",
-    tags: ["2nd Annual 2026", "Supplementary", "Date Sheet", "Inter & Matric"],
-  },
-
-  // 3. CONFIRMED: Student Learning Outcomes (SLO) Conceptual Transition
-  {
-    id: "pctb-pbcc-slo-conceptual-papers",
-    headline: "SLO-Based Conceptual Question Framework Formally Enforced in Science & Math Papers",
-    summary:
-      "Punjab Curriculum and Textbook Board (PCTB) and PBCC have formally incorporated Student Learning Outcomes (SLO) benchmarks into board examination question papers. Analytical, application-oriented, and conceptual questions now constitute an integral percentage of short and long question sections.",
-    category: "pattern",
-    status: "officially-confirmed",
-    affectedClasses: ["9th", "10th", "11th", "12th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "Annual 2026 & Annual 2027",
-    subject: "Science & Mathematics Group",
-    issuingAuthority: "Punjab Curriculum and Textbook Board (PCTB) & PBCC",
-    originalDate: "January 2024 (Updated in 2025/2026 cycles)",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://pbcc.edu.pk",
-    sourceName: "PBCC SLO Implementation Advisory & Model Papers",
-    sourceType: "pbcc_government",
-    whatItMeans:
-      "Examiners no longer rely purely on textbook exercise end-questions. Up to 25% to 30% of question items test underlying principles, graphical interpretations, and numerical application from inside chapter concepts.",
-    evidenceNotes:
-      "Verified via official model question papers published by BISE Lahore and PBCC for Physics, Chemistry, Biology, and Mathematics.",
-    actionRequired:
-      "Study concepts thoroughly from chapter text instead of memorizing exercise answers. Practice solving varied numerical problems and conceptual 'Give Reasons' questions.",
-    tags: ["SLO", "Paper Pattern", "Conceptual Questions", "PCTB", "Model Papers"],
-  },
-
-  // 4. CONFIRMED: QR Code & Digital Watermark on Roll Number Slips
-  {
-    id: "bise-digital-roll-slip-security",
-    headline: "Anti-Impersonation Digital Watermark & QR Verification System Active Across Boards",
-    summary:
-      "All nine Punjab boards enforce standardized digital security features on online Roll Number Slips, including scannable QR verification codes, embedded candidate photographs, and anti-tamper center codes. Center invigilation teams utilize portable mobile readers to authenticate slips.",
-    category: "confirmed",
-    status: "officially-confirmed",
-    affectedClasses: ["9th", "10th", "11th", "12th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "All Active Sessions",
-    issuingAuthority: "Punjab BISE Chairmen Joint Security Committee",
-    originalDate: "February 2024",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://biserawalpindi.edu.pk",
-    sourceName: "BISE Rawalpindi / Lahore Candidate Advisory Notice",
-    sourceType: "official_board",
-    whatItMeans:
-      "Slips downloaded from unofficial third-party websites without authentic QR signatures or with blurry barcodes risk rejection at center frisking checkpoints.",
-    evidenceNotes:
-      "Official candidate notices on BISE portals explicitly direct students to print from primary board sub-portals on white A4 sheets without plastic lamination.",
-    actionRequired:
-      "Print original slip directly from your own board's official portal. Never laminate the slip as supervisory signatures are required daily.",
-    tags: ["Roll Number Slip", "Security", "QR Code", "Exam Rules"],
-  },
-
-  // 5. REPORTED: Annual 2027 Online Admission Schedule Anticipation
-  {
-    id: "reported-2027-annual-admission-schedule",
-    headline: "Annual 2027 Matric Online Admission Portal Opening Anticipated for Mid-November 2026",
-    summary:
-      "Major national dailies and education news desks report that PBCC is finalizing the unified notification for Matric Annual 2027 online registration and admission form submission. Single-fee submissions are reported to open in mid-November 2026 and conclude by mid-December 2026.",
-    category: "reported",
-    status: "credibly-reported",
-    affectedClasses: ["9th", "10th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "Annual 2027",
-    issuingAuthority: "Reported via Dawn & The Express Tribune Education Desks",
-    originalDate: "October 22, 2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://pbcc.edu.pk",
-    sourceName: "Press reporting citing PBCC Secretariat sources",
-    sourceType: "news_outlet",
-    whatItMeans:
-      "The official gazette notification with exact fee challan dates has not yet been uploaded to the public portal, but educational institutions and private candidates should prepare their registration documentation.",
-    evidenceNotes:
-      "Reported in credible education press. Direct verification will occur as soon as PBCC uploads the signed circular with notification number.",
-    actionRequired:
-      "Private students should verify that their NADRA B-Form / Smart Card is up to date and does not contain name or parental spelling mismatches.",
-    tags: ["Admission 2027", "Registration", "Credibly Reported", "Matric 2027"],
-  },
-
-  // 6. REPORTED: Biometric / Electronic Attendance Pilot at Urban Centers
-  {
-    id: "reported-biometric-attendance-pilot",
-    headline: "PBCC Evaluating Expanded Electronic Candidate Verification at Divisional Headquarters",
-    summary:
-      "Education correspondents report that PBCC is reviewing an expanded pilot for electronic thumb-impression or tablet-based attendance logging at major division center clusters in Lahore, Faisalabad, and Rawalpindi for the 2027 cycle to eradicate impersonation.",
-    category: "reported",
-    status: "credibly-reported",
-    affectedClasses: ["10th", "12th"],
-    affectedBoards: ["lahore", "faisalabad", "rawalpindi"],
-    affectedBoardNames: ["BISE Lahore", "BISE Faisalabad", "BISE Rawalpindi"],
-    session: "Annual 2027",
-    issuingAuthority: "Education Press Reports citing PBCC Planning Session",
-    originalDate: "October 18, 2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://www.biselahore.com",
-    sourceName: "Punjab Education Bureau Reports",
-    sourceType: "news_outlet",
-    whatItMeans:
-      "This remains a reported administrative review. No board has declared that traditional paper roll slips or B-Form verification are replaced.",
-    evidenceNotes:
-      "Awaiting formal administrative circular from Punjab Higher Education Department / PBCC. Marked as awaiting direct verification.",
-    tags: ["Biometric", "Attendance", "Credibly Reported", "Administrative"],
-  },
-
-  // 7. EXPECTED: Matric Annual 2027 Theory Exam Commencement Window
-  {
-    id: "expected-matric-2027-theory-window",
-    headline: "Class 10 Annual 2027 Theory Examinations Expected to Commence Early March 2027",
-    summary:
-      "Based on PBCC statutory calendar precedents across 2022, 2023, 2024, 2025, and 2026, Matriculation (Class 10) Annual Examinations consistently begin on the first Tuesday of March. Class 9 papers follow approximately 15 to 18 days later.",
-    category: "expected",
-    status: "historically-expected",
-    affectedClasses: ["10th", "9th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "Annual 2027",
-    issuingAuthority: "Historical PBCC Academic Calendar Baseline",
-    originalDate: "Historical Analysis 2022–2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://pbcc.edu.pk",
-    sourceName: "Matric Mastery Historical Examination Calendar Archive",
-    sourceType: "historical_archive",
-    whatItMeans:
-      "Planning guidance only — NOT an official date sheet. Students can structure their revision countdown targeting March 1–5, 2027 as the likely commencement window for Class 10 theory papers.",
-    evidenceNotes:
-      "Analyzed PBCC unified examination gazettes for past 5 annual cycles. Exam start dates consistently adhere to early March barring exceptional gazetted holidays.",
-    actionRequired:
-      "Plan complete syllabus coverage by mid-January 2027, reserving February for full-length timed mock exams and past paper practice.",
-    tags: ["Expected Date", "Planning Guidance", "Matric 2027", "Class 10", "Class 9"],
-  },
-
-  // 8. EXPECTED: Intermediate Annual 2027 Theory Exam Commencement Window
-  {
-    id: "expected-inter-2027-theory-window",
-    headline: "Class 12 Annual 2027 Theory Examinations Expected Late April / Early May 2027",
-    summary:
-      "Historical PBCC schedule analysis establishes that Higher Secondary School Certificate (HSSC Part II - 12th Class) theory papers typically commence in late April or the first week of May, followed by Class 11 papers in late May / early June.",
-    category: "expected",
-    status: "historically-expected",
-    affectedClasses: ["12th", "11th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "Annual 2027",
-    issuingAuthority: "Historical PBCC Academic Calendar Baseline",
-    originalDate: "Historical Analysis 2022–2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://pbcc.edu.pk",
-    sourceName: "Matric Mastery Historical Examination Calendar Archive",
-    sourceType: "historical_archive",
-    whatItMeans:
-      "Expected timeline for student study roadmaps. Official subject-wise date sheets will be published by PBCC approximately 3 to 4 weeks prior to exam start.",
-    evidenceNotes:
-      "Verified against historical 5-year PBCC unified calendars for HSSC examinations.",
-    actionRequired:
-      "Intermediate students should complete 1st-term and 2nd-term syllabuses by January 2027 to allow 10 weeks of intensive revision.",
-    tags: ["Expected Date", "Planning Guidance", "Intermediate 2027", "Class 12", "Class 11"],
-  },
-
-  // 9. RUMOR & DEBUNK: "Pairing Schemes Completely Cancelled & Out-of-Syllabus Papers"
-  {
-    id: "rumor-pairing-scheme-cancellation",
-    headline: "Clarification: Claims of PBCC 'Abolishing All Pairing Schemes' & 100% Unseen Questions",
-    summary:
-      "Widespread rumors circulating on social media and WhatsApp groups claim that PBCC has cancelled all pairing schemes and that 2027 examination papers will be 100% conceptual and drawn outside prescribed textbooks. This claim is UNVERIFIED and misrepresents official policy.",
-    category: "rumor",
-    status: "unverified-rumor",
-    affectedClasses: ["9th", "10th", "11th", "12th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "Annual 2027",
-    issuingAuthority: "Social Media Rumor / Student Clarification Desk",
-    originalDate: "Circulating October 2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://pbcc.edu.pk",
-    sourceName: "PBCC Official Curriculum Advisory",
-    sourceType: "official_board",
-    whatItMeans:
-      "PBCC has never issued a 'guaranteed contract' pairing scheme, but it strictly enforces an approved assessment blueprint matching PCTB curriculum textbooks. Papers will NOT be out of syllabus; they remain grounded in textbook concepts with moderate SLO-based analytical framing.",
-    evidenceNotes:
-      "Zero official notifications or gazettes from PBCC or Punjab Education Department support the claim of abandoning curriculum-aligned patterns.",
-    rumorDebunk: {
-      circulatingClaim:
-        "PBCC has abolished all paper pairing schemes, and 2027 exams will have zero textbook questions.",
-      missingEvidence:
-        "No official circular number, notification date, or PBCC Chairman signature exists. Official PCTB syllabus notifications confirm textbooks remain primary.",
-      verifiedFact:
-        "The assessment scheme defines section marks and chapter distribution. While academies sell unofficial 'guess papers' falsely claiming 100% certainty, the official board paper is strictly derived from the approved PCTB curriculum.",
-      officialAdvice:
-        "Do not rely solely on selective chapter pairing guess papers, but do not panic about 'out-of-syllabus' claims either. Study every chapter's core concepts thoroughly from your official textbook.",
-    },
-    tags: ["Rumor Buster", "Pairing Scheme", "Clarification", "SLO", "Social Media Claim"],
-  },
-
-  // 10. RUMOR & DEBUNK: "Class 10 Board Examinations Abolished in Punjab"
-  {
-    id: "rumor-matric-board-abolition",
-    headline: "Clarification: Viral Claims that Class 10 Board Exams Are Cancelled in Favor of School Grades",
-    summary:
-      "Recurring videos and TikTok clips allege that Punjab has abolished the 10th Class Board Examination and replaced it with internal school marks. This claim is UNVERIFIED and FALSE. Statutory BISE Matric examinations remain fully active, legally mandated, and scheduled as normal.",
-    category: "rumor",
-    status: "unverified-rumor",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["matric-2027", "admissions"],
+    isHistorical: false,
     affectedClasses: ["10th"],
     affectedBoards: ["all"],
     affectedBoardNames: ["All 9 Punjab BISE Boards"],
     session: "Annual 2027",
-    issuingAuthority: "Social Media Rumor / Student Clarification Desk",
-    originalDate: "Circulating October 2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://schools.punjab.gov.pk",
-    sourceName: "Punjab School Education Department Statutory Acts",
+    issuingAuthority: "Punjab Boards Committee of Chairpersons (PBCC) — Notice dated 10 November 2026",
+    originalDate: "10 Nov 2026 (Reported 14 Nov 2026)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://dunyanews.tv/en/Pakistan/982883-punjab-announces-schedule-for-2027-matric-annual-examinations",
+    sourceName: "Dunya News & ProPakistani (citing PBCC 10 Nov 2026 Notification)",
+    sources: [
+      {
+        label: "Dunya News: Punjab Announces Schedule for 2027 Matric Annual Examinations",
+        url: "https://dunyanews.tv/en/Pakistan/982883-punjab-announces-schedule-for-2027-matric-annual-examinations",
+        sourceKind: "news",
+      },
+      {
+        label: "ProPakistani: Matric Exams 2027 Registration Schedule",
+        url: "https://propakistani.pk/2026/11/14/punjab-announces-matric-exams-2027-registration-schedule/",
+        sourceKind: "news",
+      },
+      {
+        label: "ProPakistani: Matric Exams 2027 Result Date",
+        url: "https://propakistani.pk/2026/11/14/punjab-announces-matric-exams-2027-result-date/",
+        sourceKind: "news",
+      },
+    ],
     sourceType: "pbcc_government",
+    keyFacts: [
+      "PBCC notification date: 10 November 2026.",
+      "Class 10 (SSC Part-II) First Annual exam start date: 16 March 2027.",
+      "Class 10 result declaration date: 20 July 2027.",
+      "Single-fee admission window: 10 November – 11 December 2026.",
+      "Double-fee admission window: 12 – 28 December 2026.",
+      "Triple-fee admission window: 29 December 2026 – 11 January 2027.",
+      "Applies to all 9 Punjab BISE boards (Lahore, Rawalpindi, Multan, Faisalabad, Gujranwala, Sargodha, Bahawalpur, DG Khan, Sahiwal).",
+    ],
+    limitationNote:
+      "Scope boundary: The confirmed 16 March 2027 start date specifically covers SSC Part-II (Class 10). Do NOT assume Class 9 starts on 16 March 2027.",
     whatItMeans:
-      "Every matric student in Punjab must sit the standardized BISE board examinations. Any school or academy claiming board exams have been scrapped is spreading misleading misinformation.",
+      "Class 10 students have confirmed exam and result milestones and should ensure admission forms are filed within the single-fee window closing 11 December 2026.",
     evidenceNotes:
-      "Punjab Boards of Intermediate and Secondary Education Act 1976 and subsequent legislative amendments confirm the statutory necessity of Matriculation examinations.",
-    rumorDebunk: {
-      circulatingClaim: "10th class board exams are cancelled in Punjab; only internal school tests will count.",
-      missingEvidence: "No notification from Punjab School Education Department, PBCC, or provincial cabinet exists.",
-      verifiedFact: "Matriculation (SSC) exams are statutory requirements under Punjab law. Examinations will proceed normally across all nine BISE boards.",
-      officialAdvice: "Ignore viral social media reels. Continue your preparation adhering to the official board examination calendar.",
-    },
-    tags: ["Rumor Buster", "Abolition Claim", "Clarification", "Matric Exams", "Fake News"],
+      "Verified via matching November 2026 reporting from Dunya News and ProPakistani explicitly citing PBCC's 10 November 2026 circular.",
+    actionRequired: "Submit Class 10 admission forms before 11 December 2026 for single fee.",
+    isDeadline: true,
+    deadlineDate: "Single Fee Ends 11 Dec 2026",
+    tags: ["Matric 2027", "Class 10", "16 March 2027", "20 July 2027", "Admissions", "PBCC"],
   },
-
-  // 11. DEADLINE / ACTION: Private Candidates B-Form & Enrollment Verification
   {
-    id: "deadline-bform-data-verification",
-    headline: "Action Alert: Verify NADRA B-Form Records Prior to Annual 2027 Registration Portal Opening",
+    id: "class-9-matric-exam-2027-awaited",
+    headline: "Class 9 Matric Exam Date 2027 — Awaiting Official Schedule",
     summary:
-      "Students planning to register for the Annual 2027 examination cycle (both regular through schools and private independently) must verify that their Name, Father's Name, Date of Birth, and B-Form number on NADRA records match their school leaving certificate or 9th registration exactly.",
-    category: "deadline",
-    status: "officially-confirmed",
-    affectedClasses: ["9th", "10th", "11th", "12th"],
+      "PBCC's 10 November 2026 announcement specifies 16 March 2027 for SSC Part-II (Class 10). As of 15 November 2026, no province-wide official start date for Class 9 (SSC Part-I) Annual Exam 2027 has been confirmed.",
+    category: "awaiting",
+    status: "awaiting-confirmation",
+    statusDisplayLabel: "AWAITING OFFICIAL CONFIRMATION",
+    topics: ["matric-2027"],
+    isHistorical: false,
+    affectedClasses: ["9th"],
     affectedBoards: ["all"],
     affectedBoardNames: ["All 9 Punjab BISE Boards"],
     session: "Annual 2027",
-    issuingAuthority: "PBCC Registration Guidelines",
-    originalDate: "Continuous Requirement",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://www.biselahore.com",
-    sourceName: "BISE Student Registration Advisory",
-    sourceType: "official_board",
+    issuingAuthority: "PBCC / Punjab BISEs (Class 9 Date Pending)",
+    originalDate: "Checked 15 Nov 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://pbcc.edu.pk",
+    sourceName: "PBCC & BISE Lahore / ProPakistani 14 Nov 2026 Coverage",
+    sources: [
+      {
+        label: "ProPakistani: Matric 2027 Schedule (Class 10 Identified; Class 9 Date Pending)",
+        url: "https://propakistani.pk/2026/11/14/punjab-announces-matric-exams-2027-registration-schedule/",
+        sourceKind: "news",
+      },
+      {
+        label: "Official Portal: PBCC",
+        url: "https://pbcc.edu.pk",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "pbcc_government",
+    limitationNote:
+      "Do NOT treat 16 March 2027 as the Class 9 exam date. Separate board-level registration notices (such as BISE Lahore's 9th private registration schedule) do not set a province-wide Class 9 theory start date.",
     whatItMeans:
-      "Board online admission systems cross-verify B-Form details with NADRA databases. Discrepancies block online admission form generation, resulting in late-fee penalties or physical visits to the board headquarters.",
+      "Class 9 students should prepare strictly according to the Grade 9 PECTAA Smart Syllabus / ALP (No. 1238 & No. 1255) and wait for an official SSC Part-I date announcement from PBCC or their district board.",
     evidenceNotes:
-      "Standard registration prerequisite across all BISE online portals.",
-    actionRequired:
-      "Check your B-Form / Smart Card now. If errors exist in spelling or Date of Birth, visit a NADRA facilitation center immediately before the November registration window opens.",
-    isDeadline: true,
-    deadlineDate: "November 15, 2026 (Recommended Prior Action)",
-    isExpired: false,
-    tags: ["Deadline", "Action Alert", "B-Form", "NADRA", "Registration"],
+      "Audit of PBCC-cited Matric 2027 reports up to 15 November 2026 establishes Class 10 commencement (16 March 2027) without establishing a separate Class 9 commencement date.",
+    actionRequired: "Monitor your district BISE portal for SSC Part-I (Class 9) date sheet release.",
+    tags: ["Class 9", "SSC Part-I", "Matric 2027", "Awaiting Confirmation"],
   },
 
-  // 12. DEADLINE / ACTION: 2nd Annual 2026 Roll Number Slip Download Window
+  // =========================================================================
+  // PART 2 — 2027 INTERMEDIATE EXAMINATIONS
+  // =========================================================================
   {
-    id: "deadline-second-annual-roll-slips",
-    headline: "Active Notice: Second Annual 2026 Roll Number Slips Live on Board Web Portals",
+    id: "punjab-inter-2027-schedule-awaited",
+    headline: "Punjab Intermediate Annual Examination 2027 — Schedule Awaited",
     summary:
-      "Roll number slips for the ongoing Second Annual 2026 examination session are active on respective BISE online portals. Private candidates can download by entering their Previous Roll Number, Form Number, or Current Token Number.",
-    category: "deadline",
-    status: "officially-confirmed",
-    affectedClasses: ["10th", "12th"],
+      "Official commencement and result dates for Punjab Intermediate (Class 11 & Class 12 / HSSC) First Annual Examination 2027 have not yet been announced as of 15 November 2026.",
+    category: "awaiting",
+    status: "awaiting-confirmation",
+    statusDisplayLabel: "AWAITING OFFICIAL CONFIRMATION",
+    topics: ["inter-2027"],
+    isHistorical: false,
+    affectedClasses: ["11th", "12th"],
     affectedBoards: ["all"],
     affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "2nd Annual 2026",
-    issuingAuthority: "All 9 Punjab BISE Examination Branches",
-    originalDate: "October 2026",
-    lastVerifiedDate: "October 28, 2026",
-    sourceUrl: "https://web.bisemultan.edu.pk",
-    sourceName: "BISE Online Portal Services",
-    sourceType: "official_board",
+    session: "Annual 2027",
+    issuingAuthority: "PBCC / Punjab BISEs (2027 HSSC Schedule Pending)",
+    originalDate: "Checked 15 Nov 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://pbcc.edu.pk",
+    sourceName: "PBCC & BISE Official Portals Audit",
+    sources: [
+      {
+        label: "Official Portal: PBCC",
+        url: "https://pbcc.edu.pk",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Notifications: BISE Lahore",
+        url: "https://www.biselahore.com/notifications",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "pbcc_government",
+    limitationNote:
+      "Do NOT copy the 2026 HSSC date (20 May 2026) into 2027. No official 2027 Intermediate exam commencement date exists yet.",
     whatItMeans:
-      "Candidates appearing in the 2nd annual session must present their fresh 2nd annual slip; 1st annual slips are strictly invalid for entry.",
+      "Class 11 and 12 students have their official 2026–27 PECTAA paper patterns and ALPs available now, while waiting for PBCC to notify exact 2027 HSSC examination dates.",
     evidenceNotes:
-      "Online roll number download services actively operating across all nine board websites.",
-    actionRequired:
-      "Download, print on A4 sheet, check your center location, and do not laminate.",
+      "Checked PBCC and major Punjab BISE notification portals on 15 November 2026; only 2026 HSSC schedules and 2027 Matric Class 10 dates were published.",
+    actionRequired: "Prepare using Grade 11 (No. 1239) and Grade 12 (No. 1258) ALPs while awaiting PBCC notice.",
+    tags: ["Intermediate 2027", "Class 11", "Class 12", "HSSC", "Awaiting Confirmation"],
+  },
+  {
+    id: "punjab-inter-2027-admissions-awaited",
+    headline: "Punjab Intermediate 2027 Admission Schedule — Awaiting Notification",
+    summary:
+      "Official HSSC Annual 2027 admission form opening, single/double/triple fee deadlines, and fee structure notifications have not yet been issued for Punjab boards as of 15 November 2026.",
+    category: "awaiting",
+    status: "awaiting-confirmation",
+    statusDisplayLabel: "AWAITING OFFICIAL CONFIRMATION",
+    topics: ["inter-2027", "admissions"],
+    isHistorical: false,
+    affectedClasses: ["11th", "12th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards"],
+    session: "Annual 2027",
+    issuingAuthority: "PBCC / Punjab BISEs (2027 HSSC Admissions Pending)",
+    originalDate: "Checked 15 Nov 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://web.bisemultan.edu.pk/admission-inter/",
+    sourceName: "Punjab BISE Admission Portals (BISE Multan & BISE Lahore Verified)",
+    sources: [
+      {
+        label: "Official Portal: BISE Multan Inter Admissions",
+        url: "https://web.bisemultan.edu.pk/admission-inter/",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Portal: BISE Multan Student Portal",
+        url: "https://student.bisemultan.edu.pk/",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "official_board",
+    keyFacts: [
+      "As of 15 Nov 2026, Matric 2027 fee dates are notified, but HSSC Annual 2027 exam admission form dates remain pending.",
+      "Do not confuse earlier 2026–28 Class 11 college registration/enrollment returns with Annual 2027 board examination admission schedules.",
+      "Verified 15 Nov 2026: BISE Multan admission portal displayed 'No Active Schedule Available !' for 11th Fresh and 12th / Combined.",
+    ],
+    whatItMeans:
+      "Wait for an official board circular specifying opening dates and fee tiers for HSSC Annual 2027 exam admissions.",
+    evidenceNotes:
+      "Direct inspection of BISE Multan admission portal and BISE Lahore notifications on 15 November 2026.",
+    actionRequired: "Watch your district BISE admissions section for the 2027 HSSC admission notification.",
+    tags: ["Intermediate 2027", "Admissions", "Fee Schedule", "Awaiting Confirmation"],
+  },
+
+  // =========================================================================
+  // PART 3 — COMPLETE 2027 PAPER PATTERN & PAIRING SCHEME STORIES (GRADES 9-12)
+  // =========================================================================
+  {
+    id: "pectaa-grade-9-pattern-alp-2027",
+    headline: "PECTAA Releases Grade 9 Paper Pattern and Pairing Schemes for 2027",
+    summary:
+      "PECTAA issued main Grade 9 notification No. 1238 (6 Nov 2026) and further notice No. 1255 (14 Nov 2026) covering 2026–27 deleted topics, pairing schemes, and model papers—including Computer Science & Entrepreneurship, General Science, and Masihi Taleem.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["paper-patterns", "smart-syllabus", "matric-2027", "practical-exams"],
+    isHistorical: false,
+    affectedClasses: ["9th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards (PECTAA Curriculum)"],
+    session: "Academic Session 2026–27 / BISE Annual 2027",
+    issuingAuthority: "Punjab Education, Curriculum, Training and Assessment Authority (PECTAA)",
+    originalDate: "6 Nov 2026 (No. 1238) & 14 Nov 2026 (No. 1255)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
+    sourceName: "PECTAA Official PDFs (No. 1238 & No. 1255)",
+    sources: [
+      {
+        label: "Official PDF (PECTAA): Grade 9 Main ALP Notification No. 1238 (6 Nov 2026)",
+        url: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (PECTAA): Grade 9 Further ALP Notification No. 1255 (14 Nov 2026)",
+        url: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-14.11.2026-1255-1.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (PECTAA): Grade 9 Electives (Agri, Health, Fashion, ICT)",
+        url: "https://pectaa.edu.pk/wp-content/uploads/2026/01/Pairing-Scheme-List-of-Practicals-and-Model-Papers-of-Agriculture-Sciences-Health-Sciences-Fashion-Designing-ICT-Grade-9-2.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Third-Party Informational Copy (786Times): Searchable Grade 9 ALP Summary",
+        url: "https://786times.com/2026/11/pectaa-grade-9-alp-2026-27-smart-syllabus-pairing-schemes-model-papers/",
+        sourceKind: "reproduced-copy",
+      },
+    ],
+    sourceType: "pbcc_government",
+    keyFacts: [
+      "No. PECTAA/C&C Unit/2026/1238 (6 Nov 2026): Approved at the 13th Academics Committee meeting on 5 Nov 2026; covers core compulsory & science subjects (English, Urdu, Islamiat, Mathematics, Physics, Chemistry, Biology).",
+      "No. PECTAA/C&C Unit/2026/1255 (14 Nov 2026): Adds Computer Science & Entrepreneurship (50 theory marks, 2h), General Science (50 marks, 2h), and Masihi Taleem (100 marks, 3h).",
+      "Important Policy Note: PECTAA has NOT developed or notified any Smart Syllabus / ALP for Tarjama-tul-Quran and Ethics (Grades 9–12) because no topics or exercises were deleted—prepare the full syllabus.",
+      "Subject marks vary widely: e.g., English/Urdu/Math = 75 marks; Physics/Chem/Bio = 60 theory; Islamiat/Masihi Taleem = 100 marks; CS/Gen Sci = 50 theory.",
+    ],
+    whatItMeans:
+      "Inspect the exact Grade 9 subject blueprint in our 'Paper Pattern & Syllabus Watch' tab—never apply one subject's marks or excluded chapters to another.",
+    evidenceNotes:
+      "Verified directly against both official PECTAA PDFs (ALP-9-Notification-06.11.2026-F_Redacted.pdf and ALP-Notification-14.11.2026-1255-1.pdf).",
+    tags: ["Grade 9", "PECTAA", "No. 1238", "No. 1255", "Pairing Scheme", "ALP 2026-27"],
+  },
+  {
+    id: "pectaa-grade-10-pattern-alp-2027",
+    headline: "PECTAA Releases Grade 10 Paper Pattern and Pairing Schemes for 2027",
+    summary:
+      "PECTAA Notification No. 1257 dated 14 November 2026 publishes complete Class 10 deleted topics, question-wise pairing schemes, combined Grade 9–10 practical schemes, and official 2027 model papers.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["paper-patterns", "smart-syllabus", "matric-2027", "practical-exams"],
+    isHistorical: false,
+    affectedClasses: ["10th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards (PECTAA Curriculum)"],
+    session: "Academic Session 2026–27 / BISE Annual 2027",
+    issuingAuthority: "Punjab Education, Curriculum, Training and Assessment Authority (PECTAA)",
+    originalDate: "14 November 2026 (No. 1257)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+    sourceName: "PECTAA Official PDF (No. 1257)",
+    sources: [
+      {
+        label: "Official PDF (PECTAA): Grade 10 ALP, Pairing Schemes & Model Papers No. 1257",
+        url: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "pbcc_government",
+    keyFacts: [
+      "Covers English (75), Urdu (75), Pakistan Studies (100 marks / 3 hrs), Mathematics (75), Physics (60 theory + 30 practical), Chemistry (60 theory + 30 practical), Biology (60 theory + 30 practical), CS & Entrepreneurship (50 theory + 50 practical), and General Science (50 marks / 2 hrs).",
+      "Includes combined Grade 9–10 Practical Pairing Schemes and Lists of Excluded Practicals for Physics, Chemistry, Biology (30 marks, 2 hrs) and Computer Science (50 marks, 2 hrs).",
+      "Math-10 & Math-9 Long Questions: Part-II attempt 2/3 (8m each) and Part-III attempt 1/2 (8m) — check PDF blueprint rather than assuming legacy Q9 compulsory theorem.",
+      "Tarjama-tul-Quran & Ethics (Grades 9–12): Explicitly confirmed NO Smart Syllabus / ALP exists.",
+    ],
+    whatItMeans:
+      "With Class 10 exams confirmed for 16 March 2027, students should use No. 1257 subject-by-subject to verify deleted chapters, practical exclusions, and exact question distributions.",
+    evidenceNotes:
+      "76-page official PDF ALPs-Notification-14.11.2026-1257.pdf downloaded and extracted line-by-line.",
+    tags: ["Grade 10", "PECTAA", "No. 1257", "Pairing Scheme", "Practicals", "Model Papers"],
+  },
+  {
+    id: "pectaa-grade-11-pattern-alp-2027",
+    headline: "PECTAA Releases Grade 11 Paper Pattern and Pairing Schemes for 2027",
+    summary:
+      "PECTAA issued main Grade 11 ALP Notification No. 1239 (6 Nov 2026) covering core Class 11 subjects, alongside separate notice No. 1256 (14 Nov 2026) exclusively for Masihi Taleem-11.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["paper-patterns", "smart-syllabus", "inter-2027"],
+    isHistorical: false,
+    affectedClasses: ["11th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards (PECTAA Curriculum)"],
+    session: "Academic Session 2026–27 / BISE Annual 2027",
+    issuingAuthority: "Punjab Education, Curriculum, Training and Assessment Authority (PECTAA)",
+    originalDate: "6 Nov 2026 (No. 1239) & 14 Nov 2026 (No. 1256)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+    sourceName: "PECTAA Official PDFs (No. 1239 & No. 1256)",
+    sources: [
+      {
+        label: "Official PDF (PECTAA): Grade 11 Main ALP Notification No. 1239 (6 Nov 2026)",
+        url: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (PECTAA): Grade 11 Masihi Taleem Only No. 1256 (14 Nov 2026)",
+        url: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-14.11.2026-1256.pdf",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "pbcc_government",
+    keyFacts: [
+      "No. PECTAA/C&C Unit/2026/1239 (6 Nov 2026): Approved at the 13th Academics Committee meeting on 5 Nov 2026; covers English (100), Urdu (100), Islamiat Compulsory (50 marks / 2h), Mathematics (100), Physics (85), Chemistry (85), Biology (85), and CS & Entrepreneurship (75).",
+      "No. PECTAA/C&C Unit/2026/1256 (14 Nov 2026): Concerns Masihi Taleem Grade 11 ONLY (50 marks, 2h) and does NOT supersede or replace main notification No. 1239.",
+      "Physics-11, Chemistry-11, and Biology-11 theory papers are 85 marks (3h: Obj 17 MCQs in 20m + Subj 68 marks in 2h 40m).",
+    ],
+    whatItMeans:
+      "First Year (Class 11) students must consult No. 1239 for all compulsory/elective science subjects and avoid confusing 14 Nov notice No. 1256 (Masihi Taleem only) with the main syllabus circular.",
+    evidenceNotes:
+      "Verified directly from official PECTAA PDFs ALP-Notification-Grade-11_Redacted_Redacted.pdf (71 pages) and ALP-Notification-14.11.2026-1256.pdf (8 pages).",
+    tags: ["Grade 11", "PECTAA", "No. 1239", "No. 1256", "Intermediate 2027"],
+  },
+  {
+    id: "pectaa-grade-12-pattern-alp-2027",
+    headline: "PECTAA Releases Grade 12 Paper Pattern and Pairing Schemes for 2027",
+    summary:
+      "PECTAA Notification No. 1258 dated 14 November 2026 issues the 2026–27 Smart Syllabus / ALP, chapter pairing schemes, excluded Grade 11–12 practicals, and model papers for Class 12 (HSSC Part-II).",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["paper-patterns", "smart-syllabus", "inter-2027", "practical-exams"],
+    isHistorical: false,
+    affectedClasses: ["12th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards (PECTAA Curriculum)"],
+    session: "Academic Session 2026–27 / BISE Annual 2027",
+    issuingAuthority: "Punjab Education, Curriculum, Training and Assessment Authority (PECTAA)",
+    originalDate: "14 November 2026 (No. 1258)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+    sourceName: "PECTAA Official PDF (No. 1258)",
+    sources: [
+      {
+        label: "Official PDF (PECTAA): Grade 12 ALP, Pairing Schemes & Model Papers No. 1258",
+        url: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "pbcc_government",
+    keyFacts: [
+      "Covers English-12 (100 marks / 3h), Urdu-12 (100 marks / 3h), Pakistan Studies-12 (50 marks / 2h), Mathematics-12 (100 marks / 3h), Physics-12 (85 theory / 3h), Chemistry-12 (85 theory / 3h), Biology-12 (85 theory / 3h), and CS & Entrepreneurship-12 (75 theory / 2h 30m).",
+      "Includes Lists of Excluded Practicals (Grades 11 & 12) for Physics, Chemistry, Biology, and Computer Science.",
+      "Practical marks distribution for Grades 11–12 is not detailed inside No. 1258—consult board practical notifications separately.",
+      "Explicit note confirmed: PECTAA has not developed any Smart Syllabus / ALP for Tarjama-tul-Quran or Ethics (Grades 9–12).",
+    ],
+    whatItMeans:
+      "Second Year (Class 12) candidates preparing for Annual 2027 enter IBCC Phase 2 (40% subject passing mark) alongside updated unit exclusions and pairing tables in No. 1258.",
+    evidenceNotes:
+      "65-page official PDF ALPs-Notification-14.11.2026-1258-2.pdf extracted and verified.",
+    tags: ["Grade 12", "PECTAA", "No. 1258", "Pairing Scheme", "Practicals", "Intermediate 2027"],
+  },
+  {
+    id: "punjab-model-papers-2027",
+    headline: "New Subject-Wise Model Papers Available for Punjab Board 2027 Examinations",
+    summary:
+      "Official subject-wise model question papers for 2027 Punjab Board exams are published inside PECTAA's November 2026 ALP notifications (Grades 9–12), alongside the PECTAA Downloads Archive and BISE Lahore subject resources.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["paper-patterns", "smart-syllabus", "matric-2027", "inter-2027"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "lahore"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards (PECTAA) & BISE Lahore"],
+    session: "Academic Session 2026–27 / BISE Annual 2027",
+    issuingAuthority: "PECTAA & BISE Lahore",
+    originalDate: "6 Nov – 14 Nov 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://pectaa.edu.pk/downloads-2-2/",
+    sourceName: "PECTAA Downloads Portal & Official ALP PDFs",
+    sources: [
+      {
+        label: "Official Portal: PECTAA Downloads (All Grade ALP & Model Papers PDFs)",
+        url: "https://pectaa.edu.pk/downloads-2-2/",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Portal: PECTAA Model Papers",
+        url: "https://pectaa.edu.pk/model-papers/",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (BISE Lahore): Class 10 Syllabus for Hearing Impaired Children (2026–27)",
+        url: "https://data.biselahore.com/dt/downloads/Model%20Papers/Matric/Syllabus10th_HIS.pdf",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "pbcc_government",
+    keyFacts: [
+      "Full sample model papers are appended inside PECTAA notifications No. 1238 & 1255 (Grade 9), No. 1257 (Grade 10), No. 1239 & 1256 (Grade 11), and No. 1258 (Grade 12).",
+      "Grade 9 electives (Agriculture Sciences, Health Sciences, Fashion Designing, ICT) have a separate PECTAA pairing scheme, practical list, and model papers PDF.",
+      "BISE Lahore additionally hosts Syllabus10th_HIS.pdf for Hearing Impaired Children (2026–27) and the Computer Science (OSM) Answer Book & Bubble Sheet.",
+    ],
+    whatItMeans:
+      "Always practice with official PECTAA model papers matching your exact grade notification rather than commercial guess papers.",
+    evidenceNotes:
+      "Confirmed model paper sections inside official PECTAA PDFs and verified downloads directory on pectaa.edu.pk.",
+    tags: ["Model Papers", "PECTAA", "BISE Lahore", "Annual 2027"],
+  },
+
+  // =========================================================================
+  // PART 4 — PASSING PERCENTAGE & NEW GRADING SYSTEM
+  // =========================================================================
+  {
+    id: "ibcc-40-percent-passing-10-point-grading",
+    headline: "IBCC Introduces 40% Passing Requirement Under Revised Grading Policy",
+    summary:
+      "IBCC raised the minimum subject passing percentage from 33% to 40% alongside a 10-point grading scale (A++ to U), rolling out across Pakistan's boards in phases: Grades 9 & 11 (2026), Grades 10 & 12 (2027), and full adoption planned by 2028.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["passing-grading", "policies-reforms", "matric-2027", "inter-2027", "fbise"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "fbise"],
+    affectedBoardNames: ["All Pakistani BISEs (Including All 9 Punjab Boards & FBISE)"],
+    session: "Phased Implementation: 2026 → 2027 → 2028",
+    issuingAuthority: "Inter Boards Coordination Commission (IBCC)",
+    originalDate: "Phased from 1st Annual 2026 (IBCC FAQ & Sep 2026 Review)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://ibcc.edu.pk/faqs/new-grading-system-of-ssc-hssc-faqs/",
+    sourceName: "IBCC Official Grading FAQs, Dawn & The Express Tribune",
+    sources: [
+      {
+        label: "Official Website (IBCC): New Grading System of SSC & HSSC FAQs",
+        url: "https://ibcc.edu.pk/faqs/new-grading-system-of-ssc-hssc-faqs/",
+        sourceKind: "official",
+      },
+      {
+        label: "The Express Tribune: Matric, Inter Students Will Now Need 40% Marks to Pass",
+        url: "https://tribune.com.pk/story/2571144/matric-intermediate-students-will-now-need-40-marks-to-pass-exams",
+        sourceKind: "news",
+      },
+      {
+        label: "The Express Tribune (Sep 2026): New Policy Sets 40% Minimum Passing Marks",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Dawn: IBCC 40% Pass & Grading Reform Coverage",
+        url: "https://www.dawn.com/news/1947346",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    keyFacts: [
+      "Subject pass mark increased from 33% to 40% in each subject (e.g., 30/75, 24/60, 40/100, 34/85, 20/50).",
+      "10-point alphabetical grade scale: A++, A+, A, B++, B+, B, C+, C, D, and U (replacing old 7-point A-1 to F).",
+      "Phase 1 (Annual 2026): SSC-I (Class 9) and HSSC-I (Class 11) — raw scores reported alongside grades while GPA calculation was initially deferred.",
+      "Phase 2 (Annual 2027): Expands to SSC-II (Class 10) and HSSC-II (Class 12).",
+      "Full nationwide adoption planned across all boards by 2028; universities may refer to grades or raw scores during 2026–27 transition.",
+    ],
+    whatItMeans:
+      "Do NOT rely on old 33% passing rules for 2027 Matric or Intermediate exams. Every student appearing in Class 9, 10, 11, or 12 in Annual 2027 must achieve at least 40% per subject.",
+    evidenceNotes:
+      "Directly verified from official IBCC SSC/HSSC Grading System FAQs and corroborated by Dawn and Express Tribune reporting including the September 2026 184th IBCC Forum update.",
+    tags: ["40% Passing Marks", "10-Point Grading", "IBCC", "Grades 9-12", "Annual 2027"],
+  },
+
+  // =========================================================================
+  // PART 5 — IBCC 184th FORUM REFORMS (SEPTEMBER 2026, MURREE) — STORIES A TO G
+  // =========================================================================
+  {
+    id: "ibcc-184-conceptual-assessment",
+    headline: "IBCC Pushes Examination System Towards Conceptual Assessment",
+    summary:
+      "At its 184th Forum in Murree (September 2026), IBCC resolved to move board examinations away from rote memorization toward conceptual and analytical questions testing Student Learning Outcomes (SLOs).",
+    category: "planned",
+    status: "planned-initiative",
+    statusDisplayLabel: "PLANNED / APPROVED INITIATIVE",
+    topics: ["policies-reforms", "paper-patterns"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "fbise"],
+    affectedBoardNames: ["All Pakistani Examination Boards (IBCC Forum)"],
+    session: "Ongoing Reform Direction (2026–2028)",
+    issuingAuthority: "Inter Boards Coordination Commission (IBCC — 184th Forum, Murree)",
+    originalDate: "September 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+    sourceName: "The Express Tribune & Dawn E-Paper (Sep 2026)",
+    sources: [
+      {
+        label: "The Express Tribune: 184th IBCC Forum Conceptual & Grading Reforms",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Dawn E-Paper (6 Sep 2026): IBCC Forum Proceedings",
+        url: "https://epaper.dawn.com/DetailImage.php?StoryImage=06_09_2026_151_008",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    keyFacts: [
+      "Approved policy direction at the 184th IBCC Forum in Murree (September 2026).",
+      "Emphasizes conceptual understanding and critical thinking over purely rote textbook recall.",
+      "Implementation pace varies by board—follow your grade's official PECTAA or FBISE model papers for exact 2027 question style.",
+    ],
+    whatItMeans:
+      "Expect unseen phrasing of conceptual short questions and reasoning prompts even within PECTAA's notified 2027 syllabus.",
+    evidenceNotes:
+      "Reported from the 184th IBCC Forum (Murree) in Express Tribune and Dawn E-Paper (September 2026).",
+    tags: ["IBCC 184th Forum", "Conceptual Assessment", "SLO", "Policy Reform"],
+  },
+  {
+    id: "ibcc-184-bform-cnic-certificates",
+    headline: "IBCC Approves B-Form and CNIC Identification on Matric and Inter Certificates",
+    summary:
+      "The 184th IBCC Forum approved adding candidates' NADRA Child Registration Certificate (CRC / B-Form) or CNIC numbers onto SSC and HSSC certificates to eliminate identity errors and strengthen verification.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["policies-reforms", "admissions"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "fbise"],
+    affectedBoardNames: ["All Pakistani Examination Boards (IBCC Member Boards)"],
+    session: "2026–2027 Registration & Certificates",
+    issuingAuthority: "Inter Boards Coordination Commission (IBCC — 184th Forum, Murree)",
+    originalDate: "September 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+    sourceName: "The Express Tribune & Dawn E-Paper (Sep 2026)",
+    sources: [
+      {
+        label: "The Express Tribune: IBCC Approves B-Form / CNIC on Certificates",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Dawn E-Paper (6 Sep 2026): IBCC Forum Decisions",
+        url: "https://epaper.dawn.com/DetailImage.php?StoryImage=06_09_2026_151_008",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    keyFacts: [
+      "Matric and Intermediate certificates will carry the student's NADRA B-Form (CRC) or CNIC number.",
+      "Reduces name-mismatch errors during IBCC attestation and university admissions.",
+    ],
+    whatItMeans:
+      "Verify your NADRA B-Form number and spelling carefully when submitting Class 9/10/11/12 admission forms—corrections later require board verification.",
+    evidenceNotes:
+      "Directly reported from the 184th IBCC Forum decisions in Express Tribune and Dawn E-Paper (Sep 2026).",
+    actionRequired: "Cross-check your NADRA B-Form/CNIC digits before locking admission forms.",
+    tags: ["B-Form", "CNIC", "Certificates", "IBCC 184th Forum"],
+  },
+  {
+    id: "ibcc-184-uniform-exam-calendar",
+    headline: "IBCC Moves Towards a Uniform Theory and Practical Exam Calendar",
+    summary:
+      "Member boards at the 184th IBCC Forum moved to align annual, supplementary/2nd annual, and practical examination schedules nationally so uneven provincial result dates do not delay university admissions.",
+    category: "planned",
+    status: "planned-initiative",
+    statusDisplayLabel: "PLANNED / APPROVED INITIATIVE",
+    topics: ["policies-reforms", "practical-exams"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "fbise"],
+    affectedBoardNames: ["All Pakistani Examination Boards (IBCC Forum)"],
+    session: "Policy Coordination (2026–2027)",
+    issuingAuthority: "Inter Boards Coordination Commission (IBCC — 184th Forum)",
+    originalDate: "September 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+    sourceName: "The Express Tribune & Dawn E-Paper (Sep 2026)",
+    sources: [
+      {
+        label: "The Express Tribune: IBCC 184th Forum Uniform Calendar Move",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Dawn E-Paper (6 Sep 2026): IBCC Forum Proceedings",
+        url: "https://epaper.dawn.com/DetailImage.php?StoryImage=06_09_2026_151_008",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    limitationNote:
+      "This is a national policy harmonization initiative—still wait for your own PBCC/BISE calendar notification for binding local exam dates.",
+    whatItMeans:
+      "Aims to prevent situations where students from one province miss university intake deadlines due to late practical or result declarations in another board.",
+    evidenceNotes:
+      "Verified via September 2026 reporting of the 184th IBCC Forum proceedings in Murree.",
+    tags: ["Uniform Calendar", "Practical Exams", "IBCC 184th Forum"],
+  },
+  {
+    id: "ibcc-184-common-practical-procedures",
+    headline: "IBCC Seeks Common Practical Examination Procedures",
+    summary:
+      "The 184th IBCC Forum endorsed standardizing practical examination conduct and evaluation protocols across member boards so lab assessments carry consistent fairness nationwide.",
+    category: "planned",
+    status: "planned-initiative",
+    statusDisplayLabel: "PLANNED / APPROVED INITIATIVE",
+    topics: ["policies-reforms", "practical-exams"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "fbise"],
+    affectedBoardNames: ["All Pakistani Examination Boards (IBCC Forum)"],
+    session: "Policy Coordination (2026–2027)",
+    issuingAuthority: "Inter Boards Coordination Commission (IBCC — 184th Forum)",
+    originalDate: "September 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+    sourceName: "The Express Tribune & Dawn E-Paper (Sep 2026)",
+    sources: [
+      {
+        label: "The Express Tribune: IBCC 184th Forum Practical Assessment Standards",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Dawn E-Paper (6 Sep 2026)",
+        url: "https://epaper.dawn.com/DetailImage.php?StoryImage=06_09_2026_151_008",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    limitationNote:
+      "Until your board issues new practical rubrics, Punjab students must follow PECTAA's published 2026–27 practical pairing schemes (Grades 9–10) and board practical instructions.",
+    whatItMeans:
+      "Boards are working toward common lab assessment rules, reducing wide discrepancies between different examination centers and boards.",
+    evidenceNotes:
+      "Backed by 184th IBCC Forum coverage in Express Tribune and Dawn E-Paper (September 2026).",
+    tags: ["Practical Exams", "Standardization", "IBCC 184th Forum"],
+  },
+  {
+    id: "ibcc-184-position-holders-support",
+    headline: "IBCC Announces Support Initiatives for Board Position Holders",
+    summary:
+      "At the 184th Forum, IBCC announced merit support initiatives for board position holders including scholarships, overseas educational exposure visits, and academic winter/summer camps.",
+    category: "planned",
+    status: "planned-initiative",
+    statusDisplayLabel: "PLANNED / APPROVED INITIATIVE",
+    topics: ["policies-reforms"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "fbise"],
+    affectedBoardNames: ["All Pakistani Examination Boards (IBCC Forum)"],
+    session: "Announced September 2026 (Details Pending)",
+    issuingAuthority: "Inter Boards Coordination Commission (IBCC — 184th Forum)",
+    originalDate: "September 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+    sourceName: "The Express Tribune & Dawn E-Paper (Sep 2026)",
+    sources: [
+      {
+        label: "The Express Tribune: IBCC Topper Support Initiatives",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Dawn E-Paper (6 Sep 2026)",
+        url: "https://epaper.dawn.com/DetailImage.php?StoryImage=06_09_2026_151_008",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    limitationNote:
+      "Unconfirmed details: Specific scholarship rupee amounts, application portals, seat quotas, and camp dates have NOT yet been announced.",
+    whatItMeans:
+      "Top achievers across Pakistani boards have planned recognition programs announced by IBCC, though students should wait for official IBCC/BISE circular eligibility rules.",
+    evidenceNotes:
+      "Reported in September 2026 Express Tribune and Dawn E-Paper accounts of the 184th IBCC Forum.",
+    tags: ["Position Holders", "Scholarships", "Academic Camps", "IBCC 184th Forum"],
+  },
+  {
+    id: "ibcc-184-foreign-science-equivalence",
+    headline: "IBCC Approves More Flexible Science Group Equivalence for Foreign Board Students",
+    summary:
+      "For students transferring from foreign qualification systems, the 184th IBCC Forum approved granting Science Group equivalence if a candidate has passed at least two science subjects alongside compulsory subjects.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["policies-reforms"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "fbise"],
+    affectedBoardNames: ["IBCC Equivalence Jurisdiction (Foreign Qualifications)"],
+    session: "Approved September 2026",
+    issuingAuthority: "Inter Boards Coordination Commission (IBCC — 184th Forum)",
+    originalDate: "September 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+    sourceName: "The Express Tribune & Dawn E-Paper (Sep 2026)",
+    sources: [
+      {
+        label: "The Express Tribune: IBCC Foreign Qualification Science Equivalence Decision",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Official Website: IBCC Foreign Qualifications Portal",
+        url: "https://ibcc.edu.pk/",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    limitationNote:
+      "Applies ONLY to IBCC equivalence for foreign-board students—regular Pakistani BISE Matric/Inter subject combinations remain governed by Pakistani BISE scheme of studies.",
+    whatItMeans:
+      "Students returning from O-Levels/IGCSE or foreign schooling who cleared two core science subjects can qualify more easily for Pakistani Science Group equivalence under IBCC guidelines.",
+    evidenceNotes:
+      "Verified from September 2026 Express Tribune coverage of the 184th IBCC Forum resolution.",
+    tags: ["IBCC Equivalence", "Foreign Boards", "Science Group", "IBCC 184th Forum"],
+  },
+  {
+    id: "ibcc-184-emarking-developments",
+    headline: "IBCC Emphasizes E-Marking Expansion Across Examination Boards",
+    summary:
+      "The 184th IBCC Forum highlighted digital e-marking and automated paper checking—commending Sindh boards' recent e-marking progress—while encouraging wider adoption across member boards without claiming universal 2027 Punjab BISE coverage.",
+    category: "reported",
+    status: "credibly-reported",
+    statusDisplayLabel: "REPORTED",
+    topics: ["policies-reforms", "fbise"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "lahore", "fbise"],
+    affectedBoardNames: ["IBCC Forum (Sindh Commended; BISE Lahore CS & FBISE Active Separately)"],
+    session: "Reported September 2026",
+    issuingAuthority: "IBCC 184th Forum (with board-specific implementations at BISE Lahore & FBISE)",
+    originalDate: "September 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+    sourceName: "The Express Tribune & Dawn E-Paper (Sep 2026)",
+    sources: [
+      {
+        label: "The Express Tribune: 184th IBCC Forum E-Marking Review",
+        url: "https://tribune.com.pk/story/2627671/new-policy-sets-40-minimum-passing-marks",
+        sourceKind: "news",
+      },
+      {
+        label: "Official PDF (BISE Lahore): Computer Science OSM Answer Book & Bubble Sheet",
+        url: "https://data.biselahore.com/dt/downloads/notifications/misc/AnswerBook_CSc.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Portal (FBISE): E-Sheets & OMR Screen Marking",
+        url: "https://www.fbise.edu.pk/screen_marking.php",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    limitationNote:
+      "Clarification: Appreciating e-marking at the IBCC Forum does NOT mean all subjects in all 9 Punjab BISEs will use on-screen marking in 2027. Check your own board's subject-level OSM notices (e.g., BISE Lahore Computer Science).",
+    whatItMeans:
+      "Digital screen marking is growing step by step: write neatly inside designated answer zones/boxes when sitting E-Sheet or OSM-enabled subjects.",
+    evidenceNotes:
+      "184th IBCC Forum press coverage cross-checked against live BISE Lahore OSM Answer Book PDF and FBISE E-Sheet portal.",
+    tags: ["E-Marking", "OSM", "E-Sheets", "IBCC 184th Forum"],
+  },
+
+  // =========================================================================
+  // PART 6 — ADMISSIONS, REGISTRATION & LIVE PORTAL STATUS
+  // =========================================================================
+  {
+    id: "punjab-matric-2027-admission-portals",
+    headline: "Punjab Matric 2027 Admissions — Official Online Application Information",
+    summary:
+      "Matric Annual 2027 registration runs 10 Nov–11 Dec 2026 (single fee), 12–28 Dec (double), and 29 Dec–11 Jan 2027 (triple). Regular students apply through their schools while private candidates use their district BISE portal—though individual portal activation varies.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["admissions", "matric-2027"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th"],
+    affectedBoards: ["all", "lahore", "multan"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards (Individual Portal Activation Varies)"],
+    session: "Annual 2027",
+    issuingAuthority: "PBCC & Individual Punjab BISE Admission Portals",
+    originalDate: "10 Nov 2026 (Portals Audited 15 Nov 2026)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://web.bisemultan.edu.pk/admission-matric/",
+    sourceName: "PBCC Schedule & Live Verification of BISE Lahore / BISE Multan Portals",
+    sources: [
+      {
+        label: "Official Portal: BISE Multan Matric Admissions",
+        url: "https://web.bisemultan.edu.pk/admission-matric/",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Portal: BISE Multan Student Portal",
+        url: "https://student.bisemultan.edu.pk/",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (BISE Lahore): 9th Private Registration Schedule 1st Annual 2027",
+        url: "https://data.biselahore.com/dt/downloads/notifications/admissions/Pvt_RegSch(1stA27).pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Portal: BISE Rawalpindi eServices",
+        url: "https://eservices.biserawalpindi.edu.pk",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "official_board",
+    keyFacts: [
+      "Single Fee: 10 November – 11 December 2026 | Double Fee: 12 – 28 December 2026 | Triple Fee: 29 December 2026 – 11 January 2027.",
+      "Regular candidates apply through their affiliated school's BISE institution login.",
+      "Private candidates submit forms directly on their home district BISE admission portal.",
+      "Live Portal Audit (15 Nov 2026): BISE Multan's private portal (student.bisemultan.edu.pk) displayed 'No Active Schedule Available !' despite PBCC's published dates, while BISE Lahore already posted Pvt_RegSch(1stA27).pdf.",
+    ],
+    whatItMeans:
+      "If your district BISE portal temporarily shows no active online form button despite the PBCC window having opened, wait 24–48 hours for board-level portal rollout or verify directly with your board's admission branch.",
+    evidenceNotes:
+      "Direct HTTP inspection of student.bisemultan.edu.pk, web.bisemultan.edu.pk/admission-matric/, and biselahore.com/notifications on 15 November 2026.",
+    actionRequired: "Open the '9 Punjab Boards Directory' tab to reach your exact district BISE portal.",
     isDeadline: true,
-    deadlineDate: "Active Through Exam Duration (Nov 2026)",
-    isExpired: false,
-    tags: ["Roll Number Slip", "Active Deadline", "2nd Annual 2026"],
+    deadlineDate: "Single Fee Ends 11 Dec 2026",
+    tags: ["Admissions", "Online Portal", "Matric 2027", "BISE Multan", "BISE Lahore"],
+  },
+
+  // =========================================================================
+  // PART 7 — HISTORICAL / 2026 CONTEXT (CLEARLY MARKED HISTORICAL)
+  // =========================================================================
+  {
+    id: "punjab-inter-1st-annual-2026-historical",
+    headline: "Punjab Intermediate First Annual Exams 2026 Began on 20 May",
+    summary:
+      "Historical 2026 cycle: Under PBCC's notification dated 11 February 2026, HSSC Part-II First Annual Examinations commenced on 20 May 2026, with tentative result dates originally listed as 23 September 2026 (Part-I) and 22 October 2026 (Part-II).",
+    category: "historical",
+    status: "historical-record",
+    statusDisplayLabel: "HISTORICAL",
+    topics: ["historical-2026"],
+    isHistorical: true,
+    affectedClasses: ["11th", "12th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards"],
+    session: "1st Annual 2026 (Historical)",
+    issuingAuthority: "PBCC — Notification dated 11 February 2026",
+    originalDate: "11 Feb 2026 (Exams began 20 May 2026)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://data.biselahore.com/dt/downloads/Datesheets/Inter/DS_Inter_1stA26.pdf",
+    sourceName: "BISE Lahore Official Date Sheet PDF & Dawn",
+    sources: [
+      {
+        label: "Official PDF (BISE Lahore): Intermediate 1st Annual 2026 Date Sheet",
+        url: "https://data.biselahore.com/dt/downloads/Datesheets/Inter/DS_Inter_1stA26.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Dawn: Schedule for Board Exams Announced (11 Feb 2026 Notice)",
+        url: "https://www.dawn.com/news/1967535/schedule-for-board-exams-announced",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "historical_archive",
+    keyFacts: [
+      "PBCC notification date: 11 February 2026.",
+      "HSSC 1st Annual Exam 2026 commencement: 20 May 2026.",
+      "Tentative result dates in Feb 2026 notice: 23 September 2026 (Part-I) and 22 October 2026 (Part-II).",
+      "Strictly historical as of 15 November 2026—do NOT copy 20 May into 2027 schedules.",
+    ],
+    whatItMeans:
+      "Preserved only as completed 2026 calendar reference so students do not confuse the past 2026 First Annual cycle with the upcoming 2027 cycle.",
+    evidenceNotes:
+      "Confirmed via official BISE Lahore DS_Inter_1stA26.pdf and Dawn 2026 schedule coverage.",
+    tags: ["Historical 2026", "Intermediate", "1st Annual 2026", "20 May 2026"],
+  },
+  {
+    id: "punjab-inter-2nd-annual-2026-historical",
+    headline: "Punjab Intermediate Second Annual Exams 2026 Began on 3 November",
+    summary:
+      "Historical 2026 cycle: Punjab's Intermediate (HSSC) Second Annual / supplementary Examinations 2026 commenced on 3 November 2026—separate from the May 2026 First Annual Examination and NOT an upcoming 2027 date.",
+    category: "historical",
+    status: "historical-record",
+    statusDisplayLabel: "HISTORICAL",
+    topics: ["historical-2026"],
+    isHistorical: true,
+    affectedClasses: ["11th", "12th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards"],
+    session: "2nd Annual 2026 (Historical)",
+    issuingAuthority: "Punjab Boards (HSSC Second Annual Examination 2026)",
+    originalDate: "25 Sep 2026 (Exams began 3 Nov 2026)",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://data.biselahore.com/dt/downloads/Datesheets/Inter/DS_Inter_2ndA26.pdf",
+    sourceName: "BISE Lahore Official Date Sheet PDF & ProPakistani",
+    sources: [
+      {
+        label: "Official PDF (BISE Lahore): Intermediate 2nd Annual 2026 Date Sheet",
+        url: "https://data.biselahore.com/dt/downloads/Datesheets/Inter/DS_Inter_2ndA26.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "ProPakistani (25 Sep 2026): Inter Second Annual Exam 2026 Schedule",
+        url: "https://propakistani.pk/2026/09/25/punjab-boards-announce-inter-second-annual-exam-2026-schedule/",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "historical_archive",
+    keyFacts: [
+      "Commenced 3 November 2026 across Punjab BISEs.",
+      "This was the HSSC Second Annual 2026 session (already underway/concluding as of 15 Nov 2026), distinct from First Annual 2026.",
+    ],
+    whatItMeans:
+      "Archived strictly for historical clarity so students distinguish between the 2026 First Annual (May) and Second Annual (November) cycles.",
+    evidenceNotes:
+      "Verified against official BISE Lahore DS_Inter_2ndA26.pdf and ProPakistani 25 September 2026 coverage.",
+    tags: ["Historical 2026", "Intermediate", "2nd Annual 2026", "3 November 2026"],
+  },
+
+  // =========================================================================
+  // PART 8 — BOARD-SPECIFIC PUNJAB DEVELOPMENTS & FBISE UPDATES
+  // =========================================================================
+  {
+    id: "bise-lahore-osm-cs-and-9th-private-2027",
+    headline: "BISE Lahore Releases Computer Science (OSM) Answer Book & 9th Private 2027 Schedule",
+    summary:
+      "Specific to BISE Lahore (not Punjab-wide): BISE Lahore published a sample Computer Science On-Screen Marking (OSM) Answer Book & Bubble Sheet, the 9th Class Private Registration Schedule for First Annual 2027, and SSC practical instructions.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["policies-reforms", "admissions", "practical-exams", "matric-2027"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th"],
+    affectedBoards: ["lahore"],
+    affectedBoardNames: ["BISE Lahore ONLY (Board-Specific)"],
+    session: "2026–27 / 1st Annual 2027",
+    issuingAuthority: "BISE Lahore Official Notifications Portal",
+    originalDate: "Checked 15 Nov 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://data.biselahore.com/dt/downloads/notifications/misc/AnswerBook_CSc.pdf",
+    sourceName: "BISE Lahore Official Downloads",
+    sources: [
+      {
+        label: "Official PDF (BISE Lahore): Computer Science (OSM) Answer Book & Bubble Sheet",
+        url: "https://data.biselahore.com/dt/downloads/notifications/misc/AnswerBook_CSc.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (BISE Lahore): 9th Class Private Registration Schedule (1st Annual 2027)",
+        url: "https://data.biselahore.com/dt/downloads/notifications/admissions/Pvt_RegSch(1stA27).pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (BISE Lahore): Instructions for SSC Part-II Practical Exams",
+        url: "https://data.biselahore.com/dt/downloads/notifications/examination/Instr_Pr.Exam.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Page: BISE Lahore Notifications",
+        url: "https://www.biselahore.com/notifications",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "official_board",
+    limitationNote:
+      "Board-specific notice: Applies to BISE Lahore candidates unless separately adopted by your own district BISE.",
+    whatItMeans:
+      "BISE Lahore Computer Science students should review AnswerBook_CSc.pdf to avoid writing outside designated scanned zones on OSM sheets, while private Class 9 applicants under Lahore division should inspect Pvt_RegSch(1stA27).pdf.",
+    evidenceNotes:
+      "All PDF URLs extracted directly from https://www.biselahore.com/notifications on 15 November 2026.",
+    tags: ["BISE Lahore Only", "OSM Answer Book", "Computer Science", "9th Private 2027", "Practicals"],
+  },
+  {
+    id: "fbise-2027-grading-esheets-model-papers",
+    headline: "FBISE Only: 40% Pass Policy, 10-Point Grading, SLO Papers & 2027 Sample E-Sheets",
+    summary:
+      "Applicable to Federal Board (FBISE) candidates ONLY—not Punjab provincial BISEs: FBISE has published 2027 sample E-Sheets for SSC-I & HSSC-I on-screen marking, SLO-based model papers, and enforces the IBCC 40% passing and 10-point grading framework.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["fbise", "passing-grading", "paper-patterns", "policies-reforms"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["fbise"],
+    affectedBoardNames: ["FBISE ONLY (Federal Board — Separate from Punjab BISEs)"],
+    session: "2026–27 / Annual 2027",
+    issuingAuthority: "Federal Board of Intermediate & Secondary Education (FBISE)",
+    originalDate: "Checked 15 Nov 2026",
+    lastVerifiedDate: "15 November 2026",
+    sourceUrl: "https://www.fbise.edu.pk/screen_marking.php",
+    sourceName: "FBISE Official Portal (screen_marking.php & curriculum_model_paper.php)",
+    sources: [
+      {
+        label: "Official Portal (FBISE): E-Sheets & OMR Screen Marking",
+        url: "https://www.fbise.edu.pk/screen_marking.php",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (FBISE): 2027 Sample E-Sheet — SSC-I PCBC",
+        url: "https://www.fbise.edu.pk/Downloads/E-Sheets-2026/sample_esheet_for_PCBC_SSC1_2027.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official PDF (FBISE): 2027 Sample E-Sheet — HSSC-I Maths",
+        url: "https://www.fbise.edu.pk/Downloads/E-Sheets-2026/sample_esheet_for_maths_HSSC1_2027.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "Official Portal (FBISE): SLO Model Question Papers",
+        url: "https://www.fbise.edu.pk/curriculum_model_paper.php",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "ibcc_federal",
+    limitationNote:
+      "FBISE ONLY: Federal Board rules, E-Sheet layouts, and SLO curricula apply exclusively to FBISE candidates—do NOT mix them with Punjab Board (PECTAA/PBCC) pairing schemes.",
+    whatItMeans:
+      "FBISE students sitting Annual 2027 exams should practice directly on FBISE's 2027 sample E-Sheets and SLO model papers while targeting at least 40% per subject.",
+    evidenceNotes:
+      "Direct HTTP verification of fbise.edu.pk, screen_marking.php, and curriculum_model_paper.php on 15 November 2026.",
+    tags: ["FBISE Only", "E-Sheets 2027", "SLO Model Papers", "40% Passing Marks"],
   },
 ];
 
 // ---------------------------------------------------------------------------
-// SUBJECT PATTERNS & SYLLABUS TRACKER DATA
+// SUBJECT-BY-SUBJECT OFFICIAL PAPER PATTERNS & PAIRING SCHEMES (PECTAA ALP 2026-27)
+// Verified strictly per class & per subject — NEVER generalized across subjects or grades.
 // ---------------------------------------------------------------------------
 export const SUBJECT_PATTERNS: SubjectPattern[] = [
+  // ========================= GRADE 9 (Class 9) =========================
   {
-    id: "pattern-physics-matric",
-    subject: "Physics (Class 9 & 10)",
-    classes: ["9th", "10th"],
-    theoryMarks: 60,
-    practicalMarks: 15, // In 10th
-    totalMarks: 75,
-    objectiveMcqsMarks: 12,
-    subjectiveMarks: 48,
-    passingMarks: 24, // 40% of 60 theory
-    timeAllowed: "2 Hours 45 Minutes (Objective: 15 min, Subjective: 2 hr 30 min)",
-    sloBreakdown: {
-      knowledge: "50% (Recall & basic definitions)",
-      understanding: "35% (Conceptual explanations & principles)",
-      application: "15% (Numerical problems & practical derivations)",
-    },
-    keyComponents: [
-      "Q1: 12 MCQs (1 mark each) - Covers all chapters proportionally",
-      "Section I: Short Questions (Attempt 15 out of 24 across Q2, Q3, Q4; 30 marks)",
-      "Section II: Long Questions (Attempt 2 out of 3 from Q5, Q6, Q7; 18 marks - each has Part (a) Theory [5m] and Part (b) Numerical [4m])",
-      "Practical Assessment (10th only): 15 marks covering experiment performance, lab notebook, and viva",
-    ],
-    pairingSchemeStatus: "structural-blueprint",
-    pairingNote:
-      "Official blueprint specifies marks distribution and question quotas. Chapter pairings (e.g. Q5 combining Ch 10 & 12, Q6 combining Ch 11 & 13) represent the standard assessment structure but can vary slightly across morning/evening shifts.",
-    officialModelPaperUrl: "https://www.biselahore.com",
-  },
-  {
-    id: "pattern-chemistry-matric",
-    subject: "Chemistry (Class 9 & 10)",
-    classes: ["9th", "10th"],
-    theoryMarks: 60,
-    practicalMarks: 15,
-    totalMarks: 75,
-    objectiveMcqsMarks: 12,
-    subjectiveMarks: 48,
-    passingMarks: 24,
-    timeAllowed: "2 Hours 45 Minutes",
-    sloBreakdown: {
-      knowledge: "50% (Direct formulas, periodic trends, definitions)",
-      understanding: "35% (Reaction mechanisms, bonding reasons)",
-      application: "15% (Stoichiometric calculations & molar mass conversions)",
-    },
-    keyComponents: [
-      "Q1: 12 MCQs (1 mark each) from all textbook units",
-      "Section I: Short Questions (3 sub-sections, attempt 5 out of 8 in each; total 30 marks)",
-      "Section II: Long Questions (Attempt 2 out of 3; 18 marks, distributed 5m + 4m or 5m + 5m)",
-      "Chemical equations must be balanced with state symbols for full marks",
-    ],
-    pairingSchemeStatus: "structural-blueprint",
-    pairingNote:
-      "Long questions combine physical, inorganic, and organic chemistry chapters. Focus on reaction balancing and electronic configurations.",
-    officialModelPaperUrl: "https://www.biselahore.com",
-  },
-  {
-    id: "pattern-biology-matric",
-    subject: "Biology (Class 9 & 10)",
-    classes: ["9th", "10th"],
-    theoryMarks: 60,
-    practicalMarks: 15,
-    totalMarks: 75,
-    objectiveMcqsMarks: 12,
-    subjectiveMarks: 48,
-    passingMarks: 24,
-    timeAllowed: "2 Hours 45 Minutes",
-    sloBreakdown: {
-      knowledge: "50% (Biological terms, classification, anatomy)",
-      understanding: "35% (Physiological processes, genetics, ecological cycles)",
-      application: "15% (Data interpretation, experimental reasoning)",
-    },
-    keyComponents: [
-      "Q1: 12 MCQs from all units",
-      "Section I: Short Questions (15 to attempt; neat labeled diagrams enhance scores)",
-      "Section II: Long Questions (2 out of 3 to attempt; structured 5m + 4m)",
-      "Drawings must be done with sharp pencil and labeled in block letters",
-    ],
-    pairingSchemeStatus: "structural-blueprint",
-    pairingNote:
-      "Physiology chapters (Respiratory, Circulatory, Nervous systems) form core long-question anchors.",
-    officialModelPaperUrl: "https://www.biselahore.com",
-  },
-  {
-    id: "pattern-mathematics-matric",
-    subject: "Mathematics (Science Group - Class 9 & 10)",
-    classes: ["9th", "10th"],
-    theoryMarks: 75,
-    practicalMarks: 0,
-    totalMarks: 75,
-    objectiveMcqsMarks: 15,
-    subjectiveMarks: 60,
-    passingMarks: 30, // 40% of 75
-    timeAllowed: "2 Hours 30 Minutes",
-    sloBreakdown: {
-      knowledge: "40% (Formulas, theorem statements, standard algorithms)",
-      understanding: "40% (Step-by-step algebraic manipulation, geometric proofs)",
-      application: "20% (Word problems, practical geometric construction)",
-    },
-    keyComponents: [
-      "Q1: 15 MCQs (15 marks) - 20 minutes allocated",
-      "Section I: Short Questions (Attempt 18 out of 27 across Q2, Q3, Q4; 36 marks)",
-      "Section II: Long Questions (Attempt 3 out of 5; Q9 is COMPULSORY Theorem; 24 marks)",
-      "Compulsory Question 9: 8-mark Geometric Theorem from designated textbook circles/triangles chapters",
-    ],
-    pairingSchemeStatus: "structural-blueprint",
-    pairingNote:
-      "Question 9 theorem is legally compulsory across all Punjab boards. Missing Q9 automatically limits maximum obtainable long question marks to 16/24.",
-    officialModelPaperUrl: "https://www.biselahore.com",
-  },
-  {
-    id: "pattern-english-matric",
-    subject: "English Compulsory (Class 9 & 10)",
-    classes: ["9th", "10th"],
-    theoryMarks: 75,
-    practicalMarks: 0,
-    totalMarks: 75,
-    objectiveMcqsMarks: 19,
+    id: "g9-english",
+    grade: "9th",
+    subject: "English-9",
+    notificationRef: "PECTAA/C&C Unit/2026/1238 (6 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 19,
+    mcqCount: "19 MCQs (1 mark each)",
     subjectiveMarks: 56,
-    passingMarks: 30,
-    timeAllowed: "2 Hours 30 Minutes",
-    sloBreakdown: {
-      knowledge: "30% (Vocabulary, spelling, correct verb forms)",
-      understanding: "40% (Comprehension passage answers, poem paraphrasing)",
-      application: "30% (Creative essay/paragraph writing, direct-to-indirect translation)",
-    },
-    keyComponents: [
-      "Objective Paper: 19 MCQs (Correct verb forms, spelling, meanings, grammar parts of speech)",
-      "Subjective Section I: Short Questions from textbook prose chapters (10 marks)",
-      "Section II: Translation into Urdu or Alternative English paragraph (8 marks)",
-      "Section III: Summary of poem or Stanza explanation with reference to context (5 marks)",
-      "Section IV: Essay / Paragraph (15 marks), Direct & Indirect speech (5 marks), Pair of words (5 marks), Translation of sentences into English (8 marks)",
+    practicalMarks: "None",
+    passingRequirement: "40% (30 / 75 marks — IBCC Phase 1 active from 2026)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 19 MCQs (verb forms, spellings, meanings, grammar) — 19 marks",
+      "Q2: Short Qs Part-A (3/5 textbook Qs = 6m) + Part-B Play Unit 11 (1/2 = 4m) — 10 marks",
+      "Q3: Translation into Urdu (2/3 paras) or rewrite — 8 marks",
+      "Q4: Poem Summary OR Stanza Explanation — 5 marks",
+      "Q5: Words/Idioms sentences (5/8) — 5 marks",
+      "Q6: Letter / Story / Dialogue — 8 marks",
+      "Q7: Comprehension Passage — 10 marks",
+      "Q8: Translate 5 sentences OR 10-sentence para into English — 5 marks",
+      "Q9: Change of Voice — 5 marks",
     ],
-    pairingSchemeStatus: "structural-blueprint",
-    pairingNote:
-      "Grammar and composition follow the PCTB High School English Grammar and Composition textbook.",
-    officialModelPaperUrl: "https://www.biselahore.com",
+    attemptRules: "Follow per-question attempt quotas shown above across Q2–Q9.",
+    internalChoices: "Q2 (3/5 + 1/2), Q3 (2/3 paras), Q4 (Summary OR Stanza), Q5 (5/8), Q6 (choice among Letter/Story/Dialogue), Q8 (sentences OR para).",
+    pairingScheme: [
+      "Questions drawn from remaining 8 textbook units plus PCTB English Grammar & Composition.",
+      "Zero questions allowed from excluded Units 5, 8, and 10.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Notification No. 1238.",
+    deletedContent:
+      "Excluded 3 of 11 units: Unit 5 (Women Empowerment through Entrepreneurship), Unit 8 (The Impact of Globalisation on Culture and Economy), Unit 10 (The Silent Predator and the Majestic Prey – Snow Leopard and Markhor).",
+    paperSetterInstructions: "Mandatory not to include objective or subjective questions from excluded units.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
   },
   {
-    id: "pattern-urdu-matric",
-    subject: "Urdu Compulsory (Class 9 & 10)",
-    classes: ["9th", "10th"],
-    theoryMarks: 75,
-    practicalMarks: 0,
-    totalMarks: 75,
-    objectiveMcqsMarks: 15,
+    id: "g9-urdu",
+    grade: "9th",
+    subject: "Urdu-9",
+    notificationRef: "PECTAA/C&C Unit/2026/1238 (6 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 15,
+    mcqCount: "15 MCQs (10 textbook: 7 prose, 2 nazm, 1 ghazal + 5 grammar)",
     subjectiveMarks: 60,
-    passingMarks: 30,
-    timeAllowed: "2 Hours 30 Minutes",
-    sloBreakdown: {
-      knowledge: "35% (Poet & author names, idioms, grammatical terms)",
-      understanding: "40% (Poetry tashreeh, prose khulasa, sabaq summary)",
-      application: "25% (Essay writing, formal application/letter writing, kahani)",
-    },
-    keyComponents: [
-      "Q1: 15 MCQs (Prose, poetry, grammar, tazfeer-o-tanees, mutashabeh alfaz)",
-      "Q2: Ash'aar ki Tashreeh (Ghazal & Nazm - 10 marks)",
-      "Q3: Siyāq-o-Sabāq ke saath Nasr Paray ki Tashreeh (10 marks)",
-      "Q4: Sabaq ka Khulasa (5 marks)",
-      "Q5: Mazmoon Nawaeesi (Essay - 15 marks)",
-      "Q6: Khat / Darkhwast (10 marks) & Q7: Jumlon ki Durusti / Takmeel (5 marks)",
+    practicalMarks: "None",
+    passingRequirement: "40% (30 / 75 marks — IBCC Phase 1)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 15 MCQs — 15 marks",
+      "Subjective Section: Ash'aar ki Tashreeh (Nazm + Ghazal), Prose Tashreeh, Khulasa, Letter/Application, Story/Dialogue, Comprehension/Grammar — 60 marks",
     ],
-    pairingSchemeStatus: "structural-blueprint",
-    pairingNote:
-      "Presentation, calligraphy, and proper 605 marker sub-headings significantly influence examiner marking.",
-    officialModelPaperUrl: "https://www.biselahore.com",
+    attemptRules: "See official No. 1238 Urdu-9 model paper for exact verse & passage choices.",
+    internalChoices: "Internal choices provided within Nazm/Ghazal stanzas, prose passages, and composition items.",
+    pairingScheme: [
+      "Objective split: 7 prose MCQs, 2 nazm MCQs, 1 ghazal MCQ, 5 grammar MCQs.",
+      "No questions from author or poet biographies.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Notification No. 1238.",
+    deletedContent: "Excluded Urdu lessons & topics specified in No. 1238 annexures; no author/poet intro questions.",
+    paperSetterInstructions: "Zero questions from excluded lessons or author/poet biographical introductions.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
   },
   {
-    id: "pattern-cs-matric",
-    subject: "Computer Science (Class 9 & 10)",
-    classes: ["9th", "10th"],
-    theoryMarks: 50,
-    practicalMarks: 25,
-    totalMarks: 75,
-    objectiveMcqsMarks: 10,
-    subjectiveMarks: 40,
-    passingMarks: 20, // 40% of 50
-    timeAllowed: "2 Hours (Objective: 15 min, Subjective: 1 hr 45 min)",
-    sloBreakdown: {
-      knowledge: "40% (Syntax, architecture, protocols, numbering systems)",
-      understanding: "35% (Algorithm logic, flowcharts, trace tables)",
-      application: "25% (C / Python code writing, debugging, loop outputs)",
-    },
-    keyComponents: [
-      "Q1: 10 MCQs (10 marks)",
-      "Section I: Short Questions (Attempt 12 out of 18; 24 marks)",
-      "Section II: Long Questions (Attempt 2 out of 3; 16 marks, e.g. programming constructs, network topologies)",
-      "Practical: 25 marks (Lab execution of code, viva, practical journal)",
+    id: "g9-islamiat",
+    grade: "9th",
+    subject: "Islamiat Compulsory-9",
+    notificationRef: "PECTAA/C&C Unit/2026/1238 (6 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs (1 mark each)",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 1)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "See official No. 1238 model paper",
+    subjectiveDuration: "See official No. 1238 model paper",
+    questionDistribution: [
+      "Part-I (Objective): 20 MCQs — 20 marks",
+      "Part-II (Short Qs = 40 marks): Q2 (6/9 from Ch 1–2 = 12m), Q3 (6/9 from Ch 3–4 = 12m), Q4 (8/12 from Ch 5–6 = 16m)",
+      "Part-III (Subjective = 40 marks): Q5 Ahadith translation (2/4 = 10m), Q6 Personalities (2/4 = 10m), Q7 Long Qs (2/4 = 20m)",
     ],
-    pairingSchemeStatus: "structural-blueprint",
-    pairingNote:
-      "C-Language programming logic and conditional statements in 10th form the predominant long question weight.",
-    officialModelPaperUrl: "https://www.biselahore.com",
+    attemptRules: "Attempt 20/30 short Qs (across Q2–Q4) and 2/4 in each of Q5, Q6, and Q7.",
+    internalChoices: "Q2 (6/9), Q3 (6/9), Q4 (8/12), Q5 (2/4), Q6 (2/4), Q7 (2/4).",
+    pairingScheme: [
+      "Q2: Ch 1–2 | Q3: Ch 3–4 | Q4: Ch 5–6.",
+      "Q7 Long Questions: None asked from Chapter 6 & Chapter 7.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Notification No. 1238.",
+    deletedContent: "Follow exact topic exclusions inside No. 1238. Note: Tarjama-tul-Quran and Ethics have NO deleted-topic ALP.",
+    paperSetterInstructions: "Do not include Q7 long questions from Chapters 6 and 7.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
+  },
+  {
+    id: "g9-math",
+    grade: "9th",
+    subject: "Mathematics-9",
+    notificationRef: "PECTAA/C&C Unit/2026/1238 (6 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 15,
+    mcqCount: "15 MCQs (1 each Ch 1,2,5,7,9,10,11,12,13 + 2 each Ch 3,4,6)",
+    subjectiveMarks: 60,
+    practicalMarks: "None",
+    passingRequirement: "40% (30 / 75 marks — IBCC Phase 1)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 15 MCQs — 15 marks",
+      "Short Qs (36 marks): Q2 (6/9 from Ch 1–5 = 12m), Q3 (6/9 from Ch 6,7,9 = 12m), Q4 (6/9 from Ch 10–13 = 12m)",
+      "Long Part-II (16 marks): Attempt 2/3 × 8m (Q5, Q6, Q7)",
+      "Long Part-III (8 marks): Attempt 1/2 × 8m (Q8, Q9)",
+    ],
+    attemptRules: "Attempt 18/27 short questions; 2/3 long in Part-II; 1/2 long in Part-III (no separate mandatory theorem override required).",
+    internalChoices: "6/9 per short-Q block; 2/3 in Part-II; 1/2 in Part-III.",
+    pairingScheme: [
+      "Q5: Ch 1 + Ch 2 | Q6: Ch 3 + Ch 4 | Q7: Ch 5 + Ch 6.",
+      "Q8: Ch 7/10 + Ch 9 | Q9: Ch 12 + Ch 11/13.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Notification No. 1238.",
+    deletedContent: "Excluded exercises, examples, and questions per unit listed in PECTAA No. 1238.",
+    paperSetterInstructions: "All questions strictly from remaining exercises/examples after ALP deletions.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
+  },
+  {
+    id: "g9-physics",
+    grade: "9th",
+    subject: "Physics-9",
+    notificationRef: "PECTAA No. 1238 (6 Nov) & Practicals in No. 1257",
+    totalTheoryMarks: 60,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs (2 each Ch 3,4,6; 1 each remaining chapters)",
+    subjectiveMarks: 48,
+    practicalMarks: "Combined Grades 9–10 Practical: 30 Marks (2 Hours) examined in Class 10",
+    passingRequirement: "40% (24 / 60 theory — IBCC Phase 1)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (30 marks): Q2 (5/8 Ch 1–3 = 10m), Q3 (5/8 Ch 4–6 = 10m), Q4 (5/8 Ch 7–9 = 10m)",
+      "Long Qs (18 marks): Attempt 2/3 × 9m (Q5, Q6, Q7; a=4m, b=5m from different chapters)",
+    ],
+    attemptRules: "Attempt 15/24 short questions and 2/3 long questions.",
+    internalChoices: "5/8 per short section; 2/3 detailed questions.",
+    pairingScheme: [
+      "Q5: Ch 1–3 | Q6: Ch 4–6 | Q7: Ch 7–9 (parts a & b from different chapters).",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Notification No. 1238.",
+    deletedContent:
+      "Excluded theory topics in No. 1238. Excluded 9th Practicals (in No. 1257): g by free fall, limiting friction vs normal reaction, principle of moments weight, measuring cylinder density, helical spring load-extension graph.",
+    paperSetterInstructions: "Part (a) and (b) of a long question must not come from the same chapter.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
+  },
+  {
+    id: "g9-chemistry",
+    grade: "9th",
+    subject: "Chemistry-9",
+    notificationRef: "PECTAA No. 1238 (6 Nov) & Practicals in No. 1257",
+    totalTheoryMarks: 60,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs",
+    subjectiveMarks: 48,
+    practicalMarks: "Combined Grades 9–10 Practical: 30 Marks (2 Hours) examined in Class 10",
+    passingRequirement: "40% (24 / 60 theory — IBCC Phase 1)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (30 marks): Q2 (5/8 Ch 1–4 = 10m), Q3 (5/8 Ch 5–8 = 10m), Q4 (5/8 Ch 9–11 = 10m)",
+      "Long Qs (18 marks): Attempt 2/3 × 9m (a=5m, b=4m)",
+    ],
+    attemptRules: "Attempt 15/24 short questions and 2/3 detailed questions.",
+    internalChoices: "5/8 per short section; 2/3 long questions.",
+    pairingScheme: [
+      "Q5: Ch 1 + Ch 2 | Q6: Ch 3 + Ch 7 | Q7: Ch 8 + Ch 10.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Notification No. 1238.",
+    deletedContent:
+      "Excluded topics in No. 1238. Excluded 9th Practicals (in No. 1257): temperature effect on solubility, physical mixture separation, preparing 0.1M NaOH, 0.1M Na2CO3, and 0.1M HCl solutions.",
+    paperSetterInstructions: "Zero questions from deleted topics or exercise questions.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
+  },
+  {
+    id: "g9-biology",
+    grade: "9th",
+    subject: "Biology-9",
+    notificationRef: "PECTAA No. 1238 (6 Nov) & Practicals in No. 1257",
+    totalTheoryMarks: 60,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs",
+    subjectiveMarks: 48,
+    practicalMarks: "Combined Grades 9–10 Practical: 30 Marks (2 Hours) examined in Class 10",
+    passingRequirement: "40% (24 / 60 theory — IBCC Phase 1)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (30 marks): Q2 (5/8 Ch 1–3 = 10m), Q3 (5/8 Ch 4,5,6,10 = 10m), Q4 (5/8 Ch 7–9 = 10m)",
+      "Long Qs (18 marks): Attempt 2/3 × 9m (a=5m, b=4m)",
+    ],
+    attemptRules: "Attempt 15/24 short questions and 2/3 detailed questions.",
+    internalChoices: "5/8 per short block; 2/3 long questions.",
+    pairingScheme: [
+      "Q5: Ch 2 + Ch 3 | Q6: Ch 6 + Ch 7 | Q7: Ch 9 + Ch 10.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Notification No. 1238.",
+    deletedContent:
+      "Excluded topics in No. 1238. Excluded 9th Practicals (in No. 1257): bell jar transpiration investigation, wind/light/temperature transpiration rate experiments.",
+    paperSetterInstructions: "Side boxes inside deleted topics are also treated as deleted.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
+  },
+  {
+    id: "g9-cs",
+    grade: "9th",
+    subject: "Computer Science & Entrepreneurship-9",
+    notificationRef: "PECTAA/C&C Unit/2026/1255 (14 Nov 2026)",
+    totalTheoryMarks: 50,
+    objectiveMarks: 10,
+    mcqCount: "10 MCQs (1 mark each)",
+    subjectiveMarks: 40,
+    practicalMarks: "Combined Grades 9–10 Practical: 50 Marks (2 Hours) examined in Class 10",
+    passingRequirement: "40% (20 / 50 theory — IBCC Phase 1)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 10 MCQs — 10 marks",
+      "Short Qs (24 marks): Q2 (4/6 Ch 1,4 = 8m), Q3 (4/6 Ch 3,5,7 = 8m), Q4 (4/6 Ch 6,8,9 = 8m)",
+      "Long Qs (16 marks): Attempt 2/3 × 8m (Q5, Q6, Q7)",
+    ],
+    attemptRules: "Attempt 12/18 short questions and 2/3 detailed questions.",
+    internalChoices: "4/6 per short section; 2/3 detailed questions.",
+    pairingScheme: [
+      "Q5: Unit 1 | Q6: Unit 3 | Q7: Unit 6 or Unit 9.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Further Notification No. 1255.",
+    deletedContent: "Unit 2 (Complete Unit) excluded, plus selected subtopics in Units 1, 4, 5, and 8 listed in No. 1255.",
+    paperSetterInstructions: "No question evaluated from excluded topics in any section.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-14.11.2026-1255-1.pdf",
+  },
+  {
+    id: "g9-genscience",
+    grade: "9th",
+    subject: "General Science-9",
+    notificationRef: "PECTAA/C&C Unit/2026/1255 (14 Nov 2026)",
+    totalTheoryMarks: 50,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs (2 each from Chapters 1–6)",
+    subjectiveMarks: 38,
+    practicalMarks: "None",
+    passingRequirement: "40% (20 / 50 marks — IBCC Phase 1)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "1 Hour 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (24 marks; 3 marks each!): Q2 (4/6 Ch 1–3 = 12m), Q3 (4/6 Ch 4–6 = 12m)",
+      "Long Qs (14 marks; 7 marks each!): Attempt 2/3 × 7m (a=4m, b=3m)",
+    ],
+    attemptRules: "Attempt 8/12 short questions (3 marks each) and 2/3 long questions (7 marks each).",
+    internalChoices: "4/6 per short section; 2/3 long questions.",
+    pairingScheme: [
+      "Q4: Ch 1 + Ch 2 | Q5: Ch 3 + Ch 4 | Q6: Ch 5 + Ch 6.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Further Notification No. 1255.",
+    deletedContent: "Deleted topics & exercises across Chapters 1–6 tabulated in No. 1255.",
+    paperSetterInstructions: "Note 50-mark total and 3-mark short question weighting distinct from 75-mark science subjects.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-14.11.2026-1255-1.pdf",
+  },
+  {
+    id: "g9-masihi",
+    grade: "9th",
+    subject: "Masihi Taleem-9",
+    notificationRef: "PECTAA/C&C Unit/2026/1255 (14 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs (1 mark each)",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 1)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "See official No. 1255 model paper",
+    subjectiveDuration: "See official No. 1255 model paper",
+    questionDistribution: [
+      "Part-I (Objective): 20 MCQs — 20 marks",
+      "Part-II (Short Qs = 40 marks): Q2 (6/9 = 12m), Q3 (6/9 = 12m), Q4 (8/12 = 16m)",
+      "Part-III (Subjective = 40 marks): Q5 Verses (2/4 = 10m), Q6 Note (1/2 = 10m), Q7 Long Qs (2/4 = 20m)",
+    ],
+    attemptRules: "Attempt 20/30 short questions, 2/4 verses, 1/2 notes, and 2/4 long questions.",
+    internalChoices: "6/9, 6/9, 8/12 in Part-II; 2/4, 1/2, 2/4 in Part-III.",
+    pairingScheme: ["Chapters distributed per No. 1255 Masihi Taleem-9 pairing matrix."],
+    modelPaperAvailable: "Included in Official PECTAA Grade 9 Further Notification No. 1255.",
+    deletedContent: "Selected topic exclusions per No. 1255. (Tarjama-tul-Quran & Ethics have NO deleted-topic ALP.)",
+    paperSetterInstructions: "Follow Masihi Taleem-9 instructions inside No. 1255.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-14.11.2026-1255-1.pdf",
+  },
+
+  // ========================= GRADE 10 (Class 10) =========================
+  {
+    id: "g10-english",
+    grade: "10th",
+    subject: "English-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 19,
+    mcqCount: "19 MCQs (1 mark each)",
+    subjectiveMarks: 56,
+    practicalMarks: "None",
+    passingRequirement: "40% (30 / 75 marks — IBCC Phase 2 begins Annual 2027)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Paper-I Objective: 19 MCQs — 19 marks",
+      "Paper-II Essay Type (56 marks): Q2 Short Qs (5/8 = 10m), Q3 Urdu Translation / Rewrite (8m), Q4 Poem Summary/Stanza (5m), Q5 Essay OR Para (15m), Q6 Direct/Indirect (5m), Q7 Pair of Words (5m), Q8 Urdu->Eng Paragraph (8m)",
+    ],
+    attemptRules: "Attempt all objective MCQs; follow per-question subjective choices.",
+    internalChoices: "Q2 (5/8), Q4 (Summary OR Stanza), Q5 (1/3 Essays OR 1/3 Paragraphs), Q7 (5/8 pair of words).",
+    pairingScheme: [
+      "7 remaining textbook units split evenly across short questions & translation (Units 1,2,3,5 + Review-I & Units 6,8,9 + Review-II).",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257.",
+    deletedContent:
+      "Excluded 3 of 10 units: Unit 4 (The Earth: Act Now for Tomorrow), Unit 7 (Time Poem), and Unit 10 (The Three Questions), plus related review portions.",
+    paperSetterInstructions: "Mandatory that no questions touch excluded Units 4, 7, and 10.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-urdu",
+    grade: "10th",
+    subject: "Urdu-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 15,
+    mcqCount: "15 MCQs",
+    subjectiveMarks: 60,
+    practicalMarks: "None",
+    passingRequirement: "40% (30 / 75 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Objective: 15 MCQs — 15 marks",
+      "Subjective: Nazm/Ghazal Tashreeh, Prose Tashreeh, Short Qs, Khulasa, Essay, Comprehension — 60 marks",
+    ],
+    attemptRules: "Follow Urdu-10 model paper question choices in No. 1257.",
+    internalChoices: "Internal choices on couplets, passages, summaries, and essays.",
+    pairingScheme: ["14 remaining textbook lessons + grammar rules (20 total lessons; 6 excluded)."],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257.",
+    deletedContent:
+      "6 of 20 lessons excluded (حسنِ محلہ، بابل کے کھنڈر، اولڈ ایج ہوم، کچھ ذریعہ تعلیم کے باب میں، وغیرہ، یوں کہنے کو پیرایۂ اظہار بہت ہے); zero author/poet intro questions.",
+    paperSetterInstructions: "Do not include biographical questions on authors or poets.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-pakstudies",
+    grade: "10th",
+    subject: "Pakistan Studies-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs (Ch 1,2,5,6,8: 3 each; Ch 3: 5)",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "See official No. 1257 model paper",
+    subjectiveDuration: "See official No. 1257 model paper",
+    questionDistribution: [
+      "Part-I (Objective): 20 MCQs — 20 marks",
+      "Part-II (Short Qs = 50 marks): Q2 (8/12 Ch 2+6 = 16m), Q3 (8/12 Ch 5+8 = 16m), Q4 (9/13 Ch 1+3 = 18m)",
+      "Part-III (Long Qs = 30 marks): Attempt 3/5 × 10m (from Ch 1, 2, 3, 5, 6/8)",
+    ],
+    attemptRules: "Attempt 25/37 short questions and 3/5 long questions (10 marks each).",
+    internalChoices: "Q2 (8/12), Q3 (8/12), Q4 (9/13), Part-III (3/5).",
+    pairingScheme: [
+      "MCQs: Ch 1 (3), Ch 2 (3), Ch 3 (5), Ch 5 (3), Ch 6 (3), Ch 8 (3).",
+      "Short Qs: Q2 (Ch 2+6), Q3 (Ch 5+8), Q4 (Ch 1+3). Long Qs from remaining 6 chapters.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257.",
+    deletedContent:
+      "Excluded 2 of 8 chapters completely: Chapter 4 (پاکستان کا جغرافیہ) and Chapter 7 (آبادی، معاشرہ اور پاکستان میں ثقافتی تنوع).",
+    paperSetterInstructions: "Note 100-mark / 3-hour format for Pak Studies-10 (distinct from Grade 12's 50-mark / 2-hour format).",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-math",
+    grade: "10th",
+    subject: "Mathematics-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 15,
+    mcqCount: "15 MCQs",
+    subjectiveMarks: 60,
+    practicalMarks: "None",
+    passingRequirement: "40% (30 / 75 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Objective: 15 MCQs — 15 marks",
+      "Short Qs (36 marks): Q2 (6/9 Ch 1–4 = 12m), Q3 (6/9 Ch 5–8 = 12m), Q4 (6/9 Ch 9–12 = 12m)",
+      "Long Part-II (16 marks): Attempt 2/3 × 8m (Q5, Q6, Q7)",
+      "Long Part-III (8 marks): Attempt 1/2 × 8m (Q8, Q9)",
+    ],
+    attemptRules: "Attempt 18/27 short questions, 2/3 Part-II long questions, and 1/2 Part-III long questions.",
+    internalChoices: "6/9 per short section; 2/3 in Part-II; 1/2 in Part-III.",
+    pairingScheme: [
+      "Q5: Ch 1 + Ch 2 | Q6: Ch 3 + Ch 4 | Q7: Ch 5 + Ch 7.",
+      "Q8: Ch 6 + Ch 8/11 | Q9: Ch 10 + Ch 9/12.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257.",
+    deletedContent: "Detailed per-unit skipped examples and exercises across Units 1–12 listed in No. 1257 (e.g., 1.3 Q2–4, 2.5 complete, 2.7 complete).",
+    paperSetterInstructions: "Follow the Part-II (2/3) + Part-III (1/2) pairing structure in No. 1257.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-physics",
+    grade: "10th",
+    subject: "Physics-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 60,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs (1 MCQ each from Ch 10 to Ch 21)",
+    subjectiveMarks: 48,
+    practicalMarks: "30 Marks (2 Hours) — Combined Grades 9–10 Practical (Q1: 9th part 1/2=12m; Q2: 10th part 1/2=12m; Notebook 3m; Viva 3m)",
+    passingRequirement: "40% (24 / 60 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (30 marks): Q2 (5/8 Ch 10–13 = 10m), Q3 (5/8 Ch 14–17 = 10m), Q4 (5/8 Ch 18–21 = 10m)",
+      "Long Qs (18 marks): Attempt 2/3 × 9m (a=4m, b=5m from different chapters)",
+    ],
+    attemptRules: "Attempt 15/24 short questions and 2/3 long questions.",
+    internalChoices: "5/8 per short section; 2/3 detailed questions.",
+    pairingScheme: [
+      "Q5: Ch 10–13 | Q6: Ch 14–17 | Q7: Ch 18–21 (parts a & b from different chapters).",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257 (both Theory & Practical Model Papers).",
+    deletedContent:
+      "Deleted theory topics in Ch 10–21 plus 8 excluded Physics-10 practicals (critical angle slab, glass prism deviation, series/parallel resistors, NAND burglar alarm, NOT fire alarm, specific heat mixture, ice-to-water graph).",
+    paperSetterInstructions: "Parts (a) and (b) of each long question must be from different chapters.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-chemistry",
+    grade: "10th",
+    subject: "Chemistry-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 60,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs (1 each from Ch 14–26 except Ch 25)",
+    subjectiveMarks: 48,
+    practicalMarks: "30 Marks (2 Hours) — Combined Grades 9–10 Practical (Q1 9th 12m + Q2 10th 12m + Notebook 3m + Viva 3m)",
+    passingRequirement: "40% (24 / 60 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (30 marks): Q2 (5/8 Ch 14–18 = 10m), Q3 (5/8 Ch 19–22 = 10m), Q4 (5/8 Ch 23–26 = 10m)",
+      "Long Qs (18 marks): Attempt 2/3 × 9m (a=5m, b=4m)",
+    ],
+    attemptRules: "Attempt 15/24 short questions and 2/3 detailed questions.",
+    internalChoices: "5/8 per short section; 2/3 long questions.",
+    pairingScheme: [
+      "Q5: Ch 14 + Ch 15 | Q6: Ch 20 + Ch 22 | Q7: Ch 23 + Ch 25.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257 (Theory & Practical Model Papers).",
+    deletedContent:
+      "Deleted topics/exercises in Ch 14–26 (e.g., 14.3, 14.9, 15.6 Limiting Reactant, 15.7 Yield) plus 4 excluded Chemistry-10 practicals (carboxylic acid Na2CO3 test, volumetric NaOH standardization, conductivity demo, sugar thermal decomposition).",
+    paperSetterInstructions: "No question evaluated from deleted Quick Check, MCQ, SAQ, CRQ, or DQ items listed.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-biology",
+    grade: "10th",
+    subject: "Biology-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 60,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs",
+    subjectiveMarks: 48,
+    practicalMarks: "30 Marks (2 Hours) — Combined Grades 9–10 Practical",
+    passingRequirement: "40% (24 / 60 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (30 marks): Q2 (5/8 Ch 1,2,5 = 10m), Q3 (5/8 Ch 3,4,6,7 = 10m), Q4 (5/8 Ch 8–10 = 10m)",
+      "Long Qs (18 marks): Attempt 2/3 × 9m (a=5m, b=4m)",
+    ],
+    attemptRules: "Attempt 15/24 short questions and 2/3 detailed questions.",
+    internalChoices: "5/8 per short section; 2/3 long questions.",
+    pairingScheme: [
+      "Q5: Ch 1 + Ch 3 | Q6: Ch 6 + Ch 5 | Q7: Ch 9 + Ch 8.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257 (Theory & Practical Model Papers).",
+    deletedContent:
+      "Deleted topics/side boxes across Chapters 1–10 plus 4 excluded Biology-10 practicals (potato strip osmosis, rest vs exercise breathing rate, tar in cigarette smoke, frog shin muscle 12V DC contraction).",
+    paperSetterInstructions: "All side boxes inside deleted topics are automatically excluded.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-cs",
+    grade: "10th",
+    subject: "Computer Science & Entrepreneurship-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 50,
+    objectiveMarks: 10,
+    mcqCount: "10 MCQs (1 mark each)",
+    subjectiveMarks: 40,
+    practicalMarks: "50 Marks (2 Hours) — Combined Grades 9–10 Practical (Q1 9th 20m + Q2 10th 20m + Notebook 5m + Viva 5m)",
+    passingRequirement: "40% (20 / 50 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "15 Minutes",
+    subjectiveDuration: "1 Hour 45 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 10 MCQs — 10 marks",
+      "Short Qs (24 marks): Q2 (4/6 Ch 1,3 = 8m), Q3 (4/6 Ch 4,5 = 8m), Q4 (4/6 Ch 6–8 = 8m)",
+      "Long Qs (16 marks): Attempt 2/3 × 8m (Q5, Q6, Q7)",
+    ],
+    attemptRules: "Attempt 12/18 short questions and 2/3 detailed questions.",
+    internalChoices: "4/6 per short section; 2/3 detailed questions.",
+    pairingScheme: [
+      "Q5: Unit 1 | Q6: Unit 4 | Q7: Unit 6 or Unit 8.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257 (Theory & Practical Model Papers).",
+    deletedContent: "Unit 2 (System Recovery and Advanced Maintenance) completely excluded, plus excluded topics & practicals listed in No. 1257.",
+    paperSetterInstructions: "No question evaluated from Unit 2 or excluded practical numbers.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+  {
+    id: "g10-genscience",
+    grade: "10th",
+    subject: "General Science-10",
+    notificationRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
+    totalTheoryMarks: 50,
+    objectiveMarks: 12,
+    mcqCount: "12 MCQs (Chapters 7–11)",
+    subjectiveMarks: 38,
+    practicalMarks: "None",
+    passingRequirement: "40% (20 / 50 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "1 Hour 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 12 MCQs — 12 marks",
+      "Short Qs (24 marks; 3 marks each!): Q2 (4/6 Ch 7–8 = 12m), Q3 (4/6 Ch 9–11 = 12m)",
+      "Long Qs (14 marks; 7 marks each!): Attempt 2/3 × 7m (a=4m, b=3m)",
+    ],
+    attemptRules: "Attempt 8/12 short questions (3 marks each) and 2/3 long questions (7 marks each).",
+    internalChoices: "4/6 per short block; 2/3 detailed questions.",
+    pairingScheme: [
+      "Q4: Ch 7 + Ch 11 | Q5: Ch 8 | Q6: Ch 9 + Ch 10.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 10 Notification No. 1257.",
+    deletedContent: "Deleted topics & exercises in Chapters 7–11 listed in No. 1257.",
+    paperSetterInstructions: "Note 50-mark structure and 3-mark short questions.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
+  },
+
+  // ========================= GRADE 11 (Class 11) =========================
+  {
+    id: "g11-english",
+    grade: "11th",
+    subject: "English-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs (15 synonyms/unit MCQs + 5 verb form MCQs)",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 1 active from 2026)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "30 Minutes",
+    subjectiveDuration: "2 Hours 30 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 20 MCQs — 20 marks",
+      "Section I Short Qs: Q2 (7/10 = 14m), Q3 (5/8 = 10m), Q4 (3/5 = 6m)",
+      "Section II Composition: Q5 Letter/Application (10m), Q6 Story (10m), Q7(a) Stanza (5m), Q7(b) Punctuation (5m), Q7(c) Pair of Words (5/8 = 5m), Q8 Translation into Urdu OR Essay (15m)",
+    ],
+    attemptRules: "Follow exact quotas across Q2–Q8.",
+    internalChoices: "Q2 (7/10), Q3 (5/8), Q4 (3/5), Q5 (Letter OR Application), Q6 (1/2 Stories), Q7(c) (5/8), Q8 (Translation OR Essay for Eng/Foreign medium).",
+    pairingScheme: [
+      "10 remaining textbook units (Units 1,2,3,5,6,8,10,11,13,14) mapped directly to MCQs & Q2–Q4.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent:
+      "Excluded 4 of 14 units: Unit 4 (Team Moon), Unit 7 (What You Do is What You are), Unit 9 (Freedom — Poem), and Unit 12 (The Impact of AI on Society).",
+    paperSetterInstructions: "Mandatory that no objective or subjective question is taken from excluded Units 4, 7, 9, or 12.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-urdu",
+    grade: "11th",
+    subject: "Urdu-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 1)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Objective: 20 MCQs — 20 marks (20 minutes)",
+      "Subjective: Ash'aar Tashreeh (Nazm + Ghazal), Prose Siyāq-o-Sabāq, Sabaq Khulasa, Nazm Khulasa, Dialogue/Application/Summary — 80 marks (2h 40m)",
+    ],
+    attemptRules: "Follow Urdu-11 model paper quotas in No. 1239.",
+    internalChoices: "Choice among passages, stanzas, and composition options.",
+    pairingScheme: ["Based on non-excluded Urdu-11 prose, nazm, ghazal, and grammar topics in No. 1239."],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent: "Excluded lessons/poems listed in No. 1239; no author/poet intro questions.",
+    paperSetterInstructions: "Zero questions from excluded lessons or author/poet biographical introductions.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-islamiat",
+    grade: "11th",
+    subject: "Islamiat Compulsory-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 50,
+    objectiveMarks: 10,
+    mcqCount: "10 MCQs (1 mark each)",
+    subjectiveMarks: 40,
+    practicalMarks: "None",
+    passingRequirement: "40% (20 / 50 marks — IBCC Phase 1)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "See official No. 1239 model paper",
+    subjectiveDuration: "See official No. 1239 model paper",
+    questionDistribution: [
+      "Part-I (Objective): 10 MCQs — 10 marks",
+      "Part-II (Short Qs = 20 marks): Q2 (5/8 = 10m), Q3 (5/8 = 10m)",
+      "Part-III (Subjective = 20 marks): Q4 Ahadith translation (2/4 × 2m = 4m) + Q5 Long Qs (2/4 × 8m = 16m)",
+    ],
+    attemptRules: "Attempt 10/16 short Qs, 2/4 Ahadith (4 marks total), and 2/4 long questions (8 marks each = 16 marks).",
+    internalChoices: "Q2 (5/8), Q3 (5/8), Q4 (2/4), Q5 (2/4).",
+    pairingScheme: ["Chapters mapped per No. 1239 Islamiat-11 pairing table."],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent: "Excluded Ahadith 3, 5, 8, 12 and designated subtopics across Ch 4, 5, 6, 7 in No. 1239.",
+    paperSetterInstructions: "Note 50-mark / 2-hour structure and 4m Hadith + 16m Long Q split.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-math",
+    grade: "11th",
+    subject: "Mathematics-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs (1 mark each)",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 1)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "30 Minutes",
+    subjectiveDuration: "2 Hours 30 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 20 MCQs — 20 marks",
+      "Short Qs (50 marks): Q2 (8/12 Units 1–5 = 16m), Q3 (8/12 Units 6,7,9,10 = 16m), Q4 (9/13 Units 11–14 = 18m)",
+      "Long Qs (30 marks): Attempt 3/5 × 10m (a=5m, b=5m)",
+    ],
+    attemptRules: "Attempt 25/37 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 9/13 short; 3/5 long.",
+    pairingScheme: [
+      "Q5: Unit 1 + Unit 2/3 | Q6: Unit 4 + Unit 5/9 | Q7: Unit 6 + Unit 7 | Q8: Unit 10 + Unit 12 | Q9: Unit 13 + Unit 14.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent: "Skipped examples and exercise questions across Units 1–14 specified in No. 1239.",
+    paperSetterInstructions: "All problems limited strictly to retained ALP textbook exercises.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-physics",
+    grade: "11th",
+    subject: "Physics-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 85,
+    objectiveMarks: 17,
+    mcqCount: "17 MCQs (1 mark each)",
+    subjectiveMarks: 68,
+    practicalMarks: "See official board practical notification / model paper",
+    passingRequirement: "40% (34 / 85 theory — IBCC Phase 1)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 17 MCQs — 17 marks",
+      "Short Qs (44 marks): Q2 (8/12 Ch 1–4 = 16m), Q3 (8/12 Ch 5–8 = 16m), Q4 (6/9 Ch 9–12 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m (a=5m, b=3m)",
+    ],
+    attemptRules: "Attempt 22/33 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 6/9 short; 3/5 long.",
+    pairingScheme: [
+      "Q5: Ch 1–3 | Q6: Ch 4–6 | Q7: Ch 7–8 | Q8: Ch 9–10 | Q9: Ch 11–12.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent: "Excluded theory topics & numericals listed in No. 1239; excluded 11th practicals listed in Grade 12 PDF No. 1258.",
+    paperSetterInstructions: "Ensure no objective, short, or numerical items stem from deleted topics.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-chemistry",
+    grade: "11th",
+    subject: "Chemistry-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 85,
+    objectiveMarks: 17,
+    mcqCount: "17 MCQs (1 mark each)",
+    subjectiveMarks: 68,
+    practicalMarks: "See official board practical notification / model paper",
+    passingRequirement: "40% (34 / 85 theory — IBCC Phase 1)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 17 MCQs — 17 marks",
+      "Short Qs (44 marks): Q2 (8/12 = 16m), Q3 (8/12 = 16m), Q4 (6/9 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m (a=4m, b=4m)",
+    ],
+    attemptRules: "Attempt 22/33 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 6/9 short; 3/5 long.",
+    pairingScheme: [
+      "Q5: Ch 2 + Ch 5 | Q6: Ch 3 + Ch 7 | Q7: Ch 8 + Ch 9 | Q8: Ch 11 + Ch 14 | Q9: Ch 12 + Ch 13.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent: "Chapter 16 completely excluded plus chapter-specific deletions in No. 1239; excluded 11th practicals in No. 1258.",
+    paperSetterInstructions: "Chapter 16 and listed exercise deletions strictly omitted.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-biology",
+    grade: "11th",
+    subject: "Biology-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 85,
+    objectiveMarks: 17,
+    mcqCount: "17 MCQs (1 mark each)",
+    subjectiveMarks: 68,
+    practicalMarks: "See official board practical notification / model paper",
+    passingRequirement: "40% (34 / 85 theory — IBCC Phase 1)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 17 MCQs — 17 marks",
+      "Short Qs (44 marks): Q2 (8/12 = 16m), Q3 (8/12 = 16m), Q4 (6/9 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m (a=4m, b=4m)",
+    ],
+    attemptRules: "Attempt 22/33 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 6/9 short; 3/5 long.",
+    pairingScheme: [
+      "Q5: Ch 1 + Ch 11 | Q6: Ch 3 + Ch 9 | Q7: Ch 6 + Ch 10 | Q8: Ch 2 + Ch 12 | Q9: Ch 4 + Ch 8.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent: "Excluded subtopics & side boxes in No. 1239; excluded 11th practicals listed in No. 1258.",
+    paperSetterInstructions: "All side boxes inside deleted topics are excluded.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-cs",
+    grade: "11th",
+    subject: "Computer Science & Entrepreneurship-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 15,
+    mcqCount: "15 MCQs (1 mark each)",
+    subjectiveMarks: 60,
+    practicalMarks: "See official board practical notification / model paper",
+    passingRequirement: "40% (30 / 75 theory — IBCC Phase 1)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 15 MCQs — 15 marks",
+      "Short Qs (36 marks): Q2 (6/9 = 12m), Q3 (6/9 = 12m), Q4 (6/9 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m",
+    ],
+    attemptRules: "Attempt 18/27 short questions and 3/5 detailed questions.",
+    internalChoices: "6/9 per short section; 3/5 long.",
+    pairingScheme: [
+      "Q5: Ch 2 | Q6: Ch 3 | Q7: Ch 4 | Q8: Ch 5 | Q9: Ch 7.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 11 Notification No. 1239.",
+    deletedContent: "Excluded chapters/topics in No. 1239; excluded 11th practicals listed in Grade 12 PDF No. 1258.",
+    paperSetterInstructions: "No questions from excluded sections or practicals.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
+  },
+  {
+    id: "g11-masihi",
+    grade: "11th",
+    subject: "Masihi Taleem-11",
+    notificationRef: "PECTAA/C&C Unit/2026/1256 (14 Nov 2026 — Masihi Taleem Only)",
+    totalTheoryMarks: 50,
+    objectiveMarks: 10,
+    mcqCount: "10 MCQs (1 mark each)",
+    subjectiveMarks: 40,
+    practicalMarks: "None",
+    passingRequirement: "40% (20 / 50 marks — IBCC Phase 1)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "See official No. 1256 model paper",
+    subjectiveDuration: "See official No. 1256 model paper",
+    questionDistribution: [
+      "Part-I (Objective): 10 MCQs — 10 marks",
+      "Part-II (Short Qs = 20 marks): Q2 (5/8 = 10m), Q3 (5/8 = 10m)",
+      "Part-III (Subjective = 20 marks): Q4 Verses (2/4 = 4m) + Note/Long Qs (16m)",
+    ],
+    attemptRules: "Attempt 10/16 short Qs, 2/4 verses, and Part-III note/long options per No. 1256.",
+    internalChoices: "5/8, 5/8 short; 2/4 verses + long/note options.",
+    pairingScheme: ["Chapters paired per No. 1256 Masihi Taleem-11 scheme."],
+    modelPaperAvailable: "Included in Official PECTAA Notification No. 1256 (Masihi Taleem-11 only).",
+    deletedContent: "Subject-specific deletions in No. 1256 (notice 1256 does NOT replace Grade 11 main notice No. 1239).",
+    paperSetterInstructions: "Follow Masihi Taleem-11 instructions inside No. 1256.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-14.11.2026-1256.pdf",
+  },
+
+  // ========================= GRADE 12 (Class 12) =========================
+  {
+    id: "g12-english",
+    grade: "12th",
+    subject: "English-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs (1 mark each)",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "30 Minutes",
+    subjectiveDuration: "2 Hours 30 Minutes",
+    questionDistribution: [
+      "Objective: 20 MCQs — 20 marks",
+      "Subjective (80 marks): Q2 Short Qs (5/8 = 10m), Q3 Short Qs (5/8 = 10m), Q4 Unit 13 Novel Short Qs (5/8 = 10m), Q5 Poem Critical Appreciation (10m), Q6 Essay (1/4 = 15m), Q7 Idioms/Phrasal Verbs (5/8 = 10m), Q8 Unseen Urdu->Eng Para OR English Medium alternative (15m)",
+    ],
+    attemptRules: "Attempt 15/24 short questions across Q2–Q4, plus Q5, Q6 (1/4 essays), Q7 (5/8), and Q8.",
+    internalChoices: "Q2–Q4 (5/8 each), Q6 (1/4), Q7 (5/8), Q8 (unseen translation OR para).",
+    pairingScheme: ["Based on remaining 8 textbook units (plus Unit 13 Novel for Q4) and Grammar/Composition."],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "Excluded 5 of 13 units: Units 2, 3, 6, 8, and 12.",
+    paperSetterInstructions: "Mandatory zero items from excluded Units 2, 3, 6, 8, and 12.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+  },
+  {
+    id: "g12-urdu",
+    grade: "12th",
+    subject: "Urdu-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Objective: 20 MCQs — 20 marks (20 minutes)",
+      "Subjective: Poetry Tashreeh (Nazm + Ghazal), Prose Siyāq-o-Sabāq, Khulasa, Essay (Mazmoon), Letter/Autobiography — 80 marks (2h 40m)",
+    ],
+    attemptRules: "Follow Urdu-12 model paper choices inside No. 1258.",
+    internalChoices: "Choices across couplets, prose excerpts, essays, and composition.",
+    pairingScheme: ["Drawn from 16 remaining lessons (6 of 22 lessons excluded) plus grammar."],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "6 of 22 lessons excluded per No. 1258; no author/poet biographical introduction questions.",
+    paperSetterInstructions: "No biographical questions on authors or poets.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+  },
+  {
+    id: "g12-pakstudies",
+    grade: "12th",
+    subject: "Pakistan Studies-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 50,
+    objectiveMarks: 10,
+    mcqCount: "10 MCQs",
+    subjectiveMarks: 40,
+    practicalMarks: "None",
+    passingRequirement: "40% (20 / 50 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours",
+    objectiveDuration: "See official No. 1258 model paper",
+    subjectiveDuration: "See official No. 1258 model paper",
+    questionDistribution: [
+      "Part-I (Objective): 10 MCQs — 10 marks",
+      "Part-II (Short Qs = 24 marks): Q2 (6/9 = 12m), Q3 (6/9 = 12m)",
+      "Part-III (Long Qs = 16 marks): Q4, Q5, Q6 (Attempt 2/3 × 8m)",
+    ],
+    attemptRules: "Attempt 12/18 short questions and 2/3 detailed questions.",
+    internalChoices: "Q2 (6/9), Q3 (6/9), Part-III (2/3).",
+    pairingScheme: ["Chapters paired across remaining Pak Studies-12 chapters inside No. 1258."],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "Excluded Chapter 3 (پاکستان کا انتظامی نظام) and Chapter 4 (پاکستان کے وسائل اور معاشی ترقی).",
+    paperSetterInstructions: "Note 50-mark / 2-hour structure (unlike Grade 10's 100-mark / 3-hour Pak Studies paper).",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+  },
+  {
+    id: "g12-math",
+    grade: "12th",
+    subject: "Mathematics-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 100,
+    objectiveMarks: 20,
+    mcqCount: "20 MCQs",
+    subjectiveMarks: 80,
+    practicalMarks: "None",
+    passingRequirement: "40% (40 / 100 marks — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "See official No. 1258 model paper",
+    subjectiveDuration: "See official No. 1258 model paper",
+    questionDistribution: [
+      "Objective: 20 MCQs — 20 marks",
+      "Short Qs (50 marks): Q2 (8/12 = 16m), Q3 (8/12 = 16m), Q4 (9/13 = 18m)",
+      "Long Qs (30 marks): Attempt 3/5 × 10m (a=5m, b=5m)",
+    ],
+    attemptRules: "Attempt 25/37 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 9/13 short; 3/5 long.",
+    pairingScheme: [
+      "5 long questions (Q5–Q9), each split into (a)=5m and (b)=5m. (Official PDF prints a numbering label quirk on the last row showing Q-6 for Units 6 & 8—verify pairing table in No. 1258 directly.)",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "Per-unit excluded exercises & examples tabulated in No. 1258.",
+    paperSetterInstructions: "No problems or definitions selected from deleted exercises.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+  },
+  {
+    id: "g12-physics",
+    grade: "12th",
+    subject: "Physics-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 85,
+    objectiveMarks: 17,
+    mcqCount: "17 MCQs",
+    subjectiveMarks: 68,
+    practicalMarks: "See official board practical notification / model paper (No. 1258 lists excluded practicals for Grades 11 & 12)",
+    passingRequirement: "40% (34 / 85 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 17 MCQs — 17 marks",
+      "Short Qs (44 marks): Q2 (8/12 Ch 13–15 = 16m), Q3 (8/12 Ch 16–18 = 16m), Q4 (6/9 Ch 19–21 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m (a=5m theory, b=3m numerical)",
+    ],
+    attemptRules: "Attempt 22/33 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 6/9 short; 3/5 long.",
+    pairingScheme: [
+      "Q5: Ch 13 + Ch 14 | Q6: Ch 15 + Ch 16 | Q7: Ch 17 | Q8: Ch 18 + Ch 19 | Q9: Ch 20 + Ch 21.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "Deleted chapter topics/numericals plus Lists of Excluded Practicals (Grades 11 & 12) in No. 1258.",
+    paperSetterInstructions: "Long questions pair a 5-mark theory part (a) with a 3-mark numerical part (b).",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+  },
+  {
+    id: "g12-chemistry",
+    grade: "12th",
+    subject: "Chemistry-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 85,
+    objectiveMarks: 17,
+    mcqCount: "17 MCQs (1 each from Ch 17–33)",
+    subjectiveMarks: 68,
+    practicalMarks: "See official board practical notification / model paper (No. 1258 lists excluded practicals for Grades 11 & 12)",
+    passingRequirement: "40% (34 / 85 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 17 MCQs — 17 marks",
+      "Short Qs (44 marks): Q2 (8/12 = 16m), Q3 (8/12 = 16m), Q4 (6/9 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m (a=4m, b=4m)",
+    ],
+    attemptRules: "Attempt 22/33 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 6/9 short; 3/5 long.",
+    pairingScheme: [
+      "Q5: Ch 17 + Ch 21 | Q6: Ch 18 + Ch 26 | Q7: Ch 20 + Ch 31 | Q8: Ch 22 + Ch 32 | Q9: Ch 23 + Ch 33.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "Deleted topics across Ch 17–33 plus Lists of Excluded Practicals (Grades 11 & 12) in No. 1258.",
+    paperSetterInstructions: "Each chapter Ch 17–33 contributes 1 MCQ; avoid deleted reactions and topics.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+  },
+  {
+    id: "g12-biology",
+    grade: "12th",
+    subject: "Biology-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 85,
+    objectiveMarks: 17,
+    mcqCount: "17 MCQs",
+    subjectiveMarks: 68,
+    practicalMarks: "See official board practical notification / model paper (No. 1258 lists excluded practicals for Grades 11 & 12)",
+    passingRequirement: "40% (34 / 85 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "3 Hours",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 40 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 17 MCQs — 17 marks",
+      "Short Qs (44 marks): Q2 (8/12 = 16m), Q3 (8/12 = 16m), Q4 (6/9 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m (a=4m, b=4m)",
+    ],
+    attemptRules: "Attempt 22/33 short questions and 3/5 detailed questions.",
+    internalChoices: "8/12, 8/12, 6/9 short; 3/5 long.",
+    pairingScheme: [
+      "Q5: Ch 13 + Ch 25 | Q6: Ch 14 + Ch 24 | Q7: Ch 15 + Ch 21 | Q8: Ch 16 + Ch 20 | Q9: Ch 17 + Ch 19.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "Deleted topics/side boxes across Grade 12 chapters plus Lists of Excluded Practicals (Grades 11 & 12) in No. 1258.",
+    paperSetterInstructions: "All side boxes inside excluded topics are excluded.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
+  },
+  {
+    id: "g12-cs",
+    grade: "12th",
+    subject: "Computer Science & Entrepreneurship-12",
+    notificationRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
+    totalTheoryMarks: 75,
+    objectiveMarks: 15,
+    mcqCount: "15 MCQs",
+    subjectiveMarks: 60,
+    practicalMarks: "See official board practical notification / model paper (No. 1258 lists excluded practicals for Grades 11 & 12)",
+    passingRequirement: "40% (30 / 75 theory — IBCC Phase 2 starts Annual 2027)",
+    totalDuration: "2 Hours 30 Minutes",
+    objectiveDuration: "20 Minutes",
+    subjectiveDuration: "2 Hours 10 Minutes",
+    questionDistribution: [
+      "Q1 (Objective): 15 MCQs — 15 marks",
+      "Short Qs (36 marks): Q2 (6/9 = 12m), Q3 (6/9 = 12m), Q4 (6/9 = 12m)",
+      "Long Qs (24 marks): Attempt 3/5 × 8m",
+    ],
+    attemptRules: "Attempt 18/27 short questions and 3/5 detailed questions.",
+    internalChoices: "6/9 per short section; 3/5 long.",
+    pairingScheme: [
+      "Q5: Unit 1 | Q6: Unit 3 | Q7: Unit 6 | Q8: Unit 8 | Q9: Unit 9.",
+    ],
+    modelPaperAvailable: "Included in Official PECTAA Grade 12 Notification No. 1258.",
+    deletedContent: "Unit 5 (Code Testing and Debugging) completely excluded, plus excluded topics & Grade 11–12 practicals listed in No. 1258.",
+    paperSetterInstructions: "Zero questions from Unit 5 or excluded subtopics/practicals.",
+    officialModelPaperUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
   },
 ];
