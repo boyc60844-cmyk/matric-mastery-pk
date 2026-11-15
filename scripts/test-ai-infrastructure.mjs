@@ -1,11 +1,11 @@
 // scripts/test-ai-infrastructure.mjs
-// Automated verification suite for Matric Mastery AI (v4.1.1) & Cloudflare Workers AI Infrastructure
+// Automated verification suite for Matric Mastery AI (v4.2.0) & Cloudflare Workers AI Infrastructure
 
 import assert from "assert";
 import fs from "fs";
 
 console.log("=================================================");
-console.log("Matric Mastery AI — Launch Readiness Test Suite (v4.1.1)");
+console.log("Matric Mastery AI — Launch Readiness Test Suite (v4.2.0)");
 console.log("=================================================\n");
 
 let passedTests = 0;
@@ -349,18 +349,18 @@ runTest("Client Privacy & Storage: History bounded to 50 items and JSON export p
 });
 
 // -------------------------------------------------------------
-// Test 11: Release Version Consistency (v4.1.1 & Preserved History)
+// Test 11: Release Version Consistency (v4.2.0 & Preserved History)
 // -------------------------------------------------------------
-runTest("Release Management: v4.1.1 synchronized across manifest, package, and guide without erasing history", () => {
+runTest("Release Management: v4.2.0 synchronized across manifest, package, and guide without erasing history", () => {
   const manifestFile = fs.readFileSync("lib/releaseManifest.ts", "utf8");
   assert.ok(
-    manifestFile.includes('CURRENT_VERSION = "v4.1.1"') &&
-      manifestFile.includes('version: "v4.1.1"'),
-    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v4.1.1"
+    manifestFile.includes('CURRENT_VERSION = "v4.2.0"') &&
+      manifestFile.includes('version: "v4.2.0"'),
+    "lib/releaseManifest.ts must define CURRENT_VERSION and history entry for v4.2.0"
   );
 
   // Confirm all historical versions remain intact
-  const historicalVersions = ["v4.1.0", "v4.0.0", "v3.9.0", "v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
+  const historicalVersions = ["v4.1.1", "v4.1.0", "v4.0.0", "v3.9.0", "v3.8.0", "v3.7.0", "v3.6.0", "v3.5.0", "v3.4.0", "v3.3.0", "v3.1.0"];
   for (const v of historicalVersions) {
     assert.ok(
       manifestFile.includes(`version: "${v}"`),
@@ -369,12 +369,12 @@ runTest("Release Management: v4.1.1 synchronized across manifest, package, and g
   }
 
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  assert.strictEqual(pkg.version, "4.1.1", "package.json version must be 4.1.1");
+  assert.strictEqual(pkg.version, "4.2.0", "package.json version must be 4.2.0");
 
   const faqFile = fs.readFileSync("lib/guideFaqData.ts", "utf8");
   assert.ok(
-    faqFile.includes("v4.1.1"),
-    "lib/guideFaqData.ts must reflect v4.1.1"
+    faqFile.includes("v4.2.0"),
+    "lib/guideFaqData.ts must reflect v4.2.0"
   );
 
   const envExample = fs.readFileSync(".env.example", "utf8");
@@ -454,6 +454,8 @@ runTest("AI Experience 2.0: Multi-chat persistence, personalization, voice & ric
   );
 
   assert.ok(fs.existsSync("components/ai/AIChatHistoryDrawer.tsx"), "components/ai/AIChatHistoryDrawer.tsx must exist");
+  assert.ok(fs.existsSync("components/ai/AIConversationSidebar.tsx"), "components/ai/AIConversationSidebar.tsx must exist");
+  assert.ok(fs.existsSync("components/ai/AIConversationList.tsx"), "components/ai/AIConversationList.tsx must exist");
   assert.ok(fs.existsSync("components/ai/AIPreferencesPopover.tsx"), "components/ai/AIPreferencesPopover.tsx must exist");
 
   const drawerFile = fs.readFileSync("components/ai/AIChatHistoryDrawer.tsx", "utf8");
@@ -476,8 +478,9 @@ runTest("AI Experience 2.0: Multi-chat persistence, personalization, voice & ric
     aiPage.includes('capture="environment"') &&
       aiPage.includes("speechSynthesis") &&
       aiPage.includes("voiceErrorRef") &&
+      aiPage.includes("AIConversationSidebar") &&
       aiPage.includes("Image understanding is paused until a parent/guardian accepts the Meta vision license"),
-    "app/ai/page.tsx must include camera capture, optional TTS, safe STT error handling, and honest disabled-vision preview"
+    "app/ai/page.tsx must include Phase 2 sidebar, camera capture, optional TTS, safe STT error handling, and honest disabled-vision preview"
   );
 });
 

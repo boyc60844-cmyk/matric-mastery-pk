@@ -569,7 +569,7 @@
   }
 }
 
-/* Lightweight AI message entrance (compositor-only opacity + transform) */
+/* Lightweight AI message & thread transitions (compositor-only opacity + transform) */
 @keyframes aiMessageEnter {
   from {
     opacity: 0;
@@ -581,8 +581,21 @@
   }
 }
 
+@keyframes aiFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .ai-msg-enter {
-  animation: aiMessageEnter 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: aiMessageEnter 170ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ai-thread-fade {
+  animation: aiFadeIn 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Prefers reduced motion */
@@ -594,7 +607,8 @@
     scroll-behavior: auto !important;
     transform: none !important;
   }
-  .ai-msg-enter {
+  .ai-msg-enter,
+  .ai-thread-fade {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

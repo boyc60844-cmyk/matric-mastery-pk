@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 
 interface AIMarkdownRendererProps {
@@ -217,15 +217,53 @@ function highlightCodeLine(line: string, lineIdx: number): React.ReactNode {
   });
 }
 
-function CodeBlock({ lang, code }: { lang: string; code: string }) {
+const CodeBlock = memo(function CodeBlock({
+  lang,
+  code,
+}: {
+  lang: string;
+  code: string;
+}) {
   const [copied, setCopied] = useState(false);
-  const lines = code.split("\n");
+  const timerRef = useRef<number | null>(null);
+  const lines = useMemo(() => code.split("\n"), [code]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleCopyCode = () => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(code);
+    const markCopied = () => {
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        timerRef.current = null;
+      }, 1800);
+    };
+    const fallback = () => {
+      if (typeof document === "undefined") return;
+      try {
+        const el = document.createElement("textarea");
+        el.value = code;
+        el.setAttribute("readonly", "");
+        el.style.position = "fixed";
+        el.style.opacity = "0";
+        document.body.appendChild(el);
+        el.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(el);
+        if (ok) markCopied();
+      } catch {
+        // Ignore clipboard denial on restricted browsers
+      }
+    };
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(code).then(markCopied).catch(fallback);
+    } else {
+      fallback();
     }
   };
 
@@ -268,7 +306,7 @@ function CodeBlock({ lang, code }: { lang: string; code: string }) {
       </pre>
     </div>
   );
-}
+});
 
 /**
  * Renders inline Markdown tokens + LaTeX math + isolates equations inside Urdu RTL sentences.
@@ -553,8 +591,8 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
         <blockquote
           key={`${keyPrefix}-bq-${i}`}
           dir={quoteUrdu ? "rtl" : "ltr"}
-          className={`my-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-neutral-200 ${
-            quoteUrdu ? "font-urdu text-[15px] leading-[2] text-right" : "text-sm sm:text-[15px]"
+          className={`my-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-neutral-200 max-w-[74ch] ${
+            quoteUrdu ? "ml-auto font-urdu text-[15px] leading-[2] text-right" : "text-sm sm:text-[15px]"
           }`}
         >
           {renderInline(quoteText, `${keyPrefix}-bqi-${i}`)}
@@ -607,9 +645,9 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
         <div
           key={`${keyPrefix}-ul-${i}`}
           dir={isUrduLine ? "rtl" : "ltr"}
-          className={`flex items-start gap-2.5 ${
+          className={`flex items-start gap-2.5 max-w-[74ch] ${
             isUrduLine
-              ? "font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right"
+              ? "ml-auto font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right"
               : ""
           }`}
         >
@@ -632,9 +670,9 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
         <div
           key={`${keyPrefix}-ol-${i}`}
           dir={isUrduLine ? "rtl" : "ltr"}
-          className={`flex items-start gap-2.5 ${
+          className={`flex items-start gap-2.5 max-w-[74ch] ${
             isUrduLine
-              ? "font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right"
+              ? "ml-auto font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right"
               : ""
           }`}
         >
@@ -655,11 +693,11 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
       <p
         key={`${keyPrefix}-p-${i}`}
         dir={isUrduLine ? "rtl" : "ltr"}
-        className={
+        className={`max-w-[74ch] ${
           isUrduLine
-            ? "font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right text-neutral-100"
-            : "text-neutral-200 leading-[1.65]"
-        }
+            ? "ml-auto font-urdu text-[16px] sm:text-[17px] leading-[2.0] text-right text-neutral-100"
+            : "text-neutral-200 leading-[1.68]"
+        }`}
       >
         {renderInline(trimmed, `${keyPrefix}-pi-${i}`)}
       </p>
@@ -713,7 +751,7 @@ function splitIntoSections(content: string): ParsedSection[] {
   return sections;
 }
 
-function AnswerSectionBlock({
+const AnswerSectionBlock = memo(function AnswerSectionBlock({
   section,
   index,
   defaultCollapsed,
@@ -724,22 +762,57 @@ function AnswerSectionBlock({
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [copiedSection, setCopiedSection] = useState(false);
+  const copyTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  const renderedBlocks = useMemo(
+    () => renderMarkdownBlocks(section.rawText, `sec-${index}`),
+    [section.rawText, index]
+  );
 
   const heading = section.heading;
   if (!heading) {
-    return (
-      <div className="space-y-2.5">{renderMarkdownBlocks(section.rawText, `sec-${index}`)}</div>
-    );
+    return <div className="space-y-2.5">{renderedBlocks}</div>;
   }
 
   const isUrduHeading = hasUrduScript(heading);
   const fullSectionText = `${heading}\n${section.rawText}`.trim();
 
   const handleCopySection = () => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(fullSectionText);
+    const markCopied = () => {
       setCopiedSection(true);
-      window.setTimeout(() => setCopiedSection(false), 1800);
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => {
+        setCopiedSection(false);
+        copyTimerRef.current = null;
+      }, 1800);
+    };
+    const fallback = () => {
+      if (typeof document === "undefined") return;
+      try {
+        const el = document.createElement("textarea");
+        el.value = fullSectionText;
+        el.setAttribute("readonly", "");
+        el.style.position = "fixed";
+        el.style.opacity = "0";
+        document.body.appendChild(el);
+        el.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(el);
+        if (ok) markCopied();
+      } catch {
+        // Ignore clipboard denial on restricted browsers
+      }
+    };
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(fullSectionText).then(markCopied).catch(fallback);
+    } else {
+      fallback();
     }
   };
 
@@ -787,23 +860,59 @@ function AnswerSectionBlock({
       </div>
 
       {!collapsed && section.rawText && (
-        <div className="space-y-2.5">{renderMarkdownBlocks(section.rawText, `secb-${index}`)}</div>
+        <div className="space-y-2.5">{renderedBlocks}</div>
       )}
     </div>
   );
-}
+});
 
-export default function AIMarkdownRenderer({
+const AIMarkdownRenderer = memo(function AIMarkdownRenderer({
   content,
   isStreaming = false,
 }: AIMarkdownRendererProps) {
-  const [expandedLong, setExpandedLong] = useState(false);
+  // Keep newly streamed answers expanded when generation completes so scroll position never jumps backward
+  const wasStreamedRef = useRef<boolean>(isStreaming);
+  if (isStreaming) {
+    wasStreamedRef.current = true;
+  }
+  const [expandedLong, setExpandedLong] = useState<boolean>(() => isStreaming);
+
+  useEffect(() => {
+    if (isStreaming && !expandedLong) {
+      setExpandedLong(true);
+    }
+  }, [isStreaming, expandedLong]);
+
+  const sections = useMemo(() => {
+    if (!content || isStreaming) return [];
+    return splitIntoSections(content);
+  }, [content, isStreaming]);
+
+  const headedSectionsCount = useMemo(
+    () => sections.reduce((acc, s) => (s.heading !== null ? acc + 1 : acc), 0),
+    [sections]
+  );
+
+  const useStructuredSections = !isStreaming && headedSectionsCount >= 2;
+  const isLongSingleBlock =
+    !isStreaming &&
+    !useStructuredSections &&
+    !wasStreamedRef.current &&
+    content.length > 1300;
+
+  const visibleContent = useMemo(() => {
+    if (!content) return "";
+    return isLongSingleBlock && !expandedLong
+      ? `${content.slice(0, 920).trimEnd()}...`
+      : content;
+  }, [content, isLongSingleBlock, expandedLong]);
+
+  const singleBlockNodes = useMemo(() => {
+    if (useStructuredSections || !visibleContent) return null;
+    return renderMarkdownBlocks(visibleContent);
+  }, [useStructuredSections, visibleContent]);
 
   if (!content) return null;
-
-  const sections = splitIntoSections(content);
-  const headedSections = sections.filter((s) => s.heading !== null);
-  const useStructuredSections = !isStreaming && headedSections.length >= 2;
 
   if (useStructuredSections) {
     return (
@@ -820,16 +929,9 @@ export default function AIMarkdownRenderer({
     );
   }
 
-  // Long single-block explanation collapsible preview (only when finished streaming & > 1300 chars)
-  const isLongSingleBlock = !isStreaming && content.length > 1300;
-  const visibleContent =
-    isLongSingleBlock && !expandedLong
-      ? `${content.slice(0, 920).trimEnd()}...`
-      : content;
-
   return (
     <div className="space-y-3 text-[16px] sm:text-[17px] leading-[1.65] text-neutral-200 break-words min-w-0 max-w-full">
-      {renderMarkdownBlocks(visibleContent)}
+      {singleBlockNodes}
       {isLongSingleBlock && (
         <button
           type="button"
@@ -851,4 +953,6 @@ export default function AIMarkdownRenderer({
       )}
     </div>
   );
-}
+});
+
+export default AIMarkdownRenderer;

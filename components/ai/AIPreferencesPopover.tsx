@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo, useEffect, useRef } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
   AIClassLevel,
@@ -33,17 +33,40 @@ const STYLE_OPTIONS: { value: AIPresentationStyle; label: string }[] = [
   { value: "conceptual", label: "Conceptual" },
 ];
 
-export default function AIPreferencesPopover({
+const AIPreferencesPopover = memo(function AIPreferencesPopover({
   isOpen,
   onClose,
   preferences,
   onUpdatePreferences,
 }: AIPreferencesPopoverProps) {
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleEsc);
+    const rafId = window.requestAnimationFrame(() => {
+      closeBtnRef.current?.focus();
+    });
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", handleEsc);
+      previousFocus?.focus?.();
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm ai-thread-fade"
       role="dialog"
       aria-modal="true"
       aria-label="Tutor Personalization Settings"
@@ -51,7 +74,7 @@ export default function AIPreferencesPopover({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/12 bg-[#111116] p-5 shadow-2xl space-y-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/12 bg-[#111116] p-5 shadow-2xl space-y-4 overscroll-contain">
         <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-[#FFD60A]" aria-hidden="true" />
@@ -60,12 +83,13 @@ export default function AIPreferencesPopover({
             </h2>
           </div>
           <button
+            ref={closeBtnRef}
             type="button"
             onClick={onClose}
             aria-label="Close preferences"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-300 hover:text-white cursor-pointer"
+            className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-300 hover:text-white cursor-pointer"
           >
-            <X size={15} aria-hidden="true" />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
 
@@ -191,4 +215,6 @@ export default function AIPreferencesPopover({
       </div>
     </div>
   );
-}
+});
+
+export default AIPreferencesPopover;

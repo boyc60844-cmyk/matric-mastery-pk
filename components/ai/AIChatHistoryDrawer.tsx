@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertCircle,
   Check,
   MessageSquare,
   Pencil,
@@ -19,6 +20,7 @@ interface AIChatHistoryDrawerProps {
   onClose: () => void;
   conversations: AIConversation[];
   activeId: string;
+  isGenerating?: boolean;
   onSelectConversation: (id: string) => void;
   onCreateNewChat: () => void;
   onRenameConversation: (id: string, nextTitle: string) => void;
@@ -48,11 +50,12 @@ function formatRelativeDate(ts: number): string {
   return new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-export default function AIChatHistoryDrawer({
+const AIChatHistoryDrawer = memo(function AIChatHistoryDrawer({
   isOpen,
   onClose,
   conversations,
   activeId,
+  isGenerating = false,
   onSelectConversation,
   onCreateNewChat,
   onRenameConversation,
@@ -64,6 +67,13 @@ export default function AIChatHistoryDrawer({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [pendingSwitchAction, setPendingSwitchAction] = useState<
+    | { type: "new" }
+    | { type: "select"; id: string; title: string }
+    | null
+  >(null);
+
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   const nonEmptyCount = useMemo(
     () => conversations.filter((c) => c.messages.length > 0).length,
@@ -89,6 +99,38 @@ export default function AIChatHistoryDrawer({
       });
   }, [conversations, activeId, searchQuery, subjectFilter]);
 
+  useEffect(() => {
+    if (!isGenerating && pendingSwitchAction) {
+      setPendingSwitchAction(null);
+    }
+  }, [isGenerating, pendingSwitchAction]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingId(null);
+      setConfirmDeleteId(null);
+      setPendingSwitchAction(null);
+      return;
+    }
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleEsc);
+    const rafId = window.requestAnimationFrame(() => {
+      closeBtnRef.current?.focus();
+    });
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", handleEsc);
+      previousFocus?.focus?.();
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const commitRename = (id: string) => {
@@ -100,9 +142,42 @@ export default function AIChatHistoryDrawer({
     setDraftTitle("");
   };
 
+  const handleRequestNewChat = () => {
+    if (isGenerating) {
+      setPendingSwitchAction({ type: "new" });
+      return;
+    }
+    onCreateNewChat();
+    onClose();
+  };
+
+  const handleRequestSelect = (conv: AIConversation) => {
+    if (conv.id === activeId) {
+      onClose();
+      return;
+    }
+    if (isGenerating) {
+      setPendingSwitchAction({ type: "select", id: conv.id, title: conv.title });
+      return;
+    }
+    onSelectConversation(conv.id);
+    onClose();
+  };
+
+  const confirmPendingSwitch = () => {
+    if (!pendingSwitchAction) return;
+    if (pendingSwitchAction.type === "new") {
+      onCreateNewChat();
+    } else {
+      onSelectConversation(pendingSwitchAction.id);
+    }
+    setPendingSwitchAction(null);
+    onClose();
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex justify-start bg-black/75 backdrop-blur-sm ai-thread-fade"
       role="dialog"
       aria-modal="true"
       aria-label="Saved AI conversations"
@@ -110,7 +185,7 @@ export default function AIChatHistoryDrawer({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <aside className="flex h-full w-full max-w-sm flex-col border-l border-white/10 bg-[#0F0F14] shadow-2xl">
+      <aside className="flex h-full w-full max-w-sm flex-col border-r border-white/10 bg-[#0F0F14] shadow-2xl overscroll-contain">
         {/* Header */}
         <div className="flex items-center justify-between gap-2 border-b border-white/[0.08] px-4 py-3.5">
           <div>
@@ -125,21 +200,19 @@ export default function AIChatHistoryDrawer({
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => {
-                onCreateNewChat();
-                onClose();
-              }}
-              className="inline-flex min-h-[38px] items-center gap-1 rounded-xl bg-[#FFD60A] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#FFD60A]/90 transition-colors cursor-pointer"
+              onClick={handleRequestNewChat}
+              className="inline-flex min-h-[40px] items-center gap-1 rounded-xl bg-[#FFD60A] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#FFD60A]/90 transition-colors cursor-pointer"
             >
               <Plus size={14} aria-hidden="true" />
               <span>New Chat</span>
             </button>
 
             <button
+              ref={closeBtnRef}
               type="button"
               onClick={onClose}
               aria-label="Close chat history"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-300 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-300 hover:text-white transition-colors cursor-pointer"
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -198,6 +271,41 @@ export default function AIChatHistoryDrawer({
             })}
           </div>
         </div>
+
+        {/* Guard banner preventing accidental interruption of active generation */}
+        {pendingSwitchAction && isGenerating && (
+          <div
+            role="alert"
+            className="mx-3 mt-3 shrink-0 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs space-y-2 ai-thread-fade"
+          >
+            <div className="flex items-start gap-2 text-amber-200">
+              <AlertCircle size={15} className="shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="leading-snug">
+                AI is still generating an answer. Stop generation and{" "}
+                {pendingSwitchAction.type === "new"
+                  ? "start a new chat"
+                  : `open "${pendingSwitchAction.title}"`}
+                ?
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingSwitchAction(null)}
+                className="min-h-[36px] rounded-lg border border-white/15 bg-black/30 px-3 py-1 text-[11px] font-medium text-neutral-200 hover:text-white cursor-pointer"
+              >
+                Keep waiting
+              </button>
+              <button
+                type="button"
+                onClick={confirmPendingSwitch}
+                className="min-h-[36px] rounded-lg bg-[#FFD60A] px-3 py-1 text-[11px] font-semibold text-black hover:bg-[#FFD60A]/90 cursor-pointer"
+              >
+                Stop & switch
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 space-y-2">
@@ -294,10 +402,8 @@ export default function AIChatHistoryDrawer({
                     <>
                       <button
                         type="button"
-                        onClick={() => {
-                          onSelectConversation(conv.id);
-                          onClose();
-                        }}
+                        onClick={() => handleRequestSelect(conv)}
+                        aria-current={isActive ? "true" : undefined}
                         className="w-full text-left space-y-1 cursor-pointer"
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -412,4 +518,6 @@ export default function AIChatHistoryDrawer({
       </aside>
     </div>
   );
-}
+});
+
+export default AIChatHistoryDrawer;

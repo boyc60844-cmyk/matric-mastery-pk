@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "project": "Matric Mastery",
   "sourceLabel": "Matric Mastery Project Roadmap (/roadmap.json)",
-  "lastUpdated": "2026-11-14T00:00:00Z",
+  "lastUpdated": "2026-11-15T00:00:00Z",
   "items": [
     {
       "id": "ai-experience-2-0",
@@ -22,11 +22,30 @@
       "notes": "Vision remains disabled unless the required model approval and technical compatibility checks are completed."
     },
     {
+      "id": "ai-workspace-phase-2",
+      "title": "Full AI Workspace Architecture (Phase 2)",
+      "description": "Transformed /ai into a full-viewport workspace with a collapsible desktop sidebar, expanded 940px conversation canvas, mobile-safe framing, and active-generation switch protection.",
+      "category": "AI Workspace",
+      "status": "released",
+      "details": [
+        "Collapsible 268px–280px desktop sidebar (AIConversationSidebar) with persisted open/collapse state.",
+        "Shared conversation navigation with search, subject filters, pinning, inline rename, and inline delete.",
+        "Expanded 940px conversation canvas paired with balanced 74ch reading width.",
+        "Mobile-safe viewport framing keeping the composer above the fold across 360px–412px Android screens.",
+        "Accessible focus management and active-generation switch guards without blocking dialogs."
+      ],
+      "lastUpdated": "2026-11-15",
+      "releaseVersion": "v4.2.0",
+      "releaseDate": "November 2026",
+      "changelogRef": "v4.2.0",
+      "notes": "Frontend-only transformation preserving Cloudflare Worker routing, @cf/meta/llama-3.1-8b-instruct-fast, and text-only image disablement."
+    },
+    {
       "id": "premium-ai-interface-polish",
       "title": "Premium AI Interface Polish",
       "description": "A dedicated frontend refinement to improve the speed, responsiveness and smoothness of the existing AI workspace.",
       "category": "Frontend UX",
-      "status": "upcoming",
+      "status": "released",
       "details": [
         "Smooth message streaming.",
         "Intelligent conversation scrolling.",
@@ -38,7 +57,10 @@
         "Reduced layout shifts and unnecessary re-renders.",
         "Improved Android/mobile performance."
       ],
-      "lastUpdated": "2026-11-14",
+      "lastUpdated": "2026-11-15",
+      "releaseVersion": "v4.2.0",
+      "releaseDate": "November 2026",
+      "changelogRef": "v4.2.0",
       "notes": "This is a frontend-focused improvement. The existing AI model and Cloudflare Worker are protected."
     },
     {

@@ -422,12 +422,12 @@ export async function sendAIMessage({
     let accumulated = "";
     let buffer = "";
 
-    const processLine = (rawLine: string): boolean => {
+    const processLine = (rawLine: string): { done: boolean; appended: boolean } => {
       const trimmed = rawLine.trim();
-      if (!trimmed.startsWith("data: ")) return false;
+      if (!trimmed.startsWith("data: ")) return { done: false, appended: false };
       const dataStr = trimmed.slice(6).trim();
-      if (!dataStr) return false;
-      if (dataStr === "[DONE]") return true;
+      if (!dataStr) return { done: false, appended: false };
+      if (dataStr === "[DONE]") return { done: true, appended: false };
 
       try {
         const parsed = JSON.parse(dataStr);
@@ -438,20 +438,21 @@ export async function sendAIMessage({
           "";
         if (chunk) {
           accumulated += chunk;
-          if (onChunk) onChunk(accumulated);
+          return { done: false, appended: true };
         }
       } catch {
         accumulated += dataStr;
-        if (onChunk) onChunk(accumulated);
+        return { done: false, appended: true };
       }
-      return false;
+      return { done: false, appended: false };
     };
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
         if (buffer.trim()) {
-          processLine(buffer);
+          const res = processLine(buffer);
+          if (res.appended && onChunk) onChunk(accumulated);
         }
         break;
       }
@@ -461,11 +462,17 @@ export async function sendAIMessage({
       buffer = lines.pop() || "";
 
       let reachedDone = false;
+      let batchUpdated = false;
       for (const line of lines) {
-        if (processLine(line)) {
+        const res = processLine(line);
+        if (res.appended) batchUpdated = true;
+        if (res.done) {
           reachedDone = true;
           break;
         }
+      }
+      if (batchUpdated && onChunk) {
+        onChunk(accumulated);
       }
       if (reachedDone) break;
     }

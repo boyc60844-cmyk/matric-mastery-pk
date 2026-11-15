@@ -233,16 +233,17 @@ export const DIRECTORY_MODULES: DirectoryModule[] = [
     urduName: "میٹرک ماسٹری اے آئی",
     href: "/ai",
     category: "intelligence",
-    badge: "AI Experience 2.0",
-    tagline: "Independent Class 9–10 AI study workspace with multi-chat history, personalization, voice tools, rich math/code rendering, and independent scroll.",
+    badge: "Workspace v4.2.0",
+    tagline: "Full-viewport Class 9–10 AI workspace with collapsible desktop sidebar, mobile drawer, personalization, voice tools, and rich math/code rendering.",
     purpose:
-      "A complete academic tutoring workspace connected to Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast for text queries) featuring independent conversation scrolling, local multi-chat management, student personalization settings, voice interaction, and transparent free-tier status.",
+      "A conversation-first academic tutoring workspace connected to Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct-fast for text queries) featuring a collapsible sidebar, expanded 940px conversation canvas, independent scrolling, local multi-chat management, personalization preferences, and voice interaction.",
     whatYouWillFind: [
-      "Local Multi-Conversation Drawer with search, subject filtering, pinning, inline renaming, deletion, JSON exports, and backward-compatible storage migration.",
+      "Full-viewport desktop layout with collapsible left sidebar (AIConversationSidebar) and mobile slide-over drawer (AIChatHistoryDrawer) with search, subject filtering, pinning, renaming, inline delete confirmation, and JSON session exports.",
+      "Active-generation switch guards and per-conversation scroll restoration paired with rAF-throttled SSE streaming and partial-text preservation on Stop.",
       "Personalization Settings persisted on-device for Class Level (Class 9 / 10), Explanation Length, Answer Presentation style, and English / Urdu mode.",
       "Click-triggered Web Speech dictation with editable review & Cancel, plus optional per-answer Read Aloud (Stop / Listen).",
-      "Upgraded response rendering with stacked fractions/exponents, isolated LTR math inside Urdu RTL, syntax-highlighted code blocks with Copy code, and collapsible structured sections.",
-      "Text-first composer with subject tagging, English/Urdu switch, and speech dictation (image upload is temporarily disabled in the UI pending an appropriate, policy-compliant provider).",
+      "Upgraded response rendering with balanced 74ch reading width, stacked fractions/exponents, isolated LTR math inside Urdu RTL, syntax-highlighted code blocks with Copy code, and collapsible structured sections.",
+      "Text-first composer with subject tagging and English/Urdu switch (image upload remains temporarily disabled in the UI pending an appropriate, policy-compliant provider).",
       "Independent #ai-transcript-scroll containment, structured Class 9–10 guides, prompt templates, and transparent Free AI Access guidance.",
     ],
     whenToUse:

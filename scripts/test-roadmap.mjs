@@ -66,15 +66,22 @@ runTest("Source of Truth: public/roadmap.json parses cleanly and defines require
   );
   assert.strictEqual(entryA.details.length, 6, "AI Experience 2.0 must list the 6 scoped items");
 
-  // Entry B: Premium AI Interface Polish (upcoming + protected worker note)
+  // Entry B: Premium AI Interface Polish (released in v4.2.0 + protected worker note)
   const entryB = doc.items.find((i) => i.id === "premium-ai-interface-polish");
   assert.ok(entryB, "Premium AI Interface Polish entry must exist");
-  assert.strictEqual(entryB.status, "upcoming", "Premium AI Interface Polish initial status must be upcoming");
+  assert.strictEqual(entryB.status, "released", "Premium AI Interface Polish status must be released in v4.2.0");
+  assert.strictEqual(entryB.releaseVersion, "v4.2.0", "Premium AI Interface Polish releaseVersion must be v4.2.0");
   assert.strictEqual(entryB.details.length, 9, "Premium AI Interface Polish must list the 9 scoped items");
   assert.ok(
     entryB.notes && entryB.notes.includes("The existing AI model and Cloudflare Worker are protected."),
     "Premium AI Interface Polish must explicitly protect AI model and Cloudflare Worker"
   );
+
+  // Entry B2: Phase 2 Full AI Workspace Architecture
+  const entryPhase2 = doc.items.find((i) => i.id === "ai-workspace-phase-2");
+  assert.ok(entryPhase2, "Full AI Workspace Architecture (Phase 2) entry must exist");
+  assert.strictEqual(entryPhase2.status, "released", "Phase 2 workspace status must be released");
+  assert.strictEqual(entryPhase2.releaseVersion, "v4.2.0", "Phase 2 releaseVersion must be v4.2.0");
 
   // Entry C: Continuous Platform Improvements (ongoing)
   const entryC = doc.items.find((i) => i.id === "continuous-platform-improvements");

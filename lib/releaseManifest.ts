@@ -22,10 +22,10 @@ export interface WeeklyUpgradePolicy {
   verificationStandard: string;
 }
 
-export const CURRENT_VERSION = "v4.1.1";
+export const CURRENT_VERSION = "v4.2.0";
 export const CURRENT_RELEASE_DATE = "November 2026";
 export const CURRENT_RELEASE_CODENAME =
-  "Matric Mastery AI Text-Only Maintenance Update";
+  "Matric Mastery AI — Full Workspace Architecture (Phase 2)";
 
 export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
   cycle: "Targeted Weekly Iterations During Active Academic Cycles",
@@ -74,6 +74,30 @@ export const WEEKLY_UPGRADE_POLICY: WeeklyUpgradePolicy = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: "v4.2.0",
+    codename: "Matric Mastery AI — Full Workspace Architecture (Phase 2)",
+    releaseDate: "November 2026",
+    status: "released",
+    category: "Major System",
+    summary:
+      "Transformed /ai into a full-viewport, conversation-first tutoring workspace with a collapsible desktop sidebar, expanded 940px conversation canvas with balanced 74ch reading width, mobile-safe viewport framing, active-generation switch guards, and accessible focus management while keeping Cloudflare Workers AI and text-only safeguards unchanged.",
+    features: [
+      "Replaced the narrow centered single-box /ai container with a full-viewport workspace starting directly below the global header, pairing a collapsible 268px–280px desktop left sidebar (AIConversationSidebar) with an expanded 940px conversation and composer column.",
+      "Built a shared AIConversationList experience for instant chat switching, live keyword search, subject filtering, pinned-first sorting, inline Rename (Enter/Escape), Pin/Unpin, and inline Delete confirmation.",
+      "Added inline active-generation switch protection across the sidebar, drawer, and workspace New Chat button so streaming answers are never interrupted accidentally.",
+    ],
+    improvements: [
+      "Calibrated mobile #ai-chat-workspace height (calc(100dvh - 110px) below the header + mobile utility strip) so the full composer and Send button stay visible above the fold on 360×740 Android displays at initial load.",
+      "Balanced markdown prose line measure (max-w-[74ch] in LTR/RTL) while keeping code blocks, math equations, and comparison tables full-width within #ai-transcript-scroll.",
+      "Added accessible focus placement and trigger focus restoration when opening and closing AIChatHistoryDrawer and AIPreferencesPopover, aligned mobile slide-over drawer to the left navigation edge, and increased modal close controls to >=44px touch targets.",
+    ],
+    fixes: [
+      "Preserved local storage keys, per-conversation scroll restoration, rAF-throttled SSE streaming updates, Stop-generation partial text preservation, and AI_IMAGE_INPUT_ENABLED = false text-only safeguards.",
+    ],
+    notes:
+      "Frontend Phase 2 architecture release; Cloudflare Worker (worker/index.ts), endpoint fallback, and active text model (@cf/meta/llama-3.1-8b-instruct-fast) remain strictly untouched.",
+  },
   {
     version: "v4.1.1",
     codename: "Matric Mastery AI Text-Only Maintenance Update",
