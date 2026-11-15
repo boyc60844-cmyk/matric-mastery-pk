@@ -26,17 +26,37 @@ export interface TimeSyncState {
 export interface CalendarEvent {
   id: string;
   title: string;
-  date: string; // YYYY-MM-DD
-  time?: string; // HH:mm
+  date: string; // YYYY-MM-DD (interpreted strictly in PKT, UTC+05:00)
+  time?: string; // HH:mm (24h PKT)
   category: "exam" | "registration" | "result" | "personal" | "deadline" | "study";
   isOfficial: boolean;
+  examYear?: string;
+  classLevel?: string;
+  announcementDate?: string;
+  lastVerifiedDate?: string;
   issuingAuthority?: string;
   sourceUrl?: string;
   sourceName?: string;
-  verificationStatus: "officially-confirmed" | "credibly-reported" | "historically-expected" | "unverified-rumor" | "student-custom";
+  sourceType?: "official-portal" | "media-report-citing-official" | "personal";
+  verificationStatus:
+    | "officially-confirmed"
+    | "awaiting-confirmation"
+    | "student-custom";
+  confirmationLabel?: "Confirmed" | "Awaiting Official Confirmation" | "Personal Goal";
   description?: string;
   priority?: "high" | "medium" | "low";
   completed?: boolean;
+}
+
+export interface AwaitingConfirmationItem {
+  id: string;
+  title: string;
+  examYear: string;
+  classLevel: string;
+  status: "Awaiting Official Confirmation";
+  description: string;
+  lastVerifiedDate: string;
+  officialLinks: { label: string; url: string }[];
 }
 
 export interface EventCountdown {

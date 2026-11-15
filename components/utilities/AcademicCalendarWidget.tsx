@@ -7,61 +7,95 @@ import {
   ChevronRight,
   Plus,
   Trash2,
-  CheckCircle,
   Clock,
   ShieldCheck,
   AlertTriangle,
   ExternalLink,
-  Tag,
-  Filter,
-  Check,
   X,
 } from "lucide-react";
 import { academicCalendarService } from "@/lib/utilities/academicCalendarService";
-import { CalendarEvent, EventCountdown } from "@/lib/utilities/types";
+import { timeService } from "@/lib/utilities/timeService";
+import {
+  AwaitingConfirmationItem,
+  CalendarEvent,
+  EventCountdown,
+} from "@/lib/utilities/types";
 import { motion, AnimatePresence } from "framer-motion";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
-export default function AcademicCalendarWidget() {
-  const today = new Date();
-  const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
-  const [currentMonth, setCurrentMonth] = useState<number>(today.getMonth());
-  const [selectedDateString, setSelectedDateString] = useState<string>(
-    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
-  );
+function formatPktTimeLabel(timeStr?: string): string {
+  const raw = timeStr && /^\d{1,2}:\d{2}$/.test(timeStr.trim()) ? timeStr.trim() : "08:30";
+  const [hStr, mStr] = raw.split(":");
+  const h = parseInt(hStr, 10);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${String(h12).padStart(2, "0")}:${mStr} ${period} PKT`;
+}
 
-  const [allEvents, setAllEvents] = useState<CalendarEvent[]>(academicCalendarService.getAllEvents());
-  const [countdowns, setCountdowns] = useState<EventCountdown[]>(
-    academicCalendarService.getUpcomingCountdowns(6)
+export default function AcademicCalendarWidget() {
+  const initialPktToday = academicCalendarService.getPktToday();
+  const [currentYear, setCurrentYear] = useState<number>(initialPktToday.year);
+  const [currentMonth, setCurrentMonth] = useState<number>(initialPktToday.month);
+  const [selectedDateString, setSelectedDateString] = useState<string>(
+    initialPktToday.dateString
+  );
+  const [pktTodayString, setPktTodayString] = useState<string>(initialPktToday.dateString);
+
+  const [allEvents, setAllEvents] = useState<CalendarEvent[]>(() =>
+    academicCalendarService.getAllEvents()
+  );
+  const [countdowns, setCountdowns] = useState<EventCountdown[]>(() =>
+    academicCalendarService.getUpcomingCountdowns(8)
+  );
+  const [primaryExamCountdown, setPrimaryExamCountdown] =
+    useState<EventCountdown | null>(() =>
+      academicCalendarService.getPrimaryExamCountdown()
+    );
+  const [awaitingItems] = useState<AwaitingConfirmationItem[]>(() =>
+    academicCalendarService.getAwaitingConfirmationEvents()
   );
   const [filterType, setFilterType] = useState<"all" | "official" | "personal">("all");
 
   // Personal event modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newDate, setNewDate] = useState(selectedDateString);
+  const [newDate, setNewDate] = useState(initialPktToday.dateString);
   const [newCategory, setNewCategory] = useState<CalendarEvent["category"]>("deadline");
   const [newPriority, setNewPriority] = useState<"high" | "medium" | "low">("medium");
   const [newDescription, setNewDescription] = useState("");
 
-  // Re-fetch calendar events and update countdowns every 1 sec
+  // Re-fetch calendar events and update PKT countdowns on service updates & every 1 sec
   useEffect(() => {
     const update = () => {
       setAllEvents(academicCalendarService.getAllEvents());
-      setCountdowns(academicCalendarService.getUpcomingCountdowns(6));
+      setCountdowns(academicCalendarService.getUpcomingCountdowns(8));
+      setPrimaryExamCountdown(academicCalendarService.getPrimaryExamCountdown());
+      setPktTodayString(academicCalendarService.getPktToday().dateString);
     };
 
     update();
     const interval = setInterval(update, 1000);
-    const unsubscribe = academicCalendarService.subscribe(update);
+    const unsubCal = academicCalendarService.subscribe(update);
+    const unsubTime = timeService.subscribe(update);
 
     return () => {
       clearInterval(interval);
-      unsubscribe();
+      unsubCal();
+      unsubTime();
     };
   }, []);
 
@@ -94,12 +128,11 @@ export default function AcademicCalendarWidget() {
   };
 
   const handleJumpToToday = () => {
-    const now = new Date();
-    setCurrentYear(now.getFullYear());
-    setCurrentMonth(now.getMonth());
-    setSelectedDateString(
-      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
-    );
+    const pktNow = academicCalendarService.getPktToday();
+    setCurrentYear(pktNow.year);
+    setCurrentMonth(pktNow.month);
+    setSelectedDateString(pktNow.dateString);
+    setPktTodayString(pktNow.dateString);
   };
 
   const handleCreatePersonalEvent = (e: React.FormEvent) => {
@@ -109,6 +142,7 @@ export default function AcademicCalendarWidget() {
     academicCalendarService.addPersonalEvent({
       title: newTitle.trim(),
       date: newDate,
+      time: "08:30",
       category: newCategory,
       priority: newPriority,
       description: newDescription.trim() || undefined,
@@ -137,12 +171,14 @@ export default function AcademicCalendarWidget() {
       <div className="rounded-2xl border border-white/10 bg-[#0E0E12] p-5 shadow-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="rounded bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-400 uppercase">
-                Zero Invented Dates
+                Verified · PKT (UTC+5)
               </span>
               <span className="text-white/20">·</span>
-              <span className="font-mono text-xs text-white/60">PBCC &amp; All 9 Punjab BISE Boards</span>
+              <span className="font-mono text-xs text-white/60">
+                PBCC &amp; All 9 Punjab BISE Boards · Last Verified: 15 November 2026
+              </span>
             </div>
             <h2 className="mt-1 font-heading text-xl sm:text-2xl font-black text-white">
               Academic Calendar &amp; Examination Countdowns
@@ -165,21 +201,112 @@ export default function AcademicCalendarWidget() {
         </div>
 
         {/* Verification Status Legend */}
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] font-mono text-white/70">
-          <span className="flex items-center gap-1">
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-mono text-white/70">
+          <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            <strong className="text-white font-bold">Confirmed:</strong> PBCC Gazette / Circular
+            <strong className="text-white font-bold">Confirmed:</strong> PBCC 10 Nov 2026 Notice (via Media &amp; BISE Updates)
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-amber-400" />
-            <strong className="text-white font-bold">Historically Expected:</strong> 5-Year Academic Baseline
+            <strong className="text-white font-bold">Awaiting Official Confirmation:</strong> No Countdown Shown
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-sky-400" />
-            <strong className="text-white font-bold">Personal:</strong> Custom Student Goal
+            <strong className="text-white font-bold">Personal Goal:</strong> Custom Student Deadline (PKT)
           </span>
         </div>
       </div>
+
+      {/* Featured Verified Board Exam Countdown (Class 10 / SSC Part-II ONLY) */}
+      {primaryExamCountdown && (
+        <div className="rounded-2xl border border-[#FFD60A]/30 bg-gradient-to-br from-[#FFD60A]/[0.07] via-[#0E0E12] to-[#0E0E12] p-5 shadow-2xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono">
+                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 font-bold text-emerald-400 uppercase">
+                  <ShieldCheck size={11} />
+                  Confirmed · Class 10 / SSC Part-II ONLY
+                </span>
+                <span className="rounded bg-white/5 border border-white/10 px-2 py-0.5 text-white/70">
+                  16 March 2027 · 08:30 AM PKT (UTC+5)
+                </span>
+              </div>
+
+              <h3 className="font-heading text-lg sm:text-xl font-black text-white">
+                {primaryExamCountdown.event.title}
+              </h3>
+
+              <p className="text-xs text-white/75 leading-relaxed">
+                {primaryExamCountdown.event.description}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[10px] font-mono text-white/55">
+                <span>
+                  Announcement Date:{" "}
+                  <strong className="text-white/80">
+                    {primaryExamCountdown.event.announcementDate}
+                  </strong>
+                </span>
+                <span>
+                  Last Verified:{" "}
+                  <strong className="text-white/80">
+                    {primaryExamCountdown.event.lastVerifiedDate}
+                  </strong>
+                </span>
+                {primaryExamCountdown.event.sourceUrl && (
+                  <a
+                    href={primaryExamCountdown.event.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#FFD60A] hover:underline font-bold"
+                  >
+                    <span>{primaryExamCountdown.event.sourceName}</span>
+                    <ExternalLink size={10} />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Live PKT Ticker for Class 10 Board Exam */}
+            <div className="shrink-0">
+              {primaryExamCountdown.isExpired ? (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center font-mono text-xs font-bold text-emerald-300 uppercase">
+                  {primaryExamCountdown.isToday
+                    ? "Examination Day Today (PKT)"
+                    : "Examination Commenced"}
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-2 text-center font-mono">
+                  <div className="rounded-xl border border-white/10 bg-black/50 px-3 py-2.5 min-w-[64px]">
+                    <span className="block text-xl sm:text-2xl font-black text-white tabular-nums">
+                      {primaryExamCountdown.days}
+                    </span>
+                    <span className="block text-[9px] text-white/50 uppercase">Days</span>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/50 px-3 py-2.5 min-w-[64px]">
+                    <span className="block text-xl sm:text-2xl font-black text-[#FFD60A] tabular-nums">
+                      {String(primaryExamCountdown.hours).padStart(2, "0")}
+                    </span>
+                    <span className="block text-[9px] text-white/50 uppercase">Hrs</span>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/50 px-3 py-2.5 min-w-[64px]">
+                    <span className="block text-xl sm:text-2xl font-black text-white tabular-nums">
+                      {String(primaryExamCountdown.minutes).padStart(2, "0")}
+                    </span>
+                    <span className="block text-[9px] text-white/50 uppercase">Min</span>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/50 px-3 py-2.5 min-w-[64px]">
+                    <span className="block text-xl sm:text-2xl font-black text-emerald-400 tabular-nums">
+                      {String(primaryExamCountdown.seconds).padStart(2, "0")}
+                    </span>
+                    <span className="block text-[9px] text-white/50 uppercase">Sec</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. Interactive Monthly Calendar Grid & Selected Day Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -199,8 +326,9 @@ export default function AcademicCalendarWidget() {
                 type="button"
                 onClick={handleJumpToToday}
                 className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-mono text-white/80 hover:text-white cursor-pointer"
+                title="Jump to current PKT date"
               >
-                Today
+                Today (PKT)
               </button>
               <button
                 type="button"
@@ -287,7 +415,7 @@ export default function AcademicCalendarWidget() {
                           <span
                             key={e.id}
                             className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                              e.isOfficial ? "bg-[#FFD60A]" : "bg-sky-400"
+                              e.isOfficial ? "bg-emerald-400" : "bg-sky-400"
                             }`}
                             title={e.title}
                           />
@@ -310,7 +438,10 @@ export default function AcademicCalendarWidget() {
         <div className="lg:col-span-4 rounded-2xl border border-white/10 bg-[#0E0E12] p-5 shadow-xl space-y-4">
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div>
-              <span className="text-[10px] font-mono text-white/50 uppercase font-bold">Selected Date</span>
+              <span className="text-[10px] font-mono text-white/50 uppercase font-bold">
+                Selected Date (PKT)
+                {selectedDateString === pktTodayString ? " · Today" : ""}
+              </span>
               <h4 className="font-heading text-sm sm:text-base font-bold text-white mt-0.5">
                 {selectedDateString}
               </h4>
@@ -330,7 +461,7 @@ export default function AcademicCalendarWidget() {
 
           {selectedDateEvents.length === 0 ? (
             <div className="py-8 text-center text-xs font-mono text-white/50">
-              No milestones scheduled for this date.
+              No verified milestones scheduled for this date.
               <br />
               <button
                 type="button"
@@ -338,7 +469,7 @@ export default function AcademicCalendarWidget() {
                   setNewDate(selectedDateString);
                   setIsAddModalOpen(true);
                 }}
-                className="mt-3 inline-flex items-center gap-1 text-[#FFD60A] font-bold hover:underline"
+                className="mt-3 inline-flex items-center gap-1 text-[#FFD60A] font-bold hover:underline cursor-pointer"
               >
                 + Add student task or deadline
               </button>
@@ -350,21 +481,21 @@ export default function AcademicCalendarWidget() {
                   key={evt.id}
                   className={`p-3 rounded-xl border ${
                     evt.isOfficial
-                      ? "border-[#FFD60A]/30 bg-[#FFD60A]/5"
+                      ? "border-emerald-500/30 bg-emerald-500/[0.06]"
                       : "border-sky-500/30 bg-sky-500/5"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span
-                      className={`text-[9px] font-mono font-bold uppercase rounded px-1.5 py-0.2 ${
+                      className={`text-[9px] font-mono font-bold uppercase rounded px-1.5 py-0.5 ${
                         evt.isOfficial
-                          ? "bg-[#FFD60A]/20 text-[#FFD60A]"
+                          ? "bg-emerald-500/20 text-emerald-300"
                           : "bg-sky-400/20 text-sky-300"
                       }`}
                     >
-                      {evt.isOfficial ? "Official Milestone" : "Personal Goal"}
+                      {evt.isOfficial ? "Confirmed" : "Personal Goal"}
                     </span>
-                    {!evt.isOfficial && (
+                    {!evt.isOfficial ? (
                       <button
                         type="button"
                         onClick={() => academicCalendarService.deletePersonalEvent(evt.id)}
@@ -373,6 +504,10 @@ export default function AcademicCalendarWidget() {
                       >
                         <Trash2 size={12} />
                       </button>
+                    ) : (
+                      <span className="text-[10px] font-mono text-white/55">
+                        {formatPktTimeLabel(evt.time)}
+                      </span>
                     )}
                   </div>
 
@@ -380,15 +515,37 @@ export default function AcademicCalendarWidget() {
                     {evt.title}
                   </h5>
 
+                  {evt.classLevel && (
+                    <div className="mt-1 text-[10px] font-mono text-[#FFD60A]">
+                      {evt.classLevel}
+                    </div>
+                  )}
+
                   {evt.description && (
                     <p className="text-[11px] text-white/70 mt-1 leading-snug">
                       {evt.description}
                     </p>
                   )}
 
-                  {evt.isOfficial && evt.issuingAuthority && (
-                    <div className="mt-2 text-[10px] font-mono text-white/50">
-                      Authority: {evt.issuingAuthority}
+                  {evt.isOfficial && (
+                    <div className="mt-2 pt-2 border-t border-white/10 space-y-1 text-[10px] font-mono text-white/55">
+                      {evt.issuingAuthority && (
+                        <div>Authority: {evt.issuingAuthority}</div>
+                      )}
+                      {evt.announcementDate && (
+                        <div>Announced: {evt.announcementDate}</div>
+                      )}
+                      {evt.sourceUrl && (
+                        <a
+                          href={evt.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[#FFD60A] hover:underline"
+                        >
+                          <span>{evt.sourceName || "Verified Source"}</span>
+                          <ExternalLink size={10} />
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>
@@ -403,18 +560,25 @@ export default function AcademicCalendarWidget() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4 mb-5">
           <div className="flex items-center gap-2">
             <Clock size={16} className="text-[#FFD60A]" />
-            <h3 className="font-heading text-base font-black text-white">
-              Live Punjab Examination &amp; Deadline Countdowns
-            </h3>
+            <div>
+              <h3 className="font-heading text-base font-black text-white">
+                Confirmed Examination &amp; Admission Countdowns (PKT)
+              </h3>
+              <p className="text-[11px] font-mono text-white/50">
+                All countdowns lock strictly to Pakistan Standard Time (UTC+05:00)
+              </p>
+            </div>
           </div>
 
           {/* Filter: All / Official / Personal */}
-          <div className="flex rounded-lg border border-white/10 bg-white/5 p-0.5 text-xs font-mono">
+          <div className="flex rounded-lg border border-white/10 bg-white/5 p-0.5 text-xs font-mono self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setFilterType("all")}
               className={`rounded px-2.5 py-1 cursor-pointer ${
-                filterType === "all" ? "bg-[#FFD60A] text-black font-bold" : "text-white/70 hover:text-white"
+                filterType === "all"
+                  ? "bg-[#FFD60A] text-black font-bold"
+                  : "text-white/70 hover:text-white"
               }`}
             >
               All
@@ -423,16 +587,20 @@ export default function AcademicCalendarWidget() {
               type="button"
               onClick={() => setFilterType("official")}
               className={`rounded px-2.5 py-1 cursor-pointer ${
-                filterType === "official" ? "bg-[#FFD60A] text-black font-bold" : "text-white/70 hover:text-white"
+                filterType === "official"
+                  ? "bg-[#FFD60A] text-black font-bold"
+                  : "text-white/70 hover:text-white"
               }`}
             >
-              Official PBCC
+              Verified Matric
             </button>
             <button
               type="button"
               onClick={() => setFilterType("personal")}
               className={`rounded px-2.5 py-1 cursor-pointer ${
-                filterType === "personal" ? "bg-[#FFD60A] text-black font-bold" : "text-white/70 hover:text-white"
+                filterType === "personal"
+                  ? "bg-[#FFD60A] text-black font-bold"
+                  : "text-white/70 hover:text-white"
               }`}
             >
               Personal
@@ -442,7 +610,7 @@ export default function AcademicCalendarWidget() {
 
         {displayedCountdowns.length === 0 ? (
           <div className="py-8 text-center text-xs font-mono text-white/50">
-            No upcoming events match the current filter.
+            No upcoming confirmed events match the current filter.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -452,31 +620,33 @@ export default function AcademicCalendarWidget() {
                 className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between hover:border-[#FFD60A]/40 transition-colors"
               >
                 <div>
-                  <div className="flex items-center justify-between text-[10px] font-mono mb-2">
+                  <div className="flex items-center justify-between gap-2 text-[10px] font-mono mb-2">
                     <span
-                      className={`font-bold px-1.5 py-0.2 rounded uppercase ${
+                      className={`font-bold px-1.5 py-0.5 rounded uppercase ${
                         event.isOfficial
-                          ? event.verificationStatus === "officially-confirmed"
-                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                            : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
-                          : "bg-sky-400/20 text-sky-300"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                          : "bg-sky-400/20 text-sky-300 border border-sky-400/30"
                       }`}
                     >
-                      {event.isOfficial
-                        ? event.verificationStatus === "officially-confirmed"
-                          ? "Confirmed"
-                          : "Expected Baseline"
-                        : "Personal Goal"}
+                      {event.isOfficial ? "Confirmed" : "Personal Goal"}
                     </span>
-                    <span className="text-white/50">{event.date}</span>
+                    <span className="text-white/60 text-right">
+                      {event.date} · {formatPktTimeLabel(event.time)}
+                    </span>
                   </div>
+
+                  {(event.examYear || event.classLevel) && (
+                    <div className="text-[10px] font-mono text-[#FFD60A]/90 mb-1">
+                      {[event.examYear, event.classLevel].filter(Boolean).join(" · ")}
+                    </div>
+                  )}
 
                   <h4 className="font-heading text-sm font-bold text-white line-clamp-2">
                     {event.title}
                   </h4>
 
                   {event.description && (
-                    <p className="mt-1 text-xs text-white/70 line-clamp-2 leading-relaxed">
+                    <p className="mt-1.5 text-xs text-white/70 line-clamp-2 leading-relaxed">
                       {event.description}
                     </p>
                   )}
@@ -485,45 +655,65 @@ export default function AcademicCalendarWidget() {
                 {/* Countdown Time Grid */}
                 <div className="mt-4 pt-3 border-t border-white/10">
                   {isExpired ? (
-                    <div className="text-center py-2 text-xs font-mono font-bold text-white/40 uppercase">
-                      Concluded / Expired
+                    <div className="text-center py-2 text-xs font-mono font-bold text-emerald-300/80 uppercase">
+                      {isToday ? "Scheduled Today (PKT)" : "Concluded / Expired"}
                     </div>
                   ) : (
                     <div className="grid grid-cols-4 gap-1 text-center font-mono">
                       <div className="rounded bg-black/40 p-1.5 border border-white/5">
-                        <span className="block text-base font-black text-white tabular-nums">{days}</span>
+                        <span className="block text-base font-black text-white tabular-nums">
+                          {days}
+                        </span>
                         <span className="block text-[9px] text-white/50 uppercase">Days</span>
                       </div>
                       <div className="rounded bg-black/40 p-1.5 border border-white/5">
-                        <span className="block text-base font-black text-[#FFD60A] tabular-nums">{hours}</span>
+                        <span className="block text-base font-black text-[#FFD60A] tabular-nums">
+                          {String(hours).padStart(2, "0")}
+                        </span>
                         <span className="block text-[9px] text-white/50 uppercase">Hrs</span>
                       </div>
                       <div className="rounded bg-black/40 p-1.5 border border-white/5">
-                        <span className="block text-base font-black text-white tabular-nums">{minutes}</span>
+                        <span className="block text-base font-black text-white tabular-nums">
+                          {String(minutes).padStart(2, "0")}
+                        </span>
                         <span className="block text-[9px] text-white/50 uppercase">Min</span>
                       </div>
                       <div className="rounded bg-black/40 p-1.5 border border-white/5">
-                        <span className="block text-base font-black text-emerald-400 tabular-nums">{seconds}</span>
+                        <span className="block text-base font-black text-emerald-400 tabular-nums">
+                          {String(seconds).padStart(2, "0")}
+                        </span>
                         <span className="block text-[9px] text-white/50 uppercase">Sec</span>
                       </div>
                     </div>
                   )}
 
-                  {/* Sourcing Transparency Note */}
+                  {/* Sourcing Transparency & Verification Metadata */}
                   {event.isOfficial && (
-                    <div className="mt-2.5 flex items-center justify-between text-[9px] font-mono text-white/40">
-                      <span className="truncate">{event.issuingAuthority || "PBCC Authority"}</span>
-                      {event.sourceUrl && (
-                        <a
-                          href={event.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-0.5 text-[#FFD60A] hover:underline shrink-0"
-                        >
-                          <span>Source</span>
-                          <ExternalLink size={10} />
-                        </a>
-                      )}
+                    <div className="mt-3 space-y-1 text-[10px] font-mono text-white/50">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate">
+                          Announced: {event.announcementDate || "10 Nov 2026"}
+                        </span>
+                        <span className="shrink-0">
+                          Verified: {event.lastVerifiedDate || "15 Nov 2026"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 pt-0.5">
+                        <span className="truncate text-white/40">
+                          {event.sourceName || event.issuingAuthority || "PBCC Authority"}
+                        </span>
+                        {event.sourceUrl && (
+                          <a
+                            href={event.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-0.5 text-[#FFD60A] hover:underline shrink-0"
+                          >
+                            <span>Source</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -533,7 +723,77 @@ export default function AcademicCalendarWidget() {
         )}
       </div>
 
-      {/* 4. Add Personal Deadline Modal with AnimatePresence */}
+      {/* 4. Examination Schedules Awaiting Official Confirmation (No Countdowns) */}
+      <div className="rounded-2xl border border-amber-500/20 bg-[#0E0E12] p-5 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4 mb-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+            <div>
+              <h3 className="font-heading text-base font-black text-white">
+                Examination Schedules Awaiting Official Confirmation
+              </h3>
+              <p className="text-[11px] font-mono text-white/55">
+                No countdown timers or estimated dates are shown until official PBCC / BISE notifications are issued.
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-auto rounded bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-[10px] font-mono font-bold text-amber-300 uppercase">
+            Last Verified: 15 November 2026
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {awaitingItems.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between space-y-3"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 text-[10px] font-mono mb-2">
+                  <span className="rounded bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 font-bold text-amber-300 uppercase">
+                    {item.status}
+                  </span>
+                  <span className="text-white/45">{item.examYear}</span>
+                </div>
+
+                <div className="text-[10px] font-mono text-[#FFD60A]/85 mb-1">
+                  {item.classLevel}
+                </div>
+
+                <h4 className="font-heading text-sm font-bold text-white">
+                  {item.title}
+                </h4>
+
+                <p className="mt-1.5 text-xs text-white/65 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-white/10 space-y-1.5">
+                <div className="text-[10px] font-mono text-white/45">
+                  Official Portals to Monitor:
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {item.officialLinks.map((link) => (
+                    <a
+                      key={link.url}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-mono text-white/80 hover:border-[#FFD60A]/50 hover:text-[#FFD60A] transition-colors"
+                    >
+                      <span>{link.label}</span>
+                      <ExternalLink size={9} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 5. Add Personal Deadline Modal with AnimatePresence */}
       <AnimatePresence>
         {isAddModalOpen && (
           <div
@@ -584,7 +844,9 @@ export default function AcademicCalendarWidget() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-mono text-white/70 mb-1">Date *</label>
+                    <label className="block text-xs font-mono text-white/70 mb-1">
+                      Date (PKT) *
+                    </label>
                     <input
                       type="date"
                       required
@@ -595,10 +857,14 @@ export default function AcademicCalendarWidget() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono text-white/70 mb-1">Category</label>
+                    <label className="block text-xs font-mono text-white/70 mb-1">
+                      Category
+                    </label>
                     <select
                       value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as any)}
+                      onChange={(e) =>
+                        setNewCategory(e.target.value as CalendarEvent["category"])
+                      }
                       className="w-full rounded-xl border border-white/15 bg-[#121216] px-3 py-2 text-xs font-mono text-white focus:border-[#FFD60A] focus:outline-none"
                     >
                       <option value="exam">Exam Prep</option>
@@ -607,6 +873,23 @@ export default function AcademicCalendarWidget() {
                       <option value="personal">Personal Goal</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-white/70 mb-1">
+                    Priority
+                  </label>
+                  <select
+                    value={newPriority}
+                    onChange={(e) =>
+                      setNewPriority(e.target.value as "high" | "medium" | "low")
+                    }
+                    className="w-full rounded-xl border border-white/15 bg-[#121216] px-3 py-2 text-xs font-mono text-white focus:border-[#FFD60A] focus:outline-none"
+                  >
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                  </select>
                 </div>
 
                 <div>

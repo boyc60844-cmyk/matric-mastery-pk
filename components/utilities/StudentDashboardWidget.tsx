@@ -43,22 +43,31 @@ export default function StudentDashboardWidget({
   const [personalCount, setPersonalCount] = useState<number>(
     academicCalendarService.getPersonalEvents().length
   );
-  const [countdowns, setCountdowns] = useState<EventCountdown[]>(
+  const [countdowns, setCountdowns] = useState<EventCountdown[]>(() =>
     academicCalendarService.getUpcomingCountdowns(1)
   );
+  const [primaryExamCountdown, setPrimaryExamCountdown] =
+    useState<EventCountdown | null>(() =>
+      academicCalendarService.getPrimaryExamCountdown()
+    );
 
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
   // Time & Milestone subscriptions
   useEffect(() => {
-    const unsubTime = timeService.subscribe(() => {
-      setClockData(timeService.formatTimeForZone("Asia/Karachi", "12h"));
-    });
-
-    const unsubCal = academicCalendarService.subscribe(() => {
+    const syncCalendar = () => {
       setPersonalCount(academicCalendarService.getPersonalEvents().length);
       setCountdowns(academicCalendarService.getUpcomingCountdowns(1));
+      setPrimaryExamCountdown(academicCalendarService.getPrimaryExamCountdown());
+    };
+
+    const unsubTime = timeService.subscribe(() => {
+      setClockData(timeService.formatTimeForZone("Asia/Karachi", "12h"));
+      setCountdowns(academicCalendarService.getUpcomingCountdowns(1));
+      setPrimaryExamCountdown(academicCalendarService.getPrimaryExamCountdown());
     });
+
+    const unsubCal = academicCalendarService.subscribe(syncCalendar);
 
     const unsubTracker = studySessionTracker.subscribe(() => {
       setTodayMinutes(studySessionTracker.getTodayMinutes());
@@ -244,25 +253,34 @@ export default function StudentDashboardWidget({
           </div>
         </div>
 
-        {/* Metric 2: Next PBCC Milestone */}
+        {/* Metric 2: Next Confirmed PKT Milestone */}
         <div
           onClick={() => onSwitchTab?.("calendar")}
           className="group cursor-pointer rounded-2xl border border-white/10 bg-[#0E0E12] p-5 shadow-lg hover:border-accent/40 active:scale-[0.98] transition-all"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-              Next Academic Milestone
+              Next Milestone (PKT)
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
               <Calendar size={16} />
             </span>
           </div>
           <div className="mt-3 font-mono text-2xl sm:text-3xl font-black text-accent tracking-tight tabular-nums">
-            {nextCountdown ? `${nextCountdown.days}d ${nextCountdown.hours}h` : "Scheduled"}
+            {nextCountdown
+              ? nextCountdown.isExpired && nextCountdown.isToday
+                ? "Today (PKT)"
+                : `${nextCountdown.days}d ${nextCountdown.hours}h`
+              : "16 Mar 2027"}
           </div>
           <div className="mt-1 text-xs text-neutral-300 truncate">
-            {nextCountdown?.event.title || "PBCC Examination Phase"}
+            {nextCountdown?.event.title || "Class 10 / SSC Part-II Exam"}
           </div>
+          {primaryExamCountdown && (
+            <div className="mt-1 text-[10px] font-mono text-emerald-400/90 truncate">
+              Class 10 Exam: {primaryExamCountdown.days}d left (16 Mar 2027)
+            </div>
+          )}
         </div>
 
         {/* Metric 3: Today's Focus Minutes */}
@@ -387,7 +405,7 @@ export default function StudentDashboardWidget({
                 Academic Calendar &amp; Countdowns
               </div>
               <p className="mt-1 text-xs text-neutral-400 line-clamp-2">
-                Official PBCC verified examination schedule and personal
+                Verified 2027 Matric schedule, PKT countdowns, and personal
                 deadline tracker.
               </p>
             </div>
