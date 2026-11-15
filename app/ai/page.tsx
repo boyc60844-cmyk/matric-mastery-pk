@@ -417,13 +417,13 @@ const AIMessageRow = memo(function AIMessageRow({
 
   if (isUser) {
     return (
-      <div className="flex flex-col items-end gap-1.5 ai-msg-enter">
+      <div className="flex flex-col items-end gap-1 sm:gap-1.5 ai-msg-enter">
         <div
           dir="auto"
-          className={`max-w-[88%] sm:max-w-[78%] rounded-2xl border border-[#FFD60A]/30 bg-[#FFD60A]/[0.13] px-4 py-3 sm:px-5 sm:py-3.5 text-[16px] sm:text-[17px] text-white ${
+          className={`max-w-[95%] sm:max-w-[78%] rounded-2xl border border-[#FFD60A]/30 bg-[#FFD60A]/[0.13] px-3.5 py-2 sm:px-5 sm:py-3.5 text-[15px] sm:text-[17px] text-white ${
             urduContent
-              ? "font-urdu leading-[2.0] text-right"
-              : "leading-[1.65]"
+              ? "font-urdu leading-[1.9] sm:leading-[2.0] text-right"
+              : "leading-[1.55] sm:leading-[1.65]"
           }`}
         >
           {AI_IMAGE_INPUT_ENABLED && msg.image && (
@@ -435,7 +435,7 @@ const AIMessageRow = memo(function AIMessageRow({
           )}
           <p className="whitespace-pre-wrap break-words select-text">{msg.content}</p>
         </div>
-        <div className="flex items-center gap-2 px-1 text-xs text-neutral-500 tabular-nums">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-1 text-[11px] sm:text-xs text-neutral-500 tabular-nums">
           <span>
             {msg.subject && msg.subject !== "General" ? msg.subject : "Student"}
           </span>
@@ -449,12 +449,12 @@ const AIMessageRow = memo(function AIMessageRow({
   return (
     <article
       aria-busy={isStreamingMsg ? "true" : undefined}
-      className="w-full space-y-3 py-1 ai-msg-enter"
+      className="w-full space-y-1.5 sm:space-y-3 py-0.5 sm:py-1 ai-msg-enter"
     >
-      <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#FFD60A] text-black">
-            <GraduationCap size={13} strokeWidth={2.2} aria-hidden="true" />
+      <div className="flex items-center justify-between gap-2 text-[11px] sm:text-xs text-neutral-400">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
+          <span className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-md sm:rounded-lg bg-[#FFD60A] text-black">
+            <GraduationCap size={12} strokeWidth={2.2} aria-hidden="true" />
           </span>
           <span className="font-semibold text-white">Matric Mastery AI</span>
           {msg.subject && msg.subject !== "General" && (
@@ -464,7 +464,7 @@ const AIMessageRow = memo(function AIMessageRow({
             </>
           )}
         </div>
-        <span className="tabular-nums text-xs text-neutral-500 shrink-0">
+        <span className="tabular-nums text-[11px] sm:text-xs text-neutral-500 shrink-0">
           {formattedTime}
         </span>
       </div>
@@ -942,11 +942,11 @@ const AIComposerDock = memo(
         Boolean(AI_IMAGE_INPUT_ENABLED && status.visionEnabled && attachedImage));
 
     return (
-      <div className="relative shrink-0 w-full bg-[#0A0A0A] px-3 sm:px-6 lg:px-8 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="relative shrink-0 w-full bg-[#0A0A0A] px-1.5 sm:px-6 lg:px-8 pt-0 sm:pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {/* Soft fade above composer so scrolling messages glide underneath */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -top-9 h-9 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent"
+          className="pointer-events-none absolute inset-x-0 -top-3 h-3 sm:-top-9 sm:h-9 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent"
         />
         <div className="mx-auto w-full max-w-[940px]">
 
@@ -1058,13 +1058,13 @@ const AIComposerDock = memo(
         )}
 
         {/* Slim row above floating input: Subject dropdown & English/اردو toggle */}
-        <div className="mb-2 grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-2">
+        <div className="mb-1 sm:mb-2 grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-1.5 sm:gap-2">
           <div className="contents sm:flex sm:items-center sm:gap-2">
             <select
               aria-label="Select subject"
               value={selectedSubject}
               onChange={(e) => onSubjectChange(e.target.value)}
-              className="h-10 w-full sm:w-auto sm:min-w-[175px] rounded-xl border border-white/12 bg-[#14141A] px-3 text-[13px] font-medium text-neutral-100 focus:border-[#FFD60A] focus:outline-none cursor-pointer"
+              className="h-[34px] sm:h-10 w-full sm:w-auto sm:min-w-[175px] rounded-xl border border-white/12 bg-[#14141A] px-2.5 sm:px-3 text-[12px] sm:text-[13px] font-medium text-neutral-100 focus:border-[#FFD60A] focus:outline-none cursor-pointer"
             >
               {SUBJECT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -1076,12 +1076,12 @@ const AIComposerDock = memo(
             <div
               role="group"
               aria-label="Response language"
-              className="grid grid-cols-2 h-10 w-full sm:w-auto sm:min-w-[164px] rounded-xl border border-white/12 bg-[#14141A] p-1 shrink-0"
+              className="grid grid-cols-2 h-[34px] sm:h-10 w-full sm:w-auto sm:min-w-[164px] rounded-xl border border-white/12 bg-[#14141A] p-0.5 sm:p-1 shrink-0"
             >
               <button
                 type="button"
                 onClick={() => onLanguageChange("en")}
-                className={`h-full rounded-lg px-2 text-[13px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
+                className={`h-full rounded-lg px-2 text-[12px] sm:text-[13px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
                   languageMode === "en"
                     ? "bg-white text-black font-semibold"
                     : "text-neutral-300 hover:text-white"
@@ -1092,7 +1092,7 @@ const AIComposerDock = memo(
               <button
                 type="button"
                 onClick={() => onLanguageChange("ur")}
-                className={`h-full rounded-lg px-2 text-[13px] font-urdu transition-colors whitespace-nowrap cursor-pointer ${
+                className={`h-full rounded-lg px-2 text-[12px] sm:text-[13px] font-urdu transition-colors whitespace-nowrap cursor-pointer ${
                   languageMode === "ur"
                     ? "bg-white text-black font-semibold"
                     : "text-neutral-300 hover:text-white"
@@ -1135,13 +1135,13 @@ const AIComposerDock = memo(
           </>
         )}
 
-        {/* Floating 24px Rounded Composer */}
+        {/* Floating Rounded Composer */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             submitCurrentDraft();
           }}
-          className="relative rounded-[24px] border border-white/15 bg-[#14141A] px-3.5 pt-3 pb-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.7)] focus-within:border-[#FFD60A]/75 focus-within:shadow-[0_12px_36px_rgba(0,0,0,0.75),0_0_24px_rgba(255,214,10,0.22)] transition-[border-color,box-shadow] duration-200"
+          className="relative rounded-[18px] sm:rounded-[24px] border border-white/15 bg-[#14141A] px-2.5 pt-1.5 pb-1.5 sm:px-3.5 sm:pt-3 sm:pb-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.7)] focus-within:border-[#FFD60A]/75 focus-within:shadow-[0_12px_36px_rgba(0,0,0,0.75),0_0_24px_rgba(255,214,10,0.22)] transition-[border-color,box-shadow] duration-200"
         >
           <textarea
             ref={textareaRef}
@@ -1164,15 +1164,15 @@ const AIComposerDock = memo(
                 submitCurrentDraft();
               }
             }}
-            className={`w-full resize-none bg-transparent px-1 pb-1.5 text-[16px] text-white placeholder-neutral-500 focus:outline-none ${
+            className={`w-full resize-none bg-transparent px-1 pb-0.5 sm:pb-1 text-[16px] text-white placeholder-neutral-500 focus:outline-none ${
               isUrduUI || isUrduText(inputText)
-                ? "font-urdu leading-[1.85]"
-                : "leading-[1.5]"
+                ? "font-urdu leading-[1.75] sm:leading-[1.8]"
+                : "leading-[1.4] sm:leading-[1.5]"
             }`}
           />
 
           {/* Bottom Action Row: Unified Attachment/Tools Menu + Mic on left, Send/Stop on right */}
-          <div className="mt-1 flex items-center justify-between gap-2.5 border-t border-white/[0.06] pt-2">
+          <div className="mt-0.5 sm:mt-1 flex items-center justify-between gap-2 border-t border-white/[0.06] pt-1 sm:pt-2">
             <div className="flex items-center gap-2 min-w-0">
               {/* Unified Attachment & Tools Menu (gated behind AI_IMAGE_INPUT_ENABLED) */}
               {AI_IMAGE_INPUT_ENABLED && (
@@ -1330,7 +1330,7 @@ const AIComposerDock = memo(
           </div>
         </form>
 
-        <p className="mt-2 text-center text-[11px] leading-snug text-neutral-500">
+        <p className="mt-0.5 sm:mt-2 text-center text-[10px] sm:text-[11px] leading-tight sm:leading-snug text-neutral-500">
           History stays on this device · Verify textbook answers · Avoid sharing personal IDs
         </p>
         </div>
@@ -1817,7 +1817,7 @@ export default function AIPage() {
     []
   );
 
-  // Adapt workspace container smoothly when mobile soft keyboard opens — without scrolling the outer page
+  // Adapt workspace container smoothly when mobile soft keyboard opens — without losing composer visibility
   useEffect(() => {
     if (typeof window === "undefined") return;
     const vv = window.visualViewport;
@@ -1836,7 +1836,15 @@ export default function AIPage() {
       );
 
       if (keyboardLikelyOpen && focusedInsideWorkspace) {
-        const nextH = Math.max(340, Math.round(vv.height - 56));
+        const rectTop = chatWorkspaceRef.current?.getBoundingClientRect().top ?? 59;
+        if (rectTop > 64 && chatWorkspaceRef.current) {
+          chatWorkspaceRef.current.scrollIntoView({ block: "start", behavior: "auto" });
+        }
+        const effectiveTop = Math.max(
+          58,
+          Math.min(110, Math.round(chatWorkspaceRef.current?.getBoundingClientRect().top ?? 59))
+        );
+        const nextH = Math.max(260, Math.round(vv.height - effectiveTop));
         setMobileKeyboardHeight(nextH);
       } else {
         setMobileKeyboardHeight(null);
@@ -1844,8 +1852,10 @@ export default function AIPage() {
     };
 
     vv.addEventListener("resize", handleViewportChange);
+    vv.addEventListener("scroll", handleViewportChange);
     return () => {
       vv.removeEventListener("resize", handleViewportChange);
+      vv.removeEventListener("scroll", handleViewportChange);
     };
   }, []);
 
@@ -2755,7 +2765,7 @@ export default function AIPage() {
               ? { height: `${mobileKeyboardHeight}px`, minHeight: `${mobileKeyboardHeight}px` }
               : undefined
           }
-          className="scroll-mt-20 flex h-[calc(100dvh-110px)] sm:h-[calc(100dvh-67px)] min-h-[340px] w-full overflow-hidden bg-[#0A0A0A]"
+          className="scroll-mt-[59px] sm:scroll-mt-20 flex h-[calc(100dvh-110px)] sm:h-[calc(100dvh-67px)] min-h-[260px] sm:min-h-[340px] w-full overflow-hidden bg-[#0A0A0A]"
         >
           {/* Desktop Collapsible Sidebar (268px–280px on lg+, hidden on mobile) */}
           <AIConversationSidebar
@@ -2774,18 +2784,18 @@ export default function AIPage() {
           {/* Main Spacious Conversation & Composer Column */}
           <div className="flex flex-1 min-w-0 flex-col overflow-hidden bg-[#0A0A0A]">
             {/* A. Compact Workspace Header */}
-            <header className="shrink-0 w-full border-b border-white/[0.06] bg-[#0A0A0A] px-3 sm:px-5 py-2.5">
-              <div className="flex items-center justify-between gap-2 sm:gap-3">
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+            <header className="shrink-0 w-full border-b border-white/[0.06] bg-[#0A0A0A] px-2 sm:px-5 py-1 sm:py-2.5">
+              <div className="flex items-center justify-between gap-1 sm:gap-3">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
                   {/* Mobile / Tablet Drawer Trigger (< lg) */}
                   <button
                     type="button"
                     onClick={handleOpenHistory}
                     aria-label="Open saved chat history"
                     title="Saved study chats"
-                    className="lg:hidden inline-flex h-11 min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
+                    className="lg:hidden inline-flex h-9 min-h-[36px] min-w-[36px] sm:h-11 sm:min-h-[44px] sm:min-w-[44px] items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-1.5 sm:px-2.5 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
                   >
-                    <History size={16} aria-hidden="true" />
+                    <History size={15} aria-hidden="true" />
                     <span className="hidden sm:inline">Chats</span>
                     {savedNonEmptyCount > 0 && (
                       <span className="font-mono text-[11px] tabular-nums text-[#FFD60A]">
@@ -2813,25 +2823,25 @@ export default function AIPage() {
                     </button>
                   )}
 
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFD60A] text-black">
+                  <div className="hidden sm:flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFD60A] text-black">
                     <GraduationCap size={18} strokeWidth={2.2} />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h1 className="font-heading text-[15px] sm:text-base font-bold tracking-tight text-white leading-tight truncate">
+                    <h1 className="font-heading text-[13.5px] sm:text-base font-bold tracking-tight text-white leading-none sm:leading-tight truncate">
                       Matric Mastery AI
                     </h1>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs leading-snug text-neutral-400">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[10.5px] sm:text-xs leading-tight sm:leading-snug text-neutral-400">
                       {statusLoading ? (
                         <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                       ) : status.state === "ready" ? (
                         <span className="inline-flex items-center gap-1 text-emerald-400">
-                          <CheckCircle2 size={12} className="shrink-0" aria-hidden="true" />
+                          <CheckCircle2 size={11} className="shrink-0" aria-hidden="true" />
                           <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                         </span>
                       ) : status.state === "quota_exhausted" ? (
                         <span className="inline-flex items-center gap-1 text-amber-300">
-                          <AlertCircle size={12} className="shrink-0" aria-hidden="true" />
+                          <AlertCircle size={11} className="shrink-0" aria-hidden="true" />
                           <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                         </span>
                       ) : (
@@ -2840,7 +2850,7 @@ export default function AIPage() {
                           onClick={refreshHealthStatus}
                           className="inline-flex items-center gap-1 text-left text-red-300 hover:text-red-200 underline-offset-2 hover:underline cursor-pointer"
                         >
-                          <WifiOff size={12} className="shrink-0" aria-hidden="true" />
+                          <WifiOff size={11} className="shrink-0" aria-hidden="true" />
                           <span className="whitespace-normal break-words">{statusDisplay.label}</span>
                         </button>
                       )}
@@ -2855,7 +2865,7 @@ export default function AIPage() {
                 </div>
 
                 {/* Workspace Header Actions */}
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                   <a
                     href="#ai-subjects"
                     title="Jump to Subjects, Usage Guide & Free Access Info"
@@ -2870,7 +2880,7 @@ export default function AIPage() {
                     onClick={handleOpenPreferences}
                     aria-label="Open tutor preferences"
                     title="Tutor personalization settings"
-                    className="inline-flex h-11 min-h-[44px] min-w-[44px] sm:h-10 sm:min-h-[40px] sm:min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
+                    className="inline-flex h-9 w-9 min-h-[36px] min-w-[36px] sm:h-10 sm:w-auto sm:min-h-[40px] sm:min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] sm:px-2.5 text-xs font-medium text-neutral-200 hover:border-white/25 hover:text-white active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     <SlidersHorizontal size={15} aria-hidden="true" />
                     <span className="hidden xl:inline">Preferences</span>
@@ -2882,7 +2892,7 @@ export default function AIPage() {
                       onClick={handleExportJSON}
                       aria-label="Download study session JSON"
                       title="Download this study session as JSON"
-                      className="inline-flex h-11 min-h-[44px] min-w-[44px] sm:h-10 sm:min-h-[40px] sm:min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
+                      className="inline-flex h-9 w-9 min-h-[36px] min-w-[36px] sm:h-10 sm:w-auto sm:min-h-[40px] sm:min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] sm:px-2.5 text-xs font-medium text-neutral-300 hover:border-white/25 hover:text-white active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       <Download size={15} aria-hidden="true" />
                       <span className="hidden xl:inline">Download</span>
@@ -2895,7 +2905,7 @@ export default function AIPage() {
                     disabled={messages.length === 0 && !isGenerating}
                     aria-label="New Chat"
                     title="Start a new conversation"
-                    className="inline-flex h-11 min-h-[44px] min-w-[44px] sm:h-10 sm:min-h-[40px] sm:min-w-[40px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-2.5 sm:px-3 text-xs font-medium text-white hover:border-[#FFD60A]/50 hover:text-[#FFD60A] disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
+                    className="inline-flex h-9 min-h-[36px] min-w-[36px] sm:h-10 sm:min-h-[40px] sm:min-w-[40px] items-center justify-center gap-1 rounded-xl border border-white/15 bg-white/[0.04] px-2 sm:px-3 text-xs font-medium text-white hover:border-[#FFD60A]/50 hover:text-[#FFD60A] disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-[transform,color,border-color] duration-150 whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     <Plus size={15} aria-hidden="true" />
                     <span className="min-[390px]:hidden">New</span>
@@ -2948,13 +2958,13 @@ export default function AIPage() {
               <div
                 key={activeConversationId || "default"}
                 ref={transcriptContentRef}
-                className="mx-auto w-full max-w-[940px] px-3.5 sm:px-6 lg:px-8 ai-thread-fade"
+                className="mx-auto w-full max-w-[940px] px-1.5 sm:px-6 lg:px-8 ai-thread-fade"
               >
                 {messages.length === 0 ? (
                   /* First-Visit Spacious Empty State & Tappable Class 9-10 Starter Cards */
-                  <div className="py-6 sm:py-10 pb-10 space-y-7">
-                    <div className="space-y-3" dir={isUrduUI ? "rtl" : "ltr"}>
-                      <div className={`flex ${isUrduUI ? "justify-end" : "justify-start"}`}>
+                  <div className="py-2.5 sm:py-10 pb-3 sm:pb-10 space-y-3 sm:space-y-7">
+                    <div className="space-y-1 sm:space-y-3" dir={isUrduUI ? "rtl" : "ltr"}>
+                      <div className={`hidden sm:flex ${isUrduUI ? "justify-end" : "justify-start"}`}>
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFD60A] text-black">
                           <GraduationCap size={22} strokeWidth={2.2} />
                         </div>
@@ -2962,8 +2972,8 @@ export default function AIPage() {
                       <h2
                         className={`font-bold text-white tracking-tight text-balance ${
                           isUrduUI
-                            ? "font-urdu text-2xl sm:text-[30px] leading-[1.9] text-right"
-                            : "font-heading text-2xl sm:text-[32px] leading-tight"
+                            ? "font-urdu text-[18px] sm:text-[30px] leading-[1.8] sm:leading-[1.9] text-right"
+                            : "font-heading text-[18px] sm:text-[32px] leading-snug sm:leading-tight"
                         }`}
                       >
                         {isUrduUI
@@ -2973,26 +2983,26 @@ export default function AIPage() {
                       <p
                         className={`text-neutral-300 max-w-2xl ${
                           isUrduUI
-                            ? "font-urdu text-[15px] leading-[2] text-right"
-                            : "text-[15px] sm:text-base leading-[1.6]"
+                            ? "font-urdu text-[13px] sm:text-[15px] leading-[1.85] sm:leading-[2] text-right"
+                            : "text-[13px] sm:text-base leading-snug sm:leading-[1.6]"
                         }`}
                       >
                         {isUrduUI
                           ? "پنجاب بورڈ اور فیڈرل بورڈ (کلاس 9 اور 10) کے مطابق ریاضی، فزکس، کیمسٹری اور بائیولوجی کی مرحلہ وار رہنمائی حاصل کریں۔"
                           : "Ask a Class 9–10 Math, Physics, Chemistry, or Biology question for step-by-step guidance."}
                       </p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="hidden sm:block text-xs text-neutral-500">
                         Your personal AI study assistant for Punjab Board Class 9–10 · Independent learning assistant
                       </p>
                     </div>
 
-                    <div className="space-y-3">
-                      <p className="text-xs font-medium text-neutral-400">
+                    <div className="space-y-1.5 sm:space-y-3">
+                      <p className="text-[11px] sm:text-xs font-medium text-neutral-400">
                         {isUrduUI
                           ? "مثال کے سوالات (فوری حل کے لیے کلک کریں)"
                           : "Try an example question"}
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-3.5">
                         {STARTER_QUESTIONS.map((item) => {
                           const questionText = isUrduUI ? item.ur : item.en;
                           return (
@@ -3002,18 +3012,18 @@ export default function AIPage() {
                               disabled={isGenerating}
                               onClick={() => submitQuestion(questionText, item.subject)}
                               dir={isUrduUI ? "rtl" : "ltr"}
-                              className={`group flex min-h-[104px] sm:min-h-[118px] flex-col justify-between gap-2.5 rounded-2xl border border-white/10 bg-[#121217] p-4 sm:p-5 transition-[transform,border-color,background-color] duration-150 hover:border-[#FFD60A]/50 hover:bg-[#17171E] active:scale-[0.99] disabled:opacity-50 cursor-pointer ${
+                              className={`group flex min-h-0 sm:min-h-[118px] flex-col justify-between gap-1 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-white/10 bg-[#121217] p-2.5 sm:p-5 transition-[transform,border-color,background-color] duration-150 hover:border-[#FFD60A]/50 hover:bg-[#17171E] active:scale-[0.99] disabled:opacity-50 cursor-pointer ${
                                 isUrduUI ? "text-right" : "text-left"
                               }`}
                             >
-                              <span className="text-xs font-semibold text-[#FFD60A]">
+                              <span className="text-[10.5px] sm:text-xs font-semibold text-[#FFD60A]">
                                 {item.subject}
                               </span>
                               <span
                                 className={`text-neutral-100 group-hover:text-white ${
                                   isUrduUI
-                                    ? "font-urdu text-[15px] leading-[1.95]"
-                                    : "text-[15px] leading-relaxed"
+                                    ? "font-urdu text-[13.5px] sm:text-[15px] leading-[1.8] sm:leading-[1.95]"
+                                    : "text-[13px] sm:text-[15px] leading-snug sm:leading-relaxed"
                                 }`}
                               >
                                 {questionText}
@@ -3027,7 +3037,7 @@ export default function AIPage() {
                     {/* Clean Uncluttered Section Links Below Starters */}
                     <nav
                       aria-label="AI Workspace Sections"
-                      className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.06] pt-4 text-xs text-neutral-400"
+                      className="flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1 sm:gap-y-2 border-t border-white/[0.06] pt-2 sm:pt-4 text-[11px] sm:text-xs text-neutral-400"
                     >
                       <a href="#ai-subjects" className="hover:text-[#FFD60A] transition-colors">
                         Supported Subjects
@@ -3045,7 +3055,7 @@ export default function AIPage() {
                   </div>
                 ) : (
                   /* Active Spacious Conversation Thread */
-                  <div className="pt-5 pb-12 sm:pt-7 sm:pb-14 space-y-6 sm:space-y-7">
+                  <div className="pt-2 pb-4 sm:pt-7 sm:pb-14 space-y-3.5 sm:space-y-7">
                     {messages.map((msg, idx) => (
                       <AIMessageRow
                         key={msg.id}

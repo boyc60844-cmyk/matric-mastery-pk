@@ -472,7 +472,7 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
         <div
           key={`${keyPrefix}-math-${i}`}
           dir="ltr"
-          className="my-2.5 overflow-x-auto rounded-xl border border-[#FFD60A]/25 bg-[#FFD60A]/[0.06] px-4 py-3 text-center font-mono text-sm sm:text-[15px] text-[#FFD60A] [unicode-bidi:isolate]"
+          className="my-2 overflow-x-auto rounded-xl border border-[#FFD60A]/25 bg-[#FFD60A]/[0.06] px-2.5 py-2 sm:px-4 sm:py-3 text-center font-mono text-sm sm:text-[15px] text-[#FFD60A] [unicode-bidi:isolate]"
         >
           {renderFormattedMath(formula, `${keyPrefix}-mf-${i}`)}
         </div>
@@ -495,7 +495,7 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
         <div
           key={`${keyPrefix}-mathml-${i}`}
           dir="ltr"
-          className="my-2.5 overflow-x-auto rounded-xl border border-[#FFD60A]/25 bg-[#FFD60A]/[0.06] px-4 py-3 text-center font-mono text-sm sm:text-[15px] text-[#FFD60A] [unicode-bidi:isolate]"
+          className="my-2 overflow-x-auto rounded-xl border border-[#FFD60A]/25 bg-[#FFD60A]/[0.06] px-2.5 py-2 sm:px-4 sm:py-3 text-center font-mono text-sm sm:text-[15px] text-[#FFD60A] [unicode-bidi:isolate]"
         >
           {renderFormattedMath(mathLines.join(" "), `${keyPrefix}-mml-${i}`)}
         </div>
@@ -547,7 +547,7 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
                     {headerRow.map((cell, cIdx) => (
                       <th
                         key={cIdx}
-                        className="px-3.5 py-2.5 font-semibold text-white whitespace-nowrap"
+                        className="px-2.5 py-2 sm:px-3.5 sm:py-2.5 font-semibold text-white whitespace-nowrap"
                       >
                         {renderInline(cell, `${keyPrefix}-th-${i}-${cIdx}`)}
                       </th>
@@ -562,7 +562,7 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
                     className={rIdx % 2 === 1 ? "bg-white/[0.015]" : undefined}
                   >
                     {row.map((cell, cIdx) => (
-                      <td key={cIdx} className="px-3.5 py-2.5 text-neutral-200 align-top">
+                      <td key={cIdx} className="px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-neutral-200 align-top">
                         {renderInline(cell, `${keyPrefix}-td-${i}-${rIdx}-${cIdx}`)}
                       </td>
                     ))}
@@ -591,7 +591,7 @@ function renderMarkdownBlocks(content: string, keyPrefix = "blk"): React.ReactNo
         <blockquote
           key={`${keyPrefix}-bq-${i}`}
           dir={quoteUrdu ? "rtl" : "ltr"}
-          className={`my-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-neutral-200 max-w-[74ch] ${
+          className={`my-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 sm:px-4 sm:py-2.5 text-neutral-200 max-w-[74ch] ${
             quoteUrdu ? "ml-auto font-urdu text-[15px] leading-[2] text-right" : "text-sm sm:text-[15px]"
           }`}
         >
@@ -817,17 +817,17 @@ const AnswerSectionBlock = memo(function AnswerSectionBlock({
   };
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3.5 sm:p-4 space-y-2.5">
+    <div className="border-t border-white/[0.08] pt-2 sm:rounded-xl sm:border sm:border-white/[0.08] sm:bg-white/[0.02] sm:p-4 space-y-1.5 sm:space-y-2.5">
       <div
         dir={isUrduHeading ? "rtl" : "ltr"}
-        className="flex items-center justify-between gap-2 border-b border-white/[0.07] pb-2"
+        className="flex items-center justify-between gap-2 sm:border-b sm:border-white/[0.07] pb-1 sm:pb-2"
       >
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
           aria-expanded={!collapsed}
-          className={`flex flex-1 min-w-0 items-center gap-2 text-left font-semibold text-white hover:text-[#FFD60A] transition-colors cursor-pointer ${
-            isUrduHeading ? "font-urdu text-base text-right" : "font-heading text-sm sm:text-[15px]"
+          className={`flex flex-1 min-w-0 items-center gap-1.5 sm:gap-2 text-left font-semibold text-white hover:text-[#FFD60A] transition-colors cursor-pointer ${
+            isUrduHeading ? "font-urdu text-base text-right" : "font-heading text-[14.5px] sm:text-[15px]"
           }`}
         >
           {collapsed ? (
@@ -860,7 +860,7 @@ const AnswerSectionBlock = memo(function AnswerSectionBlock({
       </div>
 
       {!collapsed && section.rawText && (
-        <div className="space-y-2.5">{renderedBlocks}</div>
+        <div className="space-y-2 sm:space-y-2.5">{renderedBlocks}</div>
       )}
     </div>
   );
@@ -916,7 +916,7 @@ const AIMarkdownRenderer = memo(function AIMarkdownRenderer({
 
   if (useStructuredSections) {
     return (
-      <div className="space-y-3 text-[16px] sm:text-[17px] leading-[1.65] text-neutral-200 break-words min-w-0 max-w-full">
+      <div className="space-y-2.5 sm:space-y-3 text-[15.5px] sm:text-[17px] leading-[1.6] sm:leading-[1.65] text-neutral-200 break-words min-w-0 max-w-full">
         {sections.map((section, idx) => (
           <AnswerSectionBlock
             key={`${idx}-${section.heading || "intro"}`}
@@ -930,7 +930,7 @@ const AIMarkdownRenderer = memo(function AIMarkdownRenderer({
   }
 
   return (
-    <div className="space-y-3 text-[16px] sm:text-[17px] leading-[1.65] text-neutral-200 break-words min-w-0 max-w-full">
+    <div className="space-y-2.5 sm:space-y-3 text-[15.5px] sm:text-[17px] leading-[1.6] sm:leading-[1.65] text-neutral-200 break-words min-w-0 max-w-full">
       {singleBlockNodes}
       {isLongSingleBlock && (
         <button
