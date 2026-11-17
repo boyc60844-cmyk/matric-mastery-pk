@@ -1,544 +1,575 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  Sparkles,
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  Compass,
+  Cpu,
   Layers,
-  Palette,
-  Type,
-  Box,
-  Smartphone,
-  ExternalLink,
-  MessageCircle,
-  CheckCircle2,
-  Copy,
   ShieldCheck,
+  UserCheck,
 } from "lucide-react";
-import Button from "@/components/Button";
-import Card from "@/components/Card";
 import Reveal from "@/components/Reveal";
-import ContactForm from "@/components/ContactForm";
-import Logo from "@/components/Logo";
-import { whatsappLink } from "@/lib/utils";
+import Button from "@/components/Button";
+import {
+  ABOUT_PLATFORM_IDENTITY,
+  ACADEMIC_SCOPE_PANELS,
+  PLATFORM_OFFERINGS,
+  TECH_ECOSYSTEM_OVERVIEW,
+} from "@/lib/aboutPlatformData";
+import { FOUNDER_PROFILE } from "@/lib/founderStoryData";
 
-export const metadata = {
-  title: "About & Brand Identity | Matric Mastery",
-  description:
-    "Learn about Hamza, the 10th-grade founder from Multan, and explore the official Matric Mastery 3D Brand Identity and pure CSS visual system.",
-};
+type OfferingFilter = "All" | "AI & Intelligence" | "Study Tools" | "Exam Practice";
 
-const colorSwatches = [
-  {
-    name: "Deep Canvas",
-    hex: "#0A0A0A",
-    role: "Base App Background",
-    border: "border-white/20",
-    textClass: "text-white",
-  },
-  {
-    name: "Kinetic Yellow",
-    hex: "#FFD60A",
-    role: "Primary 3D Brand Face & Badges",
-    border: "border-black",
-    textClass: "text-black",
-  },
-  {
-    name: "Tactical Surface",
-    hex: "#141414",
-    role: "Cards & Section Surfaces",
-    border: "border-white/20",
-    textClass: "text-white",
-  },
-  {
-    name: "Shadow Ochre",
-    hex: "#CCAA00",
-    role: "3D Extrusion & Depth Faces",
-    border: "border-black",
-    textClass: "text-black",
-  },
-  {
-    name: "Pure White",
-    hex: "#FFFFFF",
-    role: "Primary Headlines & Readability",
-    border: "border-black",
-    textClass: "text-black",
-  },
+const OFFERING_FILTERS: OfferingFilter[] = [
+  "All",
+  "AI & Intelligence",
+  "Study Tools",
+  "Exam Practice",
 ];
 
 export default function AboutPage() {
+  const [activeScopeId, setActiveScopeId] = useState<string>(
+    ACADEMIC_SCOPE_PANELS[0].id
+  );
+  const [offeringFilter, setOfferingFilter] = useState<OfferingFilter>("All");
+  const prefersReducedMotion = useReducedMotion();
+
+  const activeScope =
+    ACADEMIC_SCOPE_PANELS.find((s) => s.id === activeScopeId) ||
+    ACADEMIC_SCOPE_PANELS[0];
+
+  const visibleOfferings =
+    offeringFilter === "All"
+      ? PLATFORM_OFFERINGS
+      : PLATFORM_OFFERINGS.filter((item) => item.category === offeringFilter);
+
   return (
-    <div className="mx-auto max-w-site px-4 sm:px-6 py-8 sm:py-16 md:py-20">
-      {/* =========================================================================
-          PART 2: BRAND IDENTITY KIT (At Top of About Page)
-          ========================================================================= */}
-      <section className="mb-12 sm:mb-20">
-        <header className="mx-auto max-w-3xl text-center sm:text-left">
-          <Reveal>
-            <div className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-4 py-1.5 font-heading text-xs font-black tracking-widest text-accent uppercase shadow-[0_0_15px_rgba(255,214,10,0.2)]">
-              <Sparkles size={14} className="text-accent" />
-              <span>OFFICIAL BRAND SYSTEM</span>
+    <div className="w-full overflow-x-clip">
+      {/* =====================================================================
+          1. INTRODUCTION & PLATFORM HERO
+         ===================================================================== */}
+      <section className="mx-auto max-w-site px-5 sm:px-6 lg:px-8 pt-10 pb-14 sm:pt-16 sm:pb-20 lg:pt-24 lg:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-stretch">
+          {/* Left Typographic Introduction */}
+          <div className="lg:col-span-7 flex flex-col justify-between space-y-8">
+            <div className="space-y-5">
+              <motion.p
+                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.4,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-accent"
+              >
+                {ABOUT_PLATFORM_IDENTITY.eyebrow}
+              </motion.p>
+
+              <motion.h1
+                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.48,
+                  delay: prefersReducedMotion ? 0 : 0.05,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="font-heading text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-[-0.04em] leading-[1.06] text-white"
+              >
+                Built to Bring Clarity, Tools, and Strategy to{" "}
+                <span className="text-accent">Classes 9–12.</span>
+              </motion.h1>
+
+              <motion.p
+                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.45,
+                  delay: prefersReducedMotion ? 0 : 0.1,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="max-w-2xl text-base sm:text-lg leading-relaxed text-neutral-300"
+              >
+                {ABOUT_PLATFORM_IDENTITY.intro}
+              </motion.p>
+
+              <motion.p
+                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.45,
+                  delay: prefersReducedMotion ? 0 : 0.14,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="max-w-2xl text-sm sm:text-base leading-relaxed text-neutral-400"
+              >
+                {ABOUT_PLATFORM_IDENTITY.problemSolved}
+              </motion.p>
             </div>
 
-            <h1 className="mt-4 font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white">
-              Brand Identity &mdash; <span className="text-accent">Matric Mastery 3D</span>
-            </h1>
-
-            <p className="mt-4 text-base sm:text-lg leading-relaxed text-muted font-normal max-w-2xl">
-              The isometric 3D visual language, pure CSS rendering physics, and high-contrast
-              brutalist token system designed specifically for Punjab Board matric students.
-              Engineered to run at a rock-solid 60fps on mobile.
-            </p>
-          </Reveal>
-        </header>
-
-        <div className="mt-12 space-y-10">
-          {/* =====================================================================
-              CARD A: LOGO VARIATIONS (Including the 200px Centered Showpiece)
-              ===================================================================== */}
-          <Reveal delay={40}>
-            <Card
-              tilt={false}
-              depth="yellow"
-              className="p-6 sm:p-8 md:p-10 border-accent/40 bg-[#121214] shadow-brutalist-yellow"
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.45,
+                delay: prefersReducedMotion ? 0 : 0.18,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2"
             >
-              <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/30 bg-accent/10">
-                  <Box size={20} className="text-accent" />
-                </div>
-                <div>
-                  <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider">
-                    MODULE A
+              <Button href="/my-story" variant="primary" className="min-h-[44px]">
+                <span>Read Behind the Platform</span>
+                <ArrowRight size={16} />
+              </Button>
+              <Button href="/guide" variant="secondary" className="min-h-[44px]">
+                <span>Explore Website Guide</span>
+              </Button>
+            </motion.div>
+          </div>
+
+          {/* Right Platform Specification Plate */}
+          <motion.div
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: prefersReducedMotion ? 0 : 0.55,
+              delay: prefersReducedMotion ? 0 : 0.12,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="lg:col-span-5 flex"
+          >
+            <div className="relative w-full rounded-2xl border border-white/10 bg-[#0E0E12] p-6 sm:p-8 flex flex-col justify-between overflow-hidden lg:h-full">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-accent/12 blur-3xl"
+              />
+
+              <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-4 text-[11px] font-mono text-neutral-400">
+                <span>PLATFORM IDENTITY</span>
+                <span className="text-accent">INDEPENDENT EDTECH</span>
+              </div>
+
+              <div className="relative z-10 my-6 space-y-4">
+                <div className="flex items-baseline justify-between gap-4 border-b border-white/10 pb-3.5">
+                  <span className="text-xs font-mono text-neutral-500">Platform</span>
+                  <span className="font-heading text-base font-bold text-white">
+                    Matric Mastery
                   </span>
-                  <h2 className="font-heading text-xl sm:text-2xl font-black text-white">
-                    Logo Variations &amp; Isometric Depth
-                  </h2>
                 </div>
-              </div>
-
-              {/* Showpiece: 200px Large Logo Centered on Black Canvas */}
-              <div className="mt-8 rounded-2xl border-2 border-white/15 bg-[#0A0A0A] p-8 sm:p-14 text-center shadow-inner relative overflow-hidden">
-                {/* Ambient yellow radial spotlight */}
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,214,10,0.18)_0%,transparent_65%)]"
-                  aria-hidden="true"
-                />
-
-                <div className="relative z-10 flex flex-col items-center justify-center">
-                  <span className="mb-6 inline-block rounded-md border border-white/10 bg-white/5 px-3 py-1 font-mono text-[11px] font-bold text-accent uppercase tracking-wider">
-                    Showpiece: 200px Large 3D Icon Block
+                <div className="flex items-baseline justify-between gap-4 border-b border-white/10 pb-3.5">
+                  <span className="text-xs font-mono text-neutral-500">Founder</span>
+                  <span className="font-heading text-base font-bold text-accent">
+                    {FOUNDER_PROFILE.name}
                   </span>
-
-                  {/* 200px Centered 3D Logo Block */}
-                  <div className="py-6 sm:py-10 flex justify-center items-center">
-                    <Logo size="200" hideText={true} />
-                  </div>
-
-                  <p className="mt-6 max-w-md font-heading text-sm sm:text-base font-bold text-white/90">
-                    Pure CSS 3D Block Geometry &bull; Zero External 3D Libraries
-                  </p>
-                  <p className="mt-1 text-xs text-muted font-mono">
-                    Perspective 1000px &bull; Shadow Ochre #CCAA00 Flank &bull; 60fps on Mobile
-                  </p>
                 </div>
-              </div>
-
-              {/* Sub-variations: Black Canvas & Inverted Yellow Canvas */}
-              <div className="mt-6 grid gap-6 md:grid-cols-2">
-                {/* On Black Background */}
-                <div className="rounded-xl border border-white/15 bg-[#0A0A0A] p-6 flex flex-col justify-between">
-                  <div>
-                    <span className="text-xs font-mono font-bold text-muted uppercase">
-                      Primary Variant &bull; On Dark Canvas (#0A0A0A)
-                    </span>
-                    <div className="mt-5 py-4 flex items-center justify-center">
-                      <Logo size="nav" />
-                    </div>
-                  </div>
-                  <p className="mt-4 text-xs text-muted/80 border-t border-white/10 pt-3">
-                    Default header, cards, and primary web interfaces.
-                  </p>
-                </div>
-
-                {/* On Yellow Background (Inverted) */}
-                <div className="rounded-xl border-2 border-black bg-[#FFD60A] p-6 flex flex-col justify-between text-black shadow-[4px_4px_0_#000000]">
-                  <div>
-                    <span className="text-xs font-mono font-black text-black/80 uppercase">
-                      Inverted Variant &bull; On Kinetic Yellow (#FFD60A)
-                    </span>
-                    <div className="mt-5 py-4 flex items-center justify-center">
-                      <Logo size="nav" inverted={true} />
-                    </div>
-                  </div>
-                  <p className="mt-4 text-xs font-semibold text-black/80 border-t border-black/20 pt-3">
-                    Used on special marketing banners, printed stickers, and callouts.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Reveal>
-
-          {/* =====================================================================
-              CARD B: COLOR SYSTEM
-              ===================================================================== */}
-          <Reveal delay={80}>
-            <Card tilt={false} className="p-6 sm:p-8 md:p-10 border-white/10 bg-[#121214]">
-              <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5">
-                  <Palette size={20} className="text-accent" />
-                </div>
-                <div>
-                  <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider">
-                    MODULE B
+                <div className="flex items-baseline justify-between gap-4 border-b border-white/10 pb-3.5">
+                  <span className="text-xs font-mono text-neutral-500">Audience</span>
+                  <span className="font-heading text-sm sm:text-base font-bold text-white">
+                    Students in Classes 9–12
                   </span>
-                  <h2 className="font-heading text-xl sm:text-2xl font-black text-white">
-                    Color Architecture
-                  </h2>
                 </div>
-              </div>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                {colorSwatches.map((color) => (
-                  <div
-                    key={color.hex}
-                    className="rounded-xl border border-white/10 bg-[#0A0A0A] p-3.5 space-y-3"
-                  >
-                    <div
-                      className={`h-20 w-full rounded-lg border-2 ${color.border} flex items-end p-2.5 shadow-sm`}
-                      style={{ backgroundColor: color.hex }}
-                    >
-                      <span className={`text-[11px] font-mono font-black ${color.textClass}`}>
-                        {color.hex}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="font-heading text-sm font-bold text-white">
-                        {color.name}
-                      </h3>
-                      <p className="text-[11px] text-muted font-mono mt-0.5">
-                        {color.role}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </Reveal>
-
-          {/* =====================================================================
-              CARD C: TYPOGRAPHY
-              ===================================================================== */}
-          <Reveal delay={120}>
-            <Card tilt={false} className="p-6 sm:p-8 md:p-10 border-white/10 bg-[#121214]">
-              <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5">
-                  <Type size={20} className="text-accent" />
-                </div>
-                <div>
-                  <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider">
-                    MODULE C
+                <div className="flex items-baseline justify-between gap-4 border-b border-white/10 pb-3.5">
+                  <span className="text-xs font-mono text-neutral-500">Qualifications</span>
+                  <span className="font-mono text-xs sm:text-sm text-neutral-200">
+                    SSC (9–10) · HSSC (11–12)
                   </span>
-                  <h2 className="font-heading text-xl sm:text-2xl font-black text-white">
-                    Typography Hierarchy
-                  </h2>
                 </div>
-              </div>
-
-              <div className="mt-6 grid gap-6 md:grid-cols-2">
-                {/* Space Grotesk */}
-                <div className="rounded-xl border border-white/15 bg-[#0A0A0A] p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-heading font-black text-white text-base">
-                      Space Grotesk
-                    </span>
-                    <span className="rounded bg-accent/20 border border-accent/30 px-2 py-0.5 text-[10px] font-mono font-bold text-accent">
-                      WEIGHT 800 (EXTRA-BOLD)
-                    </span>
-                  </div>
-
-                  <p className="font-heading text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
-                    Board Strategies, Not Textbook Notes.
-                  </p>
-
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/5 font-heading text-xs text-white/70 space-y-1">
-                    <p className="font-bold">ABCDEFGHIJKLM NOPQRSTUVWXYZ</p>
-                    <p className="font-bold">abcdefghijklm nopqrstuvwxyz 0123456789</p>
-                  </div>
-
-                  <p className="text-xs text-muted leading-relaxed font-sans">
-                    Used for brand headers, 3D block lettering, and diagnostic punchlines.
-                  </p>
-                </div>
-
-                {/* Inter */}
-                <div className="rounded-xl border border-white/15 bg-[#0A0A0A] p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-sans font-bold text-white text-base">
-                      Inter
-                    </span>
-                    <span className="rounded bg-white/10 border border-white/15 px-2 py-0.5 text-[10px] font-mono text-white/90">
-                      WEIGHT 400 &bull; 500 &bull; 600
-                    </span>
-                  </div>
-
-                  <p className="font-sans text-sm sm:text-base text-muted/95 leading-[1.8]">
-                    Practical strategies for preparing smarter, writing cleaner papers, and
-                    handling exam day without turning your brain into a microwave.
-                  </p>
-
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/5 font-sans text-xs text-white/70 space-y-1">
-                    <p>The quick brown fox jumps over the lazy dog.</p>
-                    <p>Mathematical fractions, numerical units (N, J, W, m/s²), and steps.</p>
-                  </div>
-
-                  <p className="text-xs text-muted leading-relaxed font-sans">
-                    Engineered for high editorial legibility and Pakistani matric exam analysis.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Reveal>
-
-          {/* =====================================================================
-              CARD D: 3D RULES & GPU PERFORMANCE
-              ===================================================================== */}
-          <Reveal delay={160}>
-            <Card tilt={false} depth="yellow" className="p-6 sm:p-8 md:p-10 border-accent/30 bg-[#121214]">
-              <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/40 bg-accent/15">
-                  <Layers size={20} className="text-accent" />
-                </div>
-                <div>
-                  <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider">
-                    MODULE D
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-xs font-mono text-neutral-500">Boards Covered</span>
+                  <span className="font-mono text-xs sm:text-sm text-neutral-200">
+                    Punjab Boards &amp; FBISE
                   </span>
-                  <h2 className="font-heading text-xl sm:text-2xl font-black text-white">
-                    3D Isometric Rules &amp; Performance Law
-                  </h2>
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 text-xs">
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-4 space-y-1.5">
-                  <div className="font-heading font-black text-accent text-sm flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> 1. Perspective 1000px
-                  </div>
-                  <p className="text-muted leading-relaxed">
-                    Always anchor parent containers with <code>perspective: 1000px</code> and{" "}
-                    <code>transform-style: preserve-3d</code> for authentic physical camera depth.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-4 space-y-1.5">
-                  <div className="font-heading font-black text-accent text-sm flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> 2. Hard Brutalist Shadow
-                  </div>
-                  <p className="text-muted leading-relaxed">
-                    Use hard offsets (<code>6px 6px 0px #000000</code>) coupled with warm kinetic yellow
-                    aura glows (<code>0 0 40px rgba(255,214,10,0.5)</code>).
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-4 space-y-1.5">
-                  <div className="font-heading font-black text-accent text-sm flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> 3. Mobile-First GPU Rule
-                  </div>
-                  <p className="text-muted leading-relaxed">
-                    Disable continuous rotation animations on mobile viewports. Retain <code>translateZ</code>{" "}
-                    elevations only to guarantee 60fps on budget devices.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-4 space-y-1.5">
-                  <div className="font-heading font-black text-accent text-sm flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> 4. Rounded 10px&ndash;16px
-                  </div>
-                  <p className="text-muted leading-relaxed">
-                    Maintain friendly physical toy block corners (8px&ndash;10px for nav, 28px&ndash;34px
-                    for large 200px displays). Never sharp 90&deg; cutouts.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-4 space-y-1.5">
-                  <div className="font-heading font-black text-accent text-sm flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> 5. Physical Tap Response
-                  </div>
-                  <p className="text-muted leading-relaxed">
-                    Interactive buttons and logos must depress on active (<code>active:scale-95</code> and{" "}
-                    <code>translateZ(5px)</code>) simulating real mechanical switches.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-4 space-y-1.5">
-                  <div className="font-heading font-black text-accent text-sm flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> 6. Dual-Side Extrusions
-                  </div>
-                  <p className="text-muted leading-relaxed">
-                    Construct right side with <code>#CCAA00</code> (skewY 45&deg;) and bottom side with{" "}
-                    <code>#997F00</code> (skewX 45&deg;) for consistent sunlit geometry.
-                  </p>
-                </div>
+              <div className="relative z-10 border-t border-white/10 pt-4 text-xs font-mono text-neutral-400">
+                Independent student platform · Not an official board portal
               </div>
-            </Card>
-          </Reveal>
-
-          {/* =====================================================================
-              CARD E: USAGE APPLICATIONS
-              ===================================================================== */}
-          <Reveal delay={200}>
-            <Card tilt={false} className="p-6 sm:p-8 md:p-10 border-white/10 bg-[#121214]">
-              <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5">
-                  <Smartphone size={20} className="text-accent" />
-                </div>
-                <div>
-                  <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider">
-                    MODULE E
-                  </span>
-                  <h2 className="font-heading text-xl sm:text-2xl font-black text-white">
-                    Touchpoint Applications
-                  </h2>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {/* 1. WhatsApp DP */}
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-5 text-center flex flex-col items-center">
-                  <div className="h-20 w-20 rounded-full border-2 border-accent bg-[#0A0A0A] flex items-center justify-center shadow-brutalist-yellow">
-                    <Logo size="sm" hideText={true} />
-                  </div>
-                  <h3 className="mt-4 font-heading font-bold text-white text-sm">
-                    WhatsApp DP
-                  </h3>
-                  <p className="mt-1 text-[11px] text-muted font-mono">
-                    Circular 1:1 format for student helpline
-                  </p>
-                </div>
-
-                {/* 2. Favicon */}
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-5 text-center flex flex-col items-center">
-                  <div className="h-16 w-16 rounded-xl border border-white/20 bg-white/5 flex items-center justify-center">
-                    <div className="h-8 w-8 rounded-lg bg-[#FFD60A] border-2 border-black flex items-center justify-center font-heading font-black text-black text-xs shadow-sm">
-                      M
-                    </div>
-                  </div>
-                  <h3 className="mt-4 font-heading font-bold text-white text-sm">
-                    Browser Favicon
-                  </h3>
-                  <p className="mt-1 text-[11px] text-muted font-mono">
-                    32x32px high-visibility tab icon
-                  </p>
-                </div>
-
-                {/* 3. Merchandise / T-Shirt */}
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-5 text-center flex flex-col items-center">
-                  <div className="h-20 w-full rounded-xl border border-white/10 bg-[#161618] flex items-center justify-center px-2">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-black">
-                      <span className="h-3.5 w-3.5 rounded bg-[#FFD60A] border border-black flex items-center justify-center text-[8px] font-black text-black">
-                        M
-                      </span>
-                      <span className="font-heading text-[10px] font-bold text-white tracking-wider">
-                        MATRIC MASTERY
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="mt-4 font-heading font-bold text-white text-sm">
-                    Merch &amp; Apparel
-                  </h3>
-                  <p className="mt-1 text-[11px] text-muted font-mono">
-                    Chest print for topper community wear
-                  </p>
-                </div>
-
-                {/* 4. Social Thumbnail */}
-                <div className="rounded-xl border border-white/10 bg-[#0A0A0A] p-5 text-center flex flex-col items-center">
-                  <div className="h-20 w-full rounded-xl border border-white/10 bg-gradient-to-tr from-black via-[#141416] to-[#252528] flex items-center justify-between px-3">
-                    <Logo size="sm" hideText={true} />
-                    <span className="text-[9px] font-mono text-accent font-bold">
-                      BISE MULTAN
-                    </span>
-                  </div>
-                  <h3 className="mt-4 font-heading font-bold text-white text-sm">
-                    Social &amp; YouTube
-                  </h3>
-                  <p className="mt-1 text-[11px] text-muted font-mono">
-                    16:9 watermarks and stream badges
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Reveal>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* =========================================================================
-          FOUNDER STORY: HEY, I AM HAMZA
-          ========================================================================= */}
-      <div className="border-t border-white/10 pt-10 sm:pt-16 md:pt-24">
-        <div className="grid items-center gap-8 sm:gap-12 md:grid-cols-2">
-          <Reveal>
-            <p className="font-heading text-xs font-black uppercase tracking-[0.15em] text-accent">
-              THE CREATOR
-            </p>
-            <h2 className="mt-3 font-heading type-title text-white">
-              Hey, I am Hamza.
-            </h2>
-            <p className="mt-6 leading-relaxed text-muted">
-              I am a 10th grader from Multan, sitting the same Punjab Board
-              papers you are. Not a teacher, not an academy owner, not anyone
-              with a course to sell you.
-            </p>
-            <p className="mt-4 leading-relaxed text-muted">
-              Matric Mastery started because I kept noticing the same pattern:
-              students who knew the content just as well as the toppers were
-              still scoring lower, purely because of how their papers looked
-              and how their time was managed on the day.
-            </p>
-            <p className="mt-4 leading-relaxed text-muted">
-              My mission with this website is simple. Take everything I
-              figured out the hard way, comparing checked papers, asking
-              annoying questions to seniors, and messing up my own first
-              attempts, and hand it to you before your paper instead of after.
-            </p>
-          </Reveal>
-          <Reveal delay={120}>
-            <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 shadow-soft">
-              <Image
-                src="https://picsum.photos/seed/matric-about/700/800"
-                alt="A student at a classroom desk in Multan"
-                width={700}
-                height={800}
-                className="h-full w-full object-cover grayscale-[15%] contrast-[1.05]"
-              />
-            </div>
-          </Reveal>
-        </div>
-
-        {/* Have a Doubt Contact Form */}
-        <Reveal delay={80}>
-          <Card shimmer tilt={false} depth="yellow" className="mt-10 sm:mt-16 md:mt-20 p-5 sm:p-8 md:p-12 border-accent/40 bg-[#121214] shadow-brutalist-yellow">
-            <h3 className="font-heading text-2xl font-extrabold text-white md:text-3xl">Have a Doubt?</h3>
-            <p className="mt-2 max-w-md text-muted">
-              Send it across and it goes straight to my official WhatsApp (+92 308 4703973). I read
-              everything myself.
-            </p>
-            <ContactForm />
-          </Card>
-        </Reveal>
-
-        {/* WhatsApp Direct CTA */}
+      {/* =====================================================================
+          2. OUR MISSION & ACADEMIC SCOPE EXPLORER
+         ===================================================================== */}
+      <section className="mx-auto max-w-site px-5 sm:px-6 lg:px-8 py-16 sm:py-24 border-t border-white/10">
         <Reveal>
-          <div className="mt-10 sm:mt-16 rounded-2xl sm:rounded-3xl border border-white/10 card-surface p-6 sm:p-10 text-center shadow-soft">
-            <p className="font-heading text-xl font-bold text-white md:text-2xl">
-              Still stuck on something? Just message me directly.
-            </p>
-            <div className="mt-6 flex justify-center">
-              <Button href={whatsappLink()} variant="primary">
-                Chat On WhatsApp
-              </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+            <div className="lg:col-span-5 space-y-5">
+              <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-accent">
+                <Compass size={14} />
+                <span>Our Mission</span>
+              </div>
+              <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white tracking-tight">
+                {ABOUT_PLATFORM_IDENTITY.missionHeadline}
+              </h2>
+              <p className="text-base leading-relaxed text-neutral-300">
+                {ABOUT_PLATFORM_IDENTITY.missionBody}
+              </p>
+            </div>
+
+            {/* Interactive Academic Scope Switcher */}
+            <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#0E0E12] p-5 sm:p-7 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+                <div>
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-neutral-400">
+                    Academic Scope
+                  </span>
+                  <h3 className="font-heading text-lg font-bold text-white">
+                    Who Matric Mastery Serves
+                  </h3>
+                </div>
+                <span className="font-mono text-xs text-accent">
+                  Select a track
+                </span>
+              </div>
+
+              {/* Segmented Track Selector */}
+              <div
+                role="tablist"
+                aria-label="Academic Scope Tracks"
+                className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              >
+                {ACADEMIC_SCOPE_PANELS.map((panel) => {
+                  const isActive = panel.id === activeScopeId;
+                  return (
+                    <button
+                      key={panel.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setActiveScopeId(panel.id)}
+                      className={`rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer min-h-[52px] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                        isActive
+                          ? "border-accent bg-accent/10 text-white"
+                          : "border-white/10 bg-[#141418] text-neutral-400 hover:border-white/25 hover:text-neutral-200"
+                      }`}
+                    >
+                      <div
+                        className={`font-mono text-[10px] ${
+                          isActive ? "text-accent" : "text-neutral-500"
+                        }`}
+                      >
+                        {panel.tag}
+                      </div>
+                      <div className="font-heading text-xs sm:text-sm font-bold truncate mt-0.5">
+                        {panel.id.toUpperCase()}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active Scope Details */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeScope.id}
+                  role="tabpanel"
+                  initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.18,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  className="space-y-4 pt-1"
+                >
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-neutral-400">
+                    <span className="text-accent font-semibold">
+                      {activeScope.tag}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span>{activeScope.subtitle}</span>
+                  </div>
+
+                  <h4 className="font-heading text-xl sm:text-2xl font-bold text-white">
+                    {activeScope.title}
+                  </h4>
+
+                  <p className="text-sm sm:text-base leading-relaxed text-neutral-300">
+                    {activeScope.summary}
+                  </p>
+
+                  <ul className="space-y-2 pt-2 border-t border-white/10">
+                    {activeScope.focusPoints.map((pt) => (
+                      <li
+                        key={pt}
+                        className="flex items-start gap-2.5 text-sm text-neutral-300"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="mt-2 h-1.5 w-1.5 rounded-full bg-accent shrink-0"
+                        />
+                        <span>{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </Reveal>
-      </div>
+      </section>
+
+      {/* =====================================================================
+          3. WHAT THE PLATFORM OFFERS
+         ===================================================================== */}
+      <section className="mx-auto max-w-site px-5 sm:px-6 lg:px-8 py-16 sm:py-24 border-t border-white/10">
+        <Reveal>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div className="max-w-2xl space-y-3">
+              <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-accent">
+                <BookOpen size={14} />
+                <span>What the Platform Offers</span>
+              </div>
+              <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white tracking-tight">
+                Live Modules Engineered for Real Preparation.
+              </h2>
+              <p className="text-sm sm:text-base text-neutral-400 leading-relaxed">
+                Every feature below is currently active on Matric Mastery and designed to work smoothly across mobile phones and desktop screens.
+              </p>
+            </div>
+
+            {/* Category Filter Buttons */}
+            <div
+              role="group"
+              aria-label="Filter platform offerings"
+              className="flex flex-wrap gap-1.5 rounded-xl border border-white/10 bg-[#0E0E12] p-1 self-start"
+            >
+              {OFFERING_FILTERS.map((cat) => {
+                const isSelected = offeringFilter === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setOfferingFilter(cat)}
+                    className={`rounded-lg px-3 py-2 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer min-h-[38px] ${
+                      isSelected
+                        ? "bg-accent text-black font-bold"
+                        : "text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </Reveal>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {visibleOfferings.map((item, idx) => (
+            <Reveal key={item.id} delay={idx * 35}>
+              <Link
+                href={item.href}
+                className="group h-full flex flex-col justify-between rounded-2xl border border-white/10 bg-[#0E0E12] p-6 hover:border-accent/45 hover:bg-[#131318] transition-colors"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 text-xs font-mono">
+                    <span className="text-accent">{item.category}</span>
+                    <span className="inline-flex items-center gap-1 text-neutral-500 group-hover:text-accent transition-colors">
+                      <span>{item.routeLabel}</span>
+                      <ArrowUpRight size={14} />
+                    </span>
+                  </div>
+
+                  <h3 className="font-heading text-xl font-bold text-white group-hover:text-accent transition-colors">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-sm text-neutral-300 leading-relaxed">
+                    {item.summary}
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-white/10 text-xs font-mono text-neutral-400 leading-relaxed">
+                  {item.availabilityNote}
+                </div>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* =====================================================================
+          4. WHO IS BEHIND IT? (Brief Spotlight Linking to /my-story)
+         ===================================================================== */}
+      <section className="mx-auto max-w-site px-5 sm:px-6 lg:px-8 py-16 sm:py-24 border-t border-white/10">
+        <Reveal>
+          <div className="rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/[0.06] via-[#0E0E12] to-[#0A0A0D] p-6 sm:p-10 lg:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-8 space-y-4">
+                <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-accent">
+                  <UserCheck size={14} />
+                  <span>Who Is Behind It?</span>
+                </div>
+
+                <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                  Founded and Directed by{" "}
+                  <span className="text-accent">{FOUNDER_PROFILE.name}</span>.
+                </h2>
+
+                <p className="text-base leading-relaxed text-neutral-300 max-w-2xl">
+                  Matric Mastery was created by {FOUNDER_PROFILE.name}, a student founder and independent product creator focused on building honest, practical academic technology for Pakistani board students—directing product planning, content writing, and syllabus organization across Classes 9–12.
+                </p>
+
+                <div className="pt-2">
+                  <Button href="/my-story" variant="primary" className="min-h-[44px]">
+                    <span>Read Full Story on Behind the Platform</span>
+                    <ArrowRight size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="lg:col-span-4 rounded-xl border border-white/10 bg-[#0B0B0E] p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 font-heading text-lg font-extrabold text-accent shrink-0">
+                    {FOUNDER_PROFILE.monogram}
+                  </div>
+                  <div>
+                    <div className="font-heading text-base font-bold text-white">
+                      {FOUNDER_PROFILE.name}
+                    </div>
+                    <div className="font-mono text-xs text-neutral-400">
+                      {FOUNDER_PROFILE.role}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed border-t border-white/10 pt-3">
+                  Explore the complete founder narrative, platform evolution stages, system blueprint, and full credits on the dedicated Behind the Platform experience.
+                </p>
+                <Link
+                  href="/my-story"
+                  className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-accent hover:underline"
+                >
+                  <span>Go to Behind the Platform (/my-story)</span>
+                  <ArrowUpRight size={13} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* =====================================================================
+          5. TECHNOLOGY & DEVELOPMENT OVERVIEW
+         ===================================================================== */}
+      <section className="mx-auto max-w-site px-5 sm:px-6 lg:px-8 py-16 sm:py-24 border-t border-white/10">
+        <Reveal>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div className="max-w-2xl space-y-3">
+              <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-accent">
+                <Layers size={14} />
+                <span>Technology &amp; Development</span>
+              </div>
+              <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white tracking-tight">
+                Modern Web &amp; Serverless Stack.
+              </h2>
+              <p className="text-sm sm:text-base text-neutral-400 leading-relaxed">
+                Built using lightweight modern web software and free-first edge infrastructure, keeping human product authorship distinct from AI-assisted coding tools.
+              </p>
+            </div>
+
+            <Link
+              href="/my-story"
+              className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-accent hover:underline whitespace-nowrap shrink-0 min-h-[44px]"
+            >
+              <span>Inspect Interactive Stack Blueprint</span>
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+        </Reveal>
+
+        <div className="rounded-2xl border border-white/10 bg-[#0E0E12] divide-y divide-white/10 overflow-hidden">
+          {TECH_ECOSYSTEM_OVERVIEW.map((item, idx) => (
+            <Reveal key={item.name} delay={idx * 30}>
+              <div className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 items-start">
+                <div className="md:col-span-4 flex items-center gap-3">
+                  <span className="font-mono text-xs text-accent tabular-nums">
+                    0{idx + 1}
+                  </span>
+                  <div>
+                    <div className="font-heading text-base font-bold text-white">
+                      {item.name}
+                    </div>
+                    <div className="font-mono text-xs text-neutral-400">
+                      {item.role}
+                    </div>
+                  </div>
+                </div>
+                <div className="md:col-span-8 text-sm text-neutral-300 leading-relaxed">
+                  {item.detail}
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* =====================================================================
+          6. INDEPENDENCE & TRANSPARENCY
+         ===================================================================== */}
+      <section className="mx-auto max-w-site px-5 sm:px-6 lg:px-8 pt-10 pb-20 sm:pt-14 sm:pb-28 border-t border-white/10">
+        <Reveal>
+          <div className="rounded-2xl border border-white/10 bg-[#0E0E12] p-6 sm:p-10 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck size={20} className="text-accent shrink-0" />
+                <h2 className="font-heading text-xl sm:text-2xl font-bold text-white">
+                  Independence &amp; Transparency
+                </h2>
+              </div>
+              <span className="font-mono text-xs text-neutral-400">
+                Public Verification Standard
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm sm:text-base text-neutral-300 leading-relaxed">
+              <p>
+                Matric Mastery is an <strong className="text-white">independent student-focused educational technology platform</strong> founded by Abdul Wahab. It is not affiliated with, operated by, or endorsed by the Government of Pakistan, PECTAA, PBCC, FBISE, or any Punjab Board of Intermediate and Secondary Education (BISE).
+              </p>
+              <p>
+                Examination dates, paper patterns, and board advisories are cross-checked against public official board announcements before publication, and unconfirmed schedules are explicitly marked as awaiting confirmation. Google AI Studio / Gemini serves strictly as an AI-assisted development tool; Google does not own, sponsor, or endorse Matric Mastery.
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-white/10 flex flex-wrap items-center gap-4 text-xs font-mono">
+              <Link
+                href="/my-story"
+                className="inline-flex items-center gap-1.5 text-accent font-semibold hover:underline min-h-[44px]"
+              >
+                <Cpu size={14} />
+                <span>Behind the Platform &amp; Full Credits</span>
+              </Link>
+              <span aria-hidden="true" className="text-neutral-700">
+                ·
+              </span>
+              <Link
+                href="/legal"
+                className="inline-flex items-center gap-1.5 text-neutral-300 hover:text-white hover:underline min-h-[44px]"
+              >
+                <span>Legal &amp; Policies Center</span>
+                <ArrowUpRight size={13} />
+              </Link>
+              <span aria-hidden="true" className="text-neutral-700">
+                ·
+              </span>
+              <Link
+                href="/board-watch"
+                className="inline-flex items-center gap-1.5 text-neutral-300 hover:text-white hover:underline min-h-[44px]"
+              >
+                <span>Official Board Portals Directory</span>
+                <ArrowUpRight size={13} />
+              </Link>
+            </div>
+          </div>
+        </Reveal>
+      </section>
     </div>
   );
 }

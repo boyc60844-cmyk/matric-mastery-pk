@@ -79,10 +79,12 @@ function PageRenderer() {
       document.title = "Matric Mastery Study Tools & Utilities | Precision Academic Toolkit";
     } else if (cleanPath === "/strategies" || cleanPath === "/strategy" || cleanPath.startsWith("/strategies/") || cleanPath.startsWith("/strategy/")) {
       document.title = "Matric Mastery Exam Strategies | 30+ Subject Playbooks";
-    } else if (cleanPath === "/my-story") {
-      document.title = "My Story & Verification | Matric Mastery PK";
+    } else if (cleanPath === "/my-story" || cleanPath === "/start-here" || cleanPath === "/results") {
+      document.title = "Behind the Platform — Abdul Wahab | Matric Mastery";
     } else if (cleanPath === "/guide" || cleanPath === "/website-guide" || cleanPath === "/platform-guide" || cleanPath === "/directory" || cleanPath === "/site-guide") {
       document.title = "Matric Mastery Website Guide | Complete Platform Directory & Orientation";
+    } else if (cleanPath === "/about" || cleanPath === "/contact") {
+      document.title = "About Matric Mastery | Independent Academic Platform (Classes 9–12)";
     } else if (cleanPath === "/legal" || cleanPath === "/terms" || cleanPath === "/privacy" || cleanPath === "/policies") {
       document.title = "Legal & Policies Center | Matric Mastery PK";
     } else {
