@@ -30,7 +30,9 @@ import {
   Target,
   FileSignature,
   Sparkles,
+  ScanLine,
 } from "lucide-react";
+import ESheetGuideSection from "@/components/board-watch/ESheetGuideSection";
 import {
   PUNJAB_BOARDS,
   PBCC_INFO,
@@ -49,7 +51,7 @@ import {
 export default function BoardWatchPage() {
   // Navigation & Filter state
   const [activeTab, setActiveTab] = useState<
-    "stream" | "timeline" | "patterns" | "boards" | "rumors" | "workflow"
+    "stream" | "esheets" | "timeline" | "patterns" | "boards" | "rumors" | "workflow"
   >("stream");
   const [selectedTopic, setSelectedTopic] = useState<BoardWatchTopic | "all">("all");
   const [selectedCategory, setSelectedCategory] = useState<BoardWatchCategory | "all">("all");
@@ -69,7 +71,7 @@ export default function BoardWatchPage() {
   const [userSubmissionText, setUserSubmissionText] = useState("");
   const [userSubmissionSubmitted, setUserSubmissionSubmitted] = useState(false);
 
-  const lastCheckedTimestamp = "15 November 2026";
+  const lastCheckedTimestamp = "18 November 2026";
 
   // Patterns filtered cleanly by selected class (never mixing grades)
   const classFilteredPatterns = useMemo(
@@ -254,7 +256,7 @@ export default function BoardWatchPage() {
                 name: "When do Punjab Board Annual 2027 Matric examinations start?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "Under PBCC notification dated 10 November 2026, SSC Part-II (Class 10) First Annual Examination 2027 starts on 16 March 2027 with results scheduled for 20 July 2027. A confirmed Class 9 (SSC Part-I) 2027 exam start date is still awaited.",
+                  text: "News coverage (Dunya News and ProPakistani, 14 November 2026) cites PBCC indicating SSC Part-II (Class 10) First Annual Examination 2027 starts on 16 March 2027 with results indicated for 20 July 2027; however, a finalized subject-wise date sheet and direct signed PBCC circular PDF are still awaited. A confirmed Class 9 (SSC Part-I) 2027 start date is also awaited.",
                 },
               },
               {
@@ -279,6 +281,22 @@ export default function BoardWatchPage() {
                 acceptedAnswer: {
                   "@type": "Answer",
                   text: "Verify Punjab notices on your own BISE portal (biselahore.com, bisegrw.edu.pk, bisefsd.edu.pk, biserawalpindi.edu.pk, web.bisemultan.edu.pk, bisesargodha.edu.pk, bisebwp.edu.pk, bisedgkhan.edu.pk, bisesahiwal.edu.pk) and Federal Board notices strictly on fbise.edu.pk.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Are Punjab Board E-Sheet exams conducted online on computers?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "No. Students still write answers by hand with a pen in physical exam centres on structured, barcode/QR-coded E-Sheets. Boards then scan the booklets for digital On-Screen Marking (OSM) by human subject examiners.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Do Punjab Boards and FBISE follow the same E-Sheet rules?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "No. FBISE has operated E-Sheets since 2018 with its own SLO papers and sample booklets on fbise.edu.pk/screen_marking.php. Punjab BISEs issue their own OSM booklets and candidate SOPs (such as BISE D.G. Khan, Lahore, Multan, and Gujranwala) with reported plans to expand to 4 science subjects in 2027.",
                 },
               },
             ],
@@ -330,13 +348,22 @@ export default function BoardWatchPage() {
                 </h1>
 
                 <p className="mt-2 text-xs sm:text-sm text-muted max-w-3xl leading-relaxed">
-                  Verified examination schedules, 2027 PECTAA paper patterns and pairing schemes,
-                  IBCC 40% passing &amp; 10-point grading policy, admission portals, board reforms,
-                  and FBISE updates for Class 9–12 students.
+                  Verified examination schedules, Punjab &amp; FBISE E-Sheet &amp; On-Screen Marking
+                  guides, 2027 PECTAA paper patterns and pairing schemes, IBCC 40% passing &amp;
+                  10-point grading policy, and admission portals for Class 9–12 students.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("esheets")}
+                  className="flex items-center gap-2 rounded-xl bg-accent px-3.5 py-2 text-xs font-heading font-black text-black hover:bg-amber-300 transition-all cursor-pointer shadow-glow"
+                >
+                  <ScanLine size={14} />
+                  <span>E-Sheet Guide</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setActiveTab("patterns")}
@@ -446,6 +473,19 @@ export default function BoardWatchPage() {
 
               <button
                 type="button"
+                onClick={() => setActiveTab("esheets")}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
+                  activeTab === "esheets"
+                    ? "border-accent text-accent bg-accent/5"
+                    : "border-transparent text-accent/90 hover:text-accent"
+                }`}
+              >
+                <ScanLine size={14} />
+                <span>E-Sheet Guide (Punjab &amp; FBISE)</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab("patterns")}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                   activeTab === "patterns"
@@ -540,6 +580,43 @@ export default function BoardWatchPage() {
                 })}
               </div>
 
+              {/* SPOTLIGHT CALLOUT: E-SHEET GUIDE HUB */}
+              <div className="rounded-2xl border border-accent/30 bg-gradient-to-r from-accent/[0.08] via-[#141418] to-sky-950/20 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-accent/15 border border-accent/30 p-2.5 text-accent shrink-0">
+                    <ScanLine size={18} />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono">
+                      <span className="rounded bg-accent px-1.5 py-0.5 font-black text-black">
+                        NEW RESOURCE
+                      </span>
+                      <span className="text-sky-300 font-bold">
+                        PUNJAB &amp; FBISE COVERED SEPARATELY
+                      </span>
+                    </div>
+                    <h2 className="font-heading text-sm sm:text-base font-bold text-white">
+                      E-Sheet Guide — How the New On-Screen Marking System Works
+                    </h2>
+                    <p className="text-xs text-zinc-300 leading-relaxed max-w-2xl">
+                      Inspect board-specific CS E-Sheet &amp; OSM pilots (BISE Multan, Lahore &amp;
+                      D.G. Khan SOPs), 2027 4-science-subject reported plans, stationery attribution,
+                      14 mark-loss safeguards, interactive placement visuals, and FBISE&apos;s
+                      separate E-Sheet portal.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("esheets")}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-heading font-black text-black hover:bg-amber-300 transition-colors shrink-0 self-start md:self-center cursor-pointer"
+                >
+                  <span>Open E-Sheet Guide</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+
               {/* FILTERING & SEARCH CONTROLS BAR */}
               <div className="rounded-2xl border border-white/10 bg-[#121216] p-4 space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -549,7 +626,7 @@ export default function BoardWatchPage() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search 16 March 2027, PECTAA No. 1257, 40% passing marks, IBCC, BISE Multan, FBISE..."
+                      placeholder="Search E-Sheet, OSM, 16 March 2027, PECTAA No. 1257, 40% passing marks, IBCC, FBISE..."
                       className="w-full rounded-xl border border-white/15 bg-black/60 pl-9 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-muted focus:border-accent focus:outline-none"
                     />
                     {searchQuery && (
@@ -684,7 +761,7 @@ export default function BoardWatchPage() {
                       sectionKey: "current",
                       heading: "Current 2026–2027 Examination Updates, Policies & Syllabi",
                       subheading:
-                        "Verified schedules, PECTAA ALP & pairing schemes, IBCC 40% passing & grading rules, admissions, reforms, and FBISE notices as of 15 November 2026.",
+                        "Verified schedules, E-Sheet & OSM updates, PECTAA ALP & pairing schemes, IBCC 40% passing & grading rules, admissions, and FBISE notices (cutoff: 18 November 2026).",
                       items: filteredEntries.filter((e) => !e.isHistorical),
                     },
                     {
@@ -912,7 +989,19 @@ export default function BoardWatchPage() {
           )}
 
           {/* ============================================================
-              TAB 2: EXPECTED / CONFIRMED 2027 MILESTONES
+              TAB 2: DEDICATED E-SHEET GUIDE (PUNJAB BOARDS & FBISE)
+              ============================================================ */}
+          {activeTab === "esheets" && (
+            <ESheetGuideSection
+              onOpenNewsFilter={() => {
+                setActiveTab("stream");
+                setSelectedTopic("e-sheets");
+              }}
+            />
+          )}
+
+          {/* ============================================================
+              TAB 3: EXPECTED / CONFIRMED 2027 MILESTONES
               ============================================================ */}
           {activeTab === "timeline" && (
             <div className="space-y-6">
@@ -924,9 +1013,11 @@ export default function BoardWatchPage() {
                       2027 Examination Schedule &amp; Milestones (As of 15 November 2026)
                     </h2>
                     <p className="mt-1 text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                      Confirmed PBCC Class 10 Matric 2027 dates (16 March 2027 exam start, 20 July
-                      2027 result, 10 Nov–11 Jan registration) paired transparently with milestones
-                      still awaiting confirmation (Class 9 start date and 2027 Intermediate schedule).
+                      Reported Class 10 Matric 2027 dates (16 March 2027 indicated exam start and 20
+                      July 2027 indicated result from news reports citing PBCC, alongside admission
+                      registration windows) paired transparently with milestones still awaiting
+                      finalized circulars (final Class 10 date sheet, Class 9 start date, and 2027
+                      Intermediate schedule).
                     </p>
                     <div className="mt-3">
                       <Link
@@ -1406,7 +1497,7 @@ export default function BoardWatchPage() {
                   <AlertTriangle size={20} className="text-rose-400 shrink-0 mt-0.5" />
                   <div>
                     <h2 className="font-heading text-lg font-bold text-white">
-                      Clarifications &amp; Unconfirmed Items Watch (15 November 2026)
+                      Clarifications &amp; Unconfirmed Items Watch (18 November 2026)
                     </h2>
                     <p className="mt-1 text-xs sm:text-sm text-zinc-300 leading-relaxed">
                       All stale rumour cards from past cycles have been removed. Below are the exact
@@ -1420,15 +1511,16 @@ export default function BoardWatchPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div className="rounded-2xl border border-amber-500/25 bg-[#141416] p-5 space-y-2">
                   <span className="inline-block font-mono text-[10px] font-bold text-amber-300 uppercase">
-                    Awaiting Confirmation · Class 9 (SSC-I)
+                    Reported Schedule Clarity · Class 9 vs Class 10
                   </span>
                   <h3 className="font-heading text-base font-bold text-white">
-                    16 March 2027 Applies to Class 10 — NOT Confirmed for Class 9
+                    16 March 2027 Is Reported for Class 10 Only — Final Date Sheet Still Awaited
                   </h3>
                   <p className="text-zinc-300 leading-relaxed">
-                    PBCC&apos;s 10 Nov 2026 announcement confirms Class 10 starts 16 March 2027. Do
-                    not rely on unverified viral claims stating Class 9 starts on 16 March 2027;
-                    await official PBCC / BISE SSC Part-I notification.
+                    News coverage (Dunya News &amp; ProPakistani, 14 Nov 2026) cites PBCC indicating
+                    16 March 2027 for Class 10 only—with direct official signed PBCC circulars and
+                    final subject-wise date sheets still awaited. Neither reported coverage nor
+                    official notices place Class 9 on 16 March 2027.
                   </p>
                 </div>
 
@@ -1465,13 +1557,14 @@ export default function BoardWatchPage() {
                     Passing Marks &amp; E-Marking Clarification
                   </span>
                   <h3 className="font-heading text-base font-bold text-white">
-                    33% No Longer Applies; E-Marking Is Not Uniform Across All Punjab Subjects
+                    33% No Longer Applies; E-Sheets Are Pen-and-Paper (Not Online Exams)
                   </h3>
                   <p className="text-zinc-300 leading-relaxed">
                     Annual 2027 exams require 40% per subject under IBCC&apos;s phased policy.
-                    Meanwhile, IBCC Forum discussions endorsing e-marking do not mean every Punjab
-                    BISE paper is already graded digitally—follow your own board&apos;s OSM notices
-                    (like BISE Lahore Computer Science).
+                    Meanwhile, E-Sheet &amp; On-Screen Marking (OSM) exams remain handwritten in
+                    physical exam halls—and while 2027 4-science-subject expansion was reported on
+                    11 Nov 2026, signed circulars naming all exact Matric vs Inter subjects are still
+                    awaited as of 18 Nov 2026. Never mix FBISE rules with Punjab BISE circulars.
                   </p>
                 </div>
               </div>
@@ -1488,7 +1581,7 @@ export default function BoardWatchPage() {
                   Editorial Verification Standard
                 </span>
                 <h2 className="font-heading text-2xl sm:text-3xl font-black text-white mt-1">
-                  How Board Watch Classifies Updates (Cutoff: 15 November 2026)
+                  How Board Watch Classifies Updates (Cutoff: 18 November 2026)
                 </h2>
                 <p className="mt-2 text-xs sm:text-sm text-zinc-300 leading-relaxed max-w-3xl">
                   Every update is assigned one of six transparent verification labels based directly
@@ -1500,16 +1593,18 @@ export default function BoardWatchPage() {
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 p-5 space-y-2">
                   <h3 className="font-heading font-bold text-emerald-300 text-sm">1. CONFIRMED</h3>
                   <p className="text-zinc-300 leading-relaxed">
-                    Directly backed by official PECTAA/BISE/IBCC/FBISE documents or multiple
-                    corroborated reports citing a dated official circular (e.g., PBCC 10 Nov 2026).
+                    Directly backed by verified official PECTAA, BISE, IBCC, or FBISE PDFs and
+                    official portal notices (e.g., PECTAA No. 1238–1258, BISE Multan HSSC CS 2nd
+                    Annual 2026 notice, BISE Lahore CS AnswerBook PDF).
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-sky-500/30 bg-sky-950/10 p-5 space-y-2">
                   <h3 className="font-heading font-bold text-sky-300 text-sm">2. REPORTED</h3>
                   <p className="text-zinc-300 leading-relaxed">
-                    Reported in credible national media regarding official board forums without a
-                    signed province-wide circular yet issued.
+                    Reported in credible national media regarding official board forums or indicated
+                    exam dates where a direct signed circular PDF or finalized subject date sheet is
+                    still awaited (e.g., 16 March 2027 indicated Matric start, 11 Nov 4-science-subject plan).
                   </p>
                 </div>
 

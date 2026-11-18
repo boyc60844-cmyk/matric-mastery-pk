@@ -8,6 +8,7 @@ export type BoardWatchTopic =
   | "admissions"
   | "practical-exams"
   | "policies-reforms"
+  | "e-sheets"
   | "fbise";
 
 export type BoardWatchStatusLabel =
@@ -162,6 +163,7 @@ export const BOARD_WATCH_TOPIC_FILTERS: { id: BoardWatchTopic | "all"; label: st
   { id: "passing-grading", label: "Passing Marks & Grading" },
   { id: "admissions", label: "Admissions & Registration" },
   { id: "practical-exams", label: "Practical Exams" },
+  { id: "e-sheets", label: "E-Sheets & On-Screen Marking" },
   { id: "policies-reforms", label: "Board Policies & Reforms" },
   { id: "fbise", label: "FBISE Updates" },
 ];
@@ -179,7 +181,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     notificationsUrl: "https://www.biselahore.com/notifications",
     admissionPortalUrl: "https://www.biselahore.com/notifications",
     portalObservation:
-      "Verified 15 Nov 2026: Live notifications page hosts 9th Private Registration Schedule 1st Annual 2027 and Computer Science (OSM) Answer Book pattern.",
+      "Verified 18 Nov 2026: Official portal hosts Computer Science (OSM) Answer Book PDF, Student & Teacher On-Screen Marking video tutorial (via biselahore.com/#osm / YouTube @Lahore-Board-Official), and 9th Private Registration Schedule 1st Annual 2027.",
     headquarters: "86-Mozang Road, Lahore",
     districts: ["Lahore", "Kasur", "Sheikhupura", "Nankana Sahib"],
     helpline: "+92 42 99200192-97",
@@ -209,7 +211,7 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     notificationsUrl: "https://web.bisemultan.edu.pk/admission-matric/",
     admissionPortalUrl: "https://student.bisemultan.edu.pk/",
     portalObservation:
-      'Verified 15 Nov 2026: Online admission portal showed "No Active Schedule Available !" for 10th / Combined, 9th Fresh, 11th Fresh, and 12th / Combined despite published PBCC schedule — check portal activation directly.',
+      'Verified 18 Nov 2026: Events Gallery confirms 17 Nov 2026 all-board Pakistan Post Foundation OSM visit & HSSC 2nd Annual 2026 CS E-Sheet mandate (with specimen & instructional video). Private admission portal earlier displayed "No Active Schedule Available !" on 15 Nov 2026.',
     headquarters: "Gol Bagh, Gulgasht Colony, Multan",
     districts: ["Multan", "Khanewal", "Vehari", "Lodhran"],
     helpline: "+92 61 9210125",
@@ -280,6 +282,8 @@ export const PUNJAB_BOARDS: BoardInfo[] = [
     website: "https://www.bisedgkhan.edu.pk",
     notificationsUrl: "https://www.bisedgkhan.edu.pk",
     admissionPortalUrl: "https://www.bisedgkhan.edu.pk",
+    portalObservation:
+      "Verified 18 Nov 2026: Hosts official 16-point Student SOPs PDF, Centre Superintendent AMS SOPs, and OSM video/brochure for 2nd Annual 2026 Computer Science.",
     headquarters: "Board Complex, Airport Road, D.G. Khan",
     districts: ["Dera Ghazi Khan", "Muzaffargarh", "Layyah", "Rajanpur", "Kot Addu", "Taunsa"],
     helpline: "+92 64 2460114",
@@ -352,25 +356,26 @@ export const EXPECTED_TIMELINE_2027: ExpectedTimelineStage[] = [
   },
   {
     id: "stage-3-matric-class10-exam",
-    phase: "SSC Part-II (Class 10) First Annual Exam 2027 (Confirmed)",
+    phase: "SSC Part-II (Class 10) First Annual Exam 2027 (Reported / Indicated Start)",
     targetGroup: "Class 10 (SSC Part-II) across 9 Punjab BISEs",
-    expectedWindow: "Starts 16 March 2027",
-    baselineYears: "PBCC Notification dated 10 November 2026",
+    expectedWindow: "Reported: 16 March 2027 (Final Date Sheet Awaited)",
+    baselineYears:
+      "Indicated in Dunya News & ProPakistani (14 Nov 2026) reports citing 10 Nov 2026 PBCC meeting",
     description:
-      "Class 10 First Annual Examination 2027 starts on 16 March 2027 across Punjab's nine boards under the 40% passing threshold (IBCC Phase 2) and PECTAA ALP No. 1257.",
+      "National news coverage (Dunya News & ProPakistani) reports 16 March 2027 as the indicated commencement date for Class 10 First Annual Examination 2027 across Punjab's nine boards under PECTAA ALP No. 1257 and IBCC's 40% passing framework. A finalized subject-wise date sheet and direct signed PBCC circular remain awaited.",
     status: "upcoming",
     studentAction:
-      "Align preparation with PECTAA Grade 10 ALP (No. 1257) and ensure at least 40% marks in every subject.",
-    officialSourceToCheck: "Your Own BISE Portal & PECTAA ALP No. 1257",
+      "Align preparation with PECTAA Grade 10 ALP (No. 1257) targeting at least 40% marks per subject, and wait for your BISE's finalized signed date sheet before locking paper-by-paper dates.",
+    officialSourceToCheck: "PBCC & Your Own BISE Official Date Sheet Portal + PECTAA ALP No. 1257",
   },
   {
     id: "stage-4-matric-class9-exam",
     phase: "SSC Part-I (Class 9) First Annual Exam 2027 (Awaiting Date)",
     targetGroup: "Class 9 (SSC Part-I)",
     expectedWindow: "Awaiting Official Confirmation",
-    baselineYears: "Not confirmed in 10 Nov 2026 Class 10 schedule reporting",
+    baselineYears: "Not established in Class 10 schedule coverage or signed BISE circulars",
     description:
-      "No verified Class 9 (SSC Part-I) 2027 commencement date has been confirmed yet. Students must NOT assume Class 9 starts on 16 March 2027.",
+      "No verified Class 9 (SSC Part-I) 2027 commencement date has been published yet. Students must NOT assume Class 9 starts on 16 March 2027.",
     status: "planning-estimate",
     studentAction:
       "Follow PECTAA Grade 9 ALP notifications (No. 1238 & No. 1255) and watch your board's official notifications for SSC Part-I dates.",
@@ -391,15 +396,15 @@ export const EXPECTED_TIMELINE_2027: ExpectedTimelineStage[] = [
   },
   {
     id: "stage-6-matric-result-2027",
-    phase: "Class 10 Annual Exam 2027 Result Declaration (Confirmed)",
+    phase: "Class 10 Annual Exam 2027 Result Declaration (Reported Date)",
     targetGroup: "SSC Part-II (Class 10)",
-    expectedWindow: "20 July 2027",
-    baselineYears: "PBCC Notification dated 10 November 2026",
+    expectedWindow: "Reported: 20 July 2027",
+    baselineYears: "Indicated in 14 Nov 2026 Dunya News & ProPakistani coverage",
     description:
-      "PBCC's 10 November 2026 schedule fixes 20 July 2027 as the result declaration date for SSC Part-II (Class 10) First Annual Examination 2027.",
+      "News reports citing the November 2026 PBCC schedule indicate 20 July 2027 as the expected result declaration date for SSC Part-II (Class 10) First Annual Examination 2027; verify on official BISE result portals after exams.",
     status: "upcoming",
     studentAction:
-      "Check your board's official result portal on 20 July 2027 using your roll number.",
+      "Check your board's official result notification and result portal closer to July 2027 using your roll number.",
     officialSourceToCheck: "Official Punjab BISE Result Portals",
   },
 ];
@@ -410,64 +415,278 @@ export const EXPECTED_TIMELINE_2027: ExpectedTimelineStage[] = [
 // ---------------------------------------------------------------------------
 export const INITIAL_BOARD_WATCH_ENTRIES: BoardWatchEntry[] = [
   // =========================================================================
-  // PART 1 — 2027 MATRIC EXAMINATION SCHEDULE
+  // FEATURED REFORM — E-SHEETS & ON-SCREEN MARKING (VERIFIED 18 NOV 2026)
   // =========================================================================
   {
-    id: "punjab-matric-annual-2027-schedule",
-    headline: "Punjab Announces Matric Annual Examination 2027 Schedule",
+    id: "punjab-boards-pakistan-post-foundation-osm-visit-2026",
+    headline:
+      "Punjab Boards Chairmen & IT Teams Visit Pakistan Post Foundation Islamabad for 2027 OSM Readiness",
     summary:
-      "PBCC notification dated 10 November 2026 confirms Class 10 (SSC Part-II) First Annual exams start on 16 March 2027, results release on 20 July 2027, and admission forms run from 10 November 2026 to 11 January 2027 across all 9 Punjab BISEs.",
+      "Published by BISE Multan on 17 November 2026: Chairpersons and IT teams from all Punjab BISEs visited the Pakistan Post Foundation in Islamabad to inspect printing presses, answer-sheet printing workflows, scanning mechanisms, and On-Screen Marking (OSM) operations ahead of Annual Examinations 2027.",
     category: "confirmed",
     status: "officially-confirmed",
     statusDisplayLabel: "CONFIRMED",
-    topics: ["matric-2027", "admissions"],
+    topics: ["e-sheets", "policies-reforms", "matric-2027", "inter-2027"],
     isHistorical: false,
-    affectedClasses: ["10th"],
-    affectedBoards: ["all"],
-    affectedBoardNames: ["All 9 Punjab BISE Boards"],
-    session: "Annual 2027",
-    issuingAuthority: "Punjab Boards Committee of Chairpersons (PBCC) — Notice dated 10 November 2026",
-    originalDate: "10 Nov 2026 (Reported 14 Nov 2026)",
-    lastVerifiedDate: "15 November 2026",
-    sourceUrl: "https://dunyanews.tv/en/Pakistan/982883-punjab-announces-schedule-for-2027-matric-annual-examinations",
-    sourceName: "Dunya News & ProPakistani (citing PBCC 10 Nov 2026 Notification)",
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "multan"],
+    affectedBoardNames: [
+      "All 9 Punjab BISEs (Official Board Update — Implementation Preparation)",
+    ],
+    session: "Implementation Preparation for Annual 2027",
+    issuingAuthority: "BISE Multan Official Events Gallery (Reporting All-Punjab BISEs Visit)",
+    originalDate: "17 November 2026",
+    lastVerifiedDate: "18 November 2026",
+    sourceUrl: "https://web.bisemultan.edu.pk/events-gallery/",
+    sourceName: "BISE Multan Official Portal — Events Gallery (17 Nov 2026)",
     sources: [
       {
-        label: "Dunya News: Punjab Announces Schedule for 2027 Matric Annual Examinations",
-        url: "https://dunyanews.tv/en/Pakistan/982883-punjab-announces-schedule-for-2027-matric-annual-examinations",
+        label: "Official Update: BISE Multan Events Gallery (17 Nov 2026)",
+        url: "https://web.bisemultan.edu.pk/events-gallery/",
+        sourceKind: "official",
+      },
+    ],
+    sourceType: "official_board",
+    keyFacts: [
+      "Official Board Update / Implementation Preparation published 17 November 2026 on web.bisemultan.edu.pk/events-gallery/.",
+      "Participants included Chairmen and IT teams representing all Punjab Boards of Intermediate and Secondary Education (BISEs).",
+      "Inspected Pakistan Post Foundation, Islamabad printing press facilities, answer-sheet printing processes, and scanning mechanisms.",
+      "Received a detailed operational briefing from Pakistan Post Foundation on answer-sheet marking and On-Screen Marking (OSM) execution.",
+      "Stated goal: Preparing for effective, systematic, and uniform OSM implementation across Punjab boards for Annual Examinations 2027.",
+    ],
+    limitationNote:
+      "Important boundary: This operational visit confirms multi-board technical and printing preparation for 2027—it does NOT confirm that every class or every subject in 2027 will use E-Sheets. Wait for official board circulars naming specific 2027 subjects.",
+    whatItMeans:
+      "All nine Punjab boards are actively aligning printing and scanning logistics for 2027 On-Screen Marking. Science and Computer Science students should practice writing cleanly inside boxed E-Sheet templates while awaiting formal subject circulars.",
+    evidenceNotes:
+      "Direct extraction of verbatim 17 November 2026 announcement from https://web.bisemultan.edu.pk/events-gallery/ on 18 November 2026.",
+    actionRequired:
+      "Open the 'E-Sheet Guide (Punjab & FBISE)' tab to inspect the full chronological timeline and SOPs.",
+    tags: [
+      "Pakistan Post Foundation",
+      "17 Nov 2026",
+      "Implementation Preparation",
+      "E-Sheet",
+      "On-Screen Marking",
+      "BISE Multan",
+      "Annual 2027",
+    ],
+  },
+  {
+    id: "bise-multan-hssc-2nd-annual-2026-cs-esheet-osm",
+    headline:
+      "BISE Multan Requires E-Sheets & OSM for HSSC Second Annual 2026 Computer Science (Part I & II)",
+    summary:
+      "BISE Multan-specific requirement: Official notices on BISE Multan's portal direct all HSSC Second Annual 2026 Computer Science Part-I and Part-II candidates to solve their papers on E-Sheets checked through On-Screen Marking (OSM), supported by an official specimen sheet, instructional video, and centre technical staff.",
+    category: "confirmed",
+    status: "officially-confirmed",
+    statusDisplayLabel: "CONFIRMED",
+    topics: ["e-sheets", "policies-reforms"],
+    isHistorical: false,
+    affectedClasses: ["11th", "12th"],
+    affectedBoards: ["multan"],
+    affectedBoardNames: ["BISE Multan ONLY (Board-Specific Implementation)"],
+    session: "HSSC Second Annual 2026",
+    subject: "Computer Science (Part-I & Part-II)",
+    issuingAuthority: "Board of Intermediate & Secondary Education (BISE), Multan",
+    originalDate: "November 2026 (HSSC 2nd Annual 2026)",
+    lastVerifiedDate: "18 November 2026",
+    sourceUrl:
+      "https://web.bisemultan.edu.pk/specimen-of-answer-sheet-for-computer-science-2nd-annual-2026/",
+    sourceName: "BISE Multan Official Website & Events Gallery",
+    sources: [
+      {
+        label: "BISE Multan Official Portal: Computer Science Answer Sheet Specimen Page (HSSC 2nd Annual 2026)",
+        url: "https://web.bisemultan.edu.pk/specimen-of-answer-sheet-for-computer-science-2nd-annual-2026/",
+        sourceKind: "official",
+      },
+      {
+        label: "BISE Multan Official Events Gallery: HSSC 2nd Annual 2026 CS E-Sheet & Technical Staff Notice",
+        url: "https://web.bisemultan.edu.pk/events-gallery/",
+        sourceKind: "official",
+      },
+      {
+        label: "BISE Multan Video Reel (Social Media / Embedded on Events Gallery): How to Solve CS E-Sheet (HSSC 2nd Annual 2026)",
+        url: "https://www.facebook.com/reel/2381170735983275/",
+        sourceKind: "reproduced-copy",
+      },
+      {
+        label: "BISE Multan Specimen File (Direct Google Drive Link on Official Specimen Page): CS E-Sheet Specimen (2nd Annual 2026)",
+        url: "https://drive.google.com/file/d/1q3w9roZ5nm2JqqIuKpNSYtfVw3JBAHWr/view?usp=sharing",
+        sourceKind: "reproduced-copy",
+      },
+    ],
+    sourceType: "official_board",
+    keyFacts: [
+      "Board & Exam Scope: BISE Multan ONLY — HSSC Second Annual Examination 2026.",
+      "Classes & Subject: Intermediate Part-I (11th) & Part-II (12th) Computer Science candidates.",
+      "Requirement: All candidates solve their papers on printed E-Sheets evaluated via the On-Screen Marking (OSM) system.",
+      "Candidate Support: Official answer sheet specimen uploaded on BISE Multan website, paired with BISE Multan's instructional Facebook reel (embedded on its Events Gallery) and trained technical staff stationed at Computer Science exam centres.",
+    ],
+    limitationNote:
+      "Board-specific notice: This applies specifically to BISE Multan HSSC Second Annual 2026 Computer Science—do NOT generalize this requirement to other boards, subjects, or examination sessions.",
+    whatItMeans:
+      "BISE Multan Intermediate Computer Science (2nd Annual 2026) candidates must review the Multan specimen booklet and instructional video before entering the hall so answers fit designated scanned spaces.",
+    evidenceNotes:
+      "Verified verbatim from https://web.bisemultan.edu.pk/events-gallery/ and https://web.bisemultan.edu.pk/specimen-of-answer-sheet-for-computer-science-2nd-annual-2026/ on 18 November 2026.",
+    tags: [
+      "BISE Multan Only",
+      "Computer Science",
+      "HSSC 2nd Annual 2026",
+      "Part-I & Part-II",
+      "E-Sheet",
+      "OSM",
+    ],
+  },
+  {
+    id: "punjab-boards-esheet-onscreen-marking-2027",
+    headline: "Punjab Boards Move Towards E-Sheet Examinations and On-Screen Marking",
+    summary:
+      "At a Lahore meeting chaired by BISE Lahore Chairman Prof. Badrul Salam (reported 11 Nov 2026), chairpersons of Punjab's nine boards agreed in principle to introduce E-Sheets and On-Screen Marking (OSM) for four science subjects in 2027 Matric and Intermediate exams (official subject circulars awaited). Separately, BISE Lahore, D.G. Khan, Multan, and Gujranwala have published board-specific Computer Science OSM resources for 2026.",
+    category: "reported",
+    status: "credibly-reported",
+    statusDisplayLabel: "REPORTED",
+    topics: ["e-sheets", "policies-reforms", "matric-2027", "inter-2027"],
+    isHistorical: false,
+    affectedClasses: ["9th", "10th", "11th", "12th"],
+    affectedBoards: ["all", "lahore", "dgkhan", "multan", "gujranwala"],
+    affectedBoardNames: [
+      "All 9 Punjab BISEs (2027 4-Subject Plan Reported; CS 2026 Resources Board-Specific)",
+    ],
+    session: "2nd Annual 2026 Pilots & Reported 2027 Expansion",
+    issuingAuthority:
+      "Chairpersons Committee of 9 Punjab BISEs (Lahore Meeting Reported 11 Nov 2026) & Individual BISE Portals",
+    originalDate: "4 Oct – 11 Nov 2026 (Audited 18 Nov 2026)",
+    lastVerifiedDate: "18 November 2026",
+    sourceUrl: "https://bisedgkhan.edu.pk/Pdf/6aeeb863dc094_BISEPunjab-InstructionsforStudentsDGKhan1.pdf",
+    sourceName: "BISE D.G. Khan, BISE Lahore & BISE Multan Portals + EduVision, ProPakistani & Tribune",
+    sources: [
+      {
+        label: "BISE D.G. Khan Official PDF: 16 Candidate SOPs for Digital Answer Copy (OSM, Board-Specific)",
+        url: "https://bisedgkhan.edu.pk/Pdf/6aeeb863dc094_BISEPunjab-InstructionsforStudentsDGKhan1.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "BISE Lahore Official Website: Announcements, Complete CS Answer Book PDF & OSM Section (BISE Lahore Only)",
+        url: "https://www.biselahore.com/",
+        sourceKind: "official",
+      },
+      {
+        label: "BISE Lahore Official PDF: Complete Answer Book & Bubble Sheet Pattern for Computer Science (OSM, BISE Lahore Only)",
+        url: "https://data.biselahore.com/dt/downloads/notifications/misc/AnswerBook_CSc.pdf",
+        sourceKind: "official",
+      },
+      {
+        label: "BISE Lahore YouTube Tutorial (@Lahore-Board-Official, Embedded on biselahore.com): On-Screen Marking Student & Teacher Guide",
+        url: "https://www.youtube.com/watch?v=Eea8ivG9_Tg",
+        sourceKind: "reproduced-copy",
+      },
+      {
+        label: "BISE Multan Official Portal: Computer Science Answer Sheet Specimen (HSSC 2nd Annual 2026, BISE Multan Only)",
+        url: "https://web.bisemultan.edu.pk/specimen-of-answer-sheet-for-computer-science-2nd-annual-2026/",
+        sourceKind: "official",
+      },
+      {
+        label: "EduVision (News Report, 11 Nov 2026): Punjab Boards On-Screen Marking for Matric & Inter",
+        url: "https://www.eduvision.edu.pk/edu_news/punjab-boards-to-introduce-on-screen-marking-for-matric-and-intermediate-exams-news-4586",
         sourceKind: "news",
       },
       {
-        label: "ProPakistani: Matric Exams 2027 Registration Schedule",
-        url: "https://propakistani.pk/2026/11/14/punjab-announces-matric-exams-2027-registration-schedule/",
+        label: "ProPakistani (News Report, 11 Nov 2026): Punjab to Conduct Exams for 4 Subjects on E-Sheets",
+        url: "https://propakistani.pk/2026/11/11/punjab-to-conduct-exams-for-4-subjects-on-e-sheets/",
         sourceKind: "news",
       },
       {
-        label: "ProPakistani: Matric Exams 2027 Result Date",
-        url: "https://propakistani.pk/2026/11/14/punjab-announces-matric-exams-2027-result-date/",
+        label: "The Express Tribune (News Report, 4 Oct 2026): Punjab Boards to Take Paper Checking Online",
+        url: "https://tribune.com.pk/story/2632845/punjab-boards-to-take-paper-checking-online",
         sourceKind: "news",
       },
     ],
     sourceType: "pbcc_government",
     keyFacts: [
-      "PBCC notification date: 10 November 2026.",
-      "Class 10 (SSC Part-II) First Annual exam start date: 16 March 2027.",
-      "Class 10 result declaration date: 20 July 2027.",
-      "Single-fee admission window: 10 November – 11 December 2026.",
-      "Double-fee admission window: 12 – 28 December 2026.",
-      "Triple-fee admission window: 29 December 2026 – 11 January 2027.",
-      "Applies to all 9 Punjab BISE boards (Lahore, Rawalpindi, Multan, Faisalabad, Gujranwala, Sargodha, Bahawalpur, DG Khan, Sahiwal).",
+      "BOARD-SPECIFIC RESOURCES (2nd Annual 2026): BISE D.G. Khan issued a 16-point Candidate SOP PDF; BISE Lahore published 'Complete Answer Book and Bubble Sheet Pattern for Computer Science (OSM)' plus an On-Screen Marking System student & teacher video tutorial on biselahore.com; BISE Multan mandated E-Sheets/OSM for HSSC 2nd Annual 2026 Computer Science Part-I & II; BISE Gujranwala hosted CS specimen templates.",
+      "BISE D.G. KHAN SOP PDF RULES (Attributable to BISE D.G. Khan PDF): Pen-and-paper hall exams; use only blue or black ink pen (no red/green ink, highlighters, markers, or smudging gel pens); write strictly inside margins & designated question boxes; zero extra continuation sheets; no whitener/erasable ink; protect sheet barcodes & QR codes.",
+      "REPORTED (11 Nov 2026 Chairpersons Meeting): Media reports state all 9 Punjab BISE chairpersons under Prof. Badrul Salam agreed to introduce E-Sheets and OSM for four science subjects in 2027 Matric and Intermediate exams.",
+      "AWAITING OFFICIAL CONFIRMATION: Signed provincial circulars naming the exact four SSC (Classes 9–10) and HSSC (Classes 11–12) subjects have NOT been issued across all 9 BISEs as of 18 November 2026.",
     ],
     limitationNote:
-      "Scope boundary: The confirmed 16 March 2027 start date specifically covers SSC Part-II (Class 10). Do NOT assume Class 9 starts on 16 March 2027.",
+      "Do NOT treat secondary blog guesses naming the four 2027 science subjects as confirmed rules, and do NOT treat BISE Lahore's, D.G. Khan's, or Multan's board-specific Computer Science instructions as universal rules for every board or every subject. Keep FBISE rules strictly separate.",
     whatItMeans:
-      "Class 10 students have confirmed exam and result milestones and should ensure admission forms are filed within the single-fee window closing 11 December 2026.",
+      "E-Sheet exams are NOT computer-based typing tests—you still write by hand with a pen, but every answer must stay cleanly inside its designated box and margins without extra B-sheets. Open the dedicated 'E-Sheet Guide (Punjab & FBISE)' tab above for the full visual walkthrough.",
     evidenceNotes:
-      "Verified via matching November 2026 reporting from Dunya News and ProPakistani explicitly citing PBCC's 10 November 2026 circular.",
-    actionRequired: "Submit Class 10 admission forms before 11 December 2026 for single fee.",
+      "Primary PDFs downloaded & verified from bisedgkhan.edu.pk, biselahore.com, and web.bisemultan.edu.pk alongside 11 Nov & 4 Oct 2026 national reporting (audited 18 November 2026).",
+    actionRequired:
+      "Switch to the E-Sheet Guide tab for Step-by-Step Instructions, Stationery Rules & Mark-Loss Prevention.",
+    tags: [
+      "E-Sheet",
+      "On-Screen Marking",
+      "OSM",
+      "4 Science Subjects",
+      "BISE Lahore",
+      "BISE D.G. Khan",
+      "BISE Multan",
+      "Candidate SOPs",
+      "2027 Reforms",
+    ],
+  },
+
+  // =========================================================================
+  // PART 1 — 2027 MATRIC EXAMINATION SCHEDULE
+  // =========================================================================
+  {
+    id: "punjab-matric-annual-2027-schedule",
+    headline: "Punjab Matric Annual Examination 2027 — Reported Start Date (16 March 2027 Indicated)",
+    summary:
+      "National news coverage (Dunya News & ProPakistani, 14 Nov 2026) citing a 10 November 2026 PBCC schedule indicates Class 10 (SSC Part-II) First Annual exams are expected to start on 16 March 2027, with results indicated for 20 July 2027 and registration from 10 November 2026 to 11 January 2027. A finalized subject-wise date sheet / official PBCC circular PDF is still awaited.",
+    category: "reported",
+    status: "credibly-reported",
+    statusDisplayLabel: "REPORTED",
+    topics: ["matric-2027", "admissions"],
+    isHistorical: false,
+    affectedClasses: ["10th"],
+    affectedBoards: ["all"],
+    affectedBoardNames: ["All 9 Punjab BISE Boards (Reported Timeline; Final Date Sheet Awaited)"],
+    session: "Annual 2027",
+    issuingAuthority: "Reported via National Media (Citing PBCC 10 Nov 2026 Schedule)",
+    originalDate: "Reported 14 Nov 2026 (Citing 10 Nov 2026 PBCC Meeting)",
+    lastVerifiedDate: "18 November 2026",
+    sourceUrl: "https://dunyanews.tv/en/Pakistan/982883-punjab-announces-schedule-for-2027-matric-annual-examinations",
+    sourceName: "Dunya News & ProPakistani (News Reports Citing PBCC 10 Nov 2026)",
+    sources: [
+      {
+        label: "Dunya News (News Report, 14 Nov 2026): Indicated Schedule for 2027 Matric Annual Examinations",
+        url: "https://dunyanews.tv/en/Pakistan/982883-punjab-announces-schedule-for-2027-matric-annual-examinations",
+        sourceKind: "news",
+      },
+      {
+        label: "ProPakistani (News Report, 14 Nov 2026): Reported Matric Exams 2027 Registration Schedule",
+        url: "https://propakistani.pk/2026/11/14/punjab-announces-matric-exams-2027-registration-schedule/",
+        sourceKind: "news",
+      },
+      {
+        label: "ProPakistani (News Report, 14 Nov 2026): Reported Matric Exams 2027 Result Date",
+        url: "https://propakistani.pk/2026/11/14/punjab-announces-matric-exams-2027-result-date/",
+        sourceKind: "news",
+      },
+    ],
+    sourceType: "news_outlet",
+    keyFacts: [
+      "Cited PBCC meeting / schedule date in press reports: 10 November 2026.",
+      "Reported / indicated Class 10 (SSC Part-II) First Annual exam start: 16 March 2027 (not yet a finalized subject-wise date sheet).",
+      "Reported / indicated Class 10 result declaration date: 20 July 2027.",
+      "Reported admission fee windows (also supported by board-level notices like BISE Lahore's 9th private schedule): Single 10 Nov – 11 Dec 2026, Double 12 – 28 Dec 2026, Triple 29 Dec 2026 – 11 Jan 2027.",
+      "Scope covers all 9 Punjab BISE boards once formally gazetted on each BISE website.",
+    ],
+    limitationNote:
+      "Date verification boundary: 16 March 2027 is retained here strictly as a REPORTED / INDICATED start date based on news coverage (Dunya News & ProPakistani)—NOT as a finalized date sheet or verified PBCC PDF circular. Also do NOT apply 16 March 2027 to Class 9.",
+    whatItMeans:
+      "Class 10 students can use 16 March 2027 as an indicative planning target for Matric 2027 revision while verifying finalized subject dates directly on their own official BISE date sheet portal when published.",
+    evidenceNotes:
+      "Sourced from Dunya News and ProPakistani 14 Nov 2026 reports citing PBCC; direct signed PBCC gazette/PDF establishing 16 March 2027 is not yet posted across PBCC/BISE portals as of 18 Nov 2026.",
+    actionRequired: "Verify final paper-by-paper dates on your district BISE portal once official 2027 date sheets are released.",
     isDeadline: true,
     deadlineDate: "Single Fee Ends 11 Dec 2026",
-    tags: ["Matric 2027", "Class 10", "16 March 2027", "20 July 2027", "Admissions", "PBCC"],
+    tags: ["Matric 2027", "Class 10", "16 March 2027 (Reported)", "20 July 2027", "Admissions"],
   },
   {
     id: "class-9-matric-exam-2027-awaited",
@@ -691,7 +910,7 @@ export const INITIAL_BOARD_WATCH_ENTRIES: BoardWatchEntry[] = [
       "Tarjama-tul-Quran & Ethics (Grades 9–12): Explicitly confirmed NO Smart Syllabus / ALP exists.",
     ],
     whatItMeans:
-      "With Class 10 exams confirmed for 16 March 2027, students should use No. 1257 subject-by-subject to verify deleted chapters, practical exclusions, and exact question distributions.",
+      "With Class 10 exams reported to begin around 16 March 2027, students should use No. 1257 subject-by-subject to verify deleted chapters, practical exclusions, and exact question distributions.",
     evidenceNotes:
       "76-page official PDF ALPs-Notification-14.11.2026-1257.pdf downloaded and extracted line-by-line.",
     tags: ["Grade 10", "PECTAA", "No. 1257", "Pairing Scheme", "Practicals", "Model Papers"],
@@ -1143,7 +1362,7 @@ export const INITIAL_BOARD_WATCH_ENTRIES: BoardWatchEntry[] = [
     category: "reported",
     status: "credibly-reported",
     statusDisplayLabel: "REPORTED",
-    topics: ["policies-reforms", "fbise"],
+    topics: ["e-sheets", "policies-reforms", "fbise"],
     isHistorical: false,
     affectedClasses: ["9th", "10th", "11th", "12th"],
     affectedBoards: ["all", "lahore", "fbise"],
@@ -1337,102 +1556,122 @@ export const INITIAL_BOARD_WATCH_ENTRIES: BoardWatchEntry[] = [
   // =========================================================================
   {
     id: "bise-lahore-osm-cs-and-9th-private-2027",
-    headline: "BISE Lahore Releases Computer Science (OSM) Answer Book & 9th Private 2027 Schedule",
+    headline: "BISE Lahore Publishes Computer Science (OSM) Answer Book, Video Tutorial & 9th Private 2027 Schedule",
     summary:
-      "Specific to BISE Lahore (not Punjab-wide): BISE Lahore published a sample Computer Science On-Screen Marking (OSM) Answer Book & Bubble Sheet, the 9th Class Private Registration Schedule for First Annual 2027, and SSC practical instructions.",
+      "BISE Lahore-specific resources (NOT universal Punjab instructions): BISE Lahore's official website and notifications list the 'Complete Answer Book and Bubble Sheet Pattern for Computer Science (OSM)' PDF, the 'BISE Lahore On-Screen Marking System' student and teacher video tutorial, the 9th Private Registration Schedule (1st Annual 2027), and SSC practical instructions.",
     category: "confirmed",
     status: "officially-confirmed",
     statusDisplayLabel: "CONFIRMED",
-    topics: ["policies-reforms", "admissions", "practical-exams", "matric-2027"],
+    topics: ["e-sheets", "policies-reforms", "admissions", "practical-exams", "matric-2027"],
     isHistorical: false,
-    affectedClasses: ["9th", "10th"],
+    affectedClasses: ["9th", "10th", "11th", "12th"],
     affectedBoards: ["lahore"],
-    affectedBoardNames: ["BISE Lahore ONLY (Board-Specific)"],
+    affectedBoardNames: ["BISE Lahore ONLY (Board-Specific Resources)"],
     session: "2026–27 / 1st Annual 2027",
-    issuingAuthority: "BISE Lahore Official Notifications Portal",
-    originalDate: "Checked 15 Nov 2026",
-    lastVerifiedDate: "15 November 2026",
-    sourceUrl: "https://data.biselahore.com/dt/downloads/notifications/misc/AnswerBook_CSc.pdf",
-    sourceName: "BISE Lahore Official Downloads",
+    issuingAuthority: "Board of Intermediate & Secondary Education (BISE), Lahore",
+    originalDate: "Checked 18 Nov 2026",
+    lastVerifiedDate: "18 November 2026",
+    sourceUrl: "https://www.biselahore.com/",
+    sourceName: "BISE Lahore Official Website & Notifications Portal",
     sources: [
       {
-        label: "Official PDF (BISE Lahore): Computer Science (OSM) Answer Book & Bubble Sheet",
+        label: "BISE Lahore Official Portal: Home Announcements & OSM Guidance (#osm, BISE Lahore Only)",
+        url: "https://www.biselahore.com/",
+        sourceKind: "official",
+      },
+      {
+        label: "BISE Lahore Official PDF: Complete Answer Book & Bubble Sheet Pattern for Computer Science (OSM, BISE Lahore Only)",
         url: "https://data.biselahore.com/dt/downloads/notifications/misc/AnswerBook_CSc.pdf",
         sourceKind: "official",
       },
       {
-        label: "Official PDF (BISE Lahore): 9th Class Private Registration Schedule (1st Annual 2027)",
+        label: "BISE Lahore Video Tutorial (YouTube @Lahore-Board-Official, Embedded on biselahore.com): On-Screen Marking System Student & Teacher Guide",
+        url: "https://www.youtube.com/watch?v=Eea8ivG9_Tg",
+        sourceKind: "reproduced-copy",
+      },
+      {
+        label: "BISE Lahore Official PDF: 9th Class Private Registration Schedule (1st Annual 2027)",
         url: "https://data.biselahore.com/dt/downloads/notifications/admissions/Pvt_RegSch(1stA27).pdf",
         sourceKind: "official",
       },
       {
-        label: "Official PDF (BISE Lahore): Instructions for SSC Part-II Practical Exams",
+        label: "BISE Lahore Official PDF: Instructions for SSC Part-II Practical Exams",
         url: "https://data.biselahore.com/dt/downloads/notifications/examination/Instr_Pr.Exam.pdf",
         sourceKind: "official",
       },
       {
-        label: "Official Page: BISE Lahore Notifications",
+        label: "BISE Lahore Official Notifications Directory",
         url: "https://www.biselahore.com/notifications",
         sourceKind: "official",
       },
     ],
     sourceType: "official_board",
+    keyFacts: [
+      "BISE Lahore OSM Specimen PDF: 'Complete Answer Book and Bubble Sheet Pattern for the Subject Computer Science (OSM)' (34-page PDF hosted on data.biselahore.com).",
+      "BISE Lahore Student & Teacher Tutorial: 'BISE Lahore On-Screen Marking System - Complete Answer & Bubble Sheet Guide for Students & Teachers' embedded directly on biselahore.com/#osm via BISE Lahore's official YouTube channel.",
+      "9th Class Private Registration (1st Annual 2027): Official schedule published in Pvt_RegSch(1stA27).pdf.",
+    ],
     limitationNote:
-      "Board-specific notice: Applies to BISE Lahore candidates unless separately adopted by your own district BISE.",
+      "BISE Lahore ONLY: These materials are published specifically as BISE Lahore resources—do NOT treat BISE Lahore's booklet pattern or tutorial as universal instructions for all nine Punjab boards.",
     whatItMeans:
-      "BISE Lahore Computer Science students should review AnswerBook_CSc.pdf to avoid writing outside designated scanned zones on OSM sheets, while private Class 9 applicants under Lahore division should inspect Pvt_RegSch(1stA27).pdf.",
+      "BISE Lahore Computer Science students should inspect AnswerBook_CSc.pdf and watch BISE Lahore's student & teacher OSM video tutorial on biselahore.com, while private Class 9 applicants under Lahore division should follow Pvt_RegSch(1stA27).pdf.",
     evidenceNotes:
-      "All PDF URLs extracted directly from https://www.biselahore.com/notifications on 15 November 2026.",
-    tags: ["BISE Lahore Only", "OSM Answer Book", "Computer Science", "9th Private 2027", "Practicals"],
+      "Verified directly on https://www.biselahore.com/, https://www.biselahore.com/notifications, and embedded YouTube tutorial Eea8ivG9_Tg on 18 November 2026.",
+    tags: ["BISE Lahore Only", "OSM Answer Book", "OSM Video Tutorial", "Computer Science", "9th Private 2027"],
   },
   {
     id: "fbise-2027-grading-esheets-model-papers",
     headline: "FBISE Only: 40% Pass Policy, 10-Point Grading, SLO Papers & 2027 Sample E-Sheets",
     summary:
-      "Applicable to Federal Board (FBISE) candidates ONLY—not Punjab provincial BISEs: FBISE has published 2027 sample E-Sheets for SSC-I & HSSC-I on-screen marking, SLO-based model papers, and enforces the IBCC 40% passing and 10-point grading framework.",
+      "Applicable to Federal Board (FBISE) candidates ONLY—not Punjab provincial BISEs: FBISE's 2027 sample E-Sheets (SSC-I & HSSC-I) explicitly instruct candidates to answer each question or part in the specified space; otherwise marks for that answer will not be awarded.",
     category: "confirmed",
     status: "officially-confirmed",
     statusDisplayLabel: "CONFIRMED",
-    topics: ["fbise", "passing-grading", "paper-patterns", "policies-reforms"],
+    topics: ["e-sheets", "fbise", "passing-grading", "paper-patterns", "policies-reforms"],
     isHistorical: false,
     affectedClasses: ["9th", "10th", "11th", "12th"],
     affectedBoards: ["fbise"],
     affectedBoardNames: ["FBISE ONLY (Federal Board — Separate from Punjab BISEs)"],
     session: "2026–27 / Annual 2027",
     issuingAuthority: "Federal Board of Intermediate & Secondary Education (FBISE)",
-    originalDate: "Checked 15 Nov 2026",
-    lastVerifiedDate: "15 November 2026",
+    originalDate: "Checked 18 Nov 2026",
+    lastVerifiedDate: "18 November 2026",
     sourceUrl: "https://www.fbise.edu.pk/screen_marking.php",
     sourceName: "FBISE Official Portal (screen_marking.php & curriculum_model_paper.php)",
     sources: [
       {
-        label: "Official Portal (FBISE): E-Sheets & OMR Screen Marking",
+        label: "FBISE Official Portal: E-Sheets & OMR Screen Marking Downloads (FBISE Only)",
         url: "https://www.fbise.edu.pk/screen_marking.php",
         sourceKind: "official",
       },
       {
-        label: "Official PDF (FBISE): 2027 Sample E-Sheet — SSC-I PCBC",
+        label: "FBISE Official PDF (2027 Sample): SSC-I PCBC E-Sheet — Explicit Space Rule (FBISE Only)",
         url: "https://www.fbise.edu.pk/Downloads/E-Sheets-2026/sample_esheet_for_PCBC_SSC1_2027.pdf",
         sourceKind: "official",
       },
       {
-        label: "Official PDF (FBISE): 2027 Sample E-Sheet — HSSC-I Maths",
+        label: "FBISE Official PDF (2027 Sample): HSSC-I Mathematics E-Sheet (FBISE Only)",
         url: "https://www.fbise.edu.pk/Downloads/E-Sheets-2026/sample_esheet_for_maths_HSSC1_2027.pdf",
         sourceKind: "official",
       },
       {
-        label: "Official Portal (FBISE): SLO Model Question Papers",
+        label: "FBISE Official Portal: SLO Model Question Papers (FBISE Only)",
         url: "https://www.fbise.edu.pk/curriculum_model_paper.php",
         sourceKind: "official",
       },
     ],
     sourceType: "ibcc_federal",
+    keyFacts: [
+      "Explicit FBISE Sample Rule (sample_esheet_for_PCBC_SSC1_2027.pdf): Candidates must answer each question or part strictly in the specified space; otherwise marks for that answer will not be awarded.",
+      "Section-A OMR Rule: FBISE cover sheet explicitly instructs candidates not to use lead pencil and states deleting/overwriting is not allowed.",
+      "Passing & Assessment Policy: FBISE enforces the 40% passing threshold, 10-point grading scale, and SLO-based assessment papers.",
+    ],
     limitationNote:
-      "FBISE ONLY: Federal Board rules, E-Sheet layouts, and SLO curricula apply exclusively to FBISE candidates—do NOT mix them with Punjab Board (PECTAA/PBCC) pairing schemes.",
+      "FBISE ONLY: Federal Board E-Sheet layouts, explicit mark-forfeiture space rules, and SLO curricula apply exclusively to FBISE candidates—keep strictly separate from Punjab BISE rules.",
     whatItMeans:
-      "FBISE students sitting Annual 2027 exams should practice directly on FBISE's 2027 sample E-Sheets and SLO model papers while targeting at least 40% per subject.",
+      "FBISE students sitting Annual 2027 exams should practice directly on FBISE's 2027 sample E-Sheets so every answer sits cleanly inside its designated box and meets the 40% subject threshold.",
     evidenceNotes:
-      "Direct HTTP verification of fbise.edu.pk, screen_marking.php, and curriculum_model_paper.php on 15 November 2026.",
+      "Direct verification of fbise.edu.pk/screen_marking.php and sample_esheet_for_PCBC_SSC1_2027.pdf on 18 November 2026.",
     tags: ["FBISE Only", "E-Sheets 2027", "SLO Model Papers", "40% Passing Marks"],
   },
 ];
