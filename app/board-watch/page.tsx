@@ -32,6 +32,16 @@ import {
   Sparkles,
   ScanLine,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  BW_EASE,
+  BW_TWEEN_INTERACTIVE,
+  CollapsiblePanel,
+  HeroEntranceItem,
+  ScrollRevealArticle,
+  ScrollRevealDiv,
+  TabSwitchPanel,
+} from "@/components/board-watch/BoardWatchMotion";
 import ESheetGuideSection from "@/components/board-watch/ESheetGuideSection";
 import {
   PUNJAB_BOARDS,
@@ -70,6 +80,7 @@ export default function BoardWatchPage() {
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [userSubmissionText, setUserSubmissionText] = useState("");
   const [userSubmissionSubmitted, setUserSubmissionSubmitted] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   const lastCheckedTimestamp = "18 November 2026";
 
@@ -304,7 +315,7 @@ export default function BoardWatchPage() {
         }}
       />
 
-      <div className="relative min-h-screen bg-[#0A0A0A] text-white">
+      <div className="relative min-h-screen bg-[#0A0A0A] text-white overflow-x-clip">
         {/* MANDATORY INDEPENDENT PLATFORM DISCLAIMER BAR */}
         <section
           aria-label="Independent Platform Legal Disclaimer"
@@ -326,39 +337,63 @@ export default function BoardWatchPage() {
         </section>
 
         {/* HERO HEADER */}
-        <header className="border-b border-white/10 pt-10 pb-8 px-4 sm:px-6">
-          <div className="mx-auto max-w-site">
+        <header className="relative overflow-hidden border-b border-white/10 pt-10 pb-8 px-4 sm:px-6">
+          {/* Subtle non-looping ambient editorial glow */}
+          <motion.div
+            aria-hidden="true"
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.58, ease: BW_EASE }}
+            className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-72 w-[780px] max-w-full"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, rgba(255, 214, 10, 0.085) 0%, rgba(255, 214, 10, 0.02) 48%, transparent 74%)",
+            }}
+          />
+
+          <div className="relative mx-auto max-w-site">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted mb-2 font-mono">
-                  <span className="text-accent font-bold">BOARD WATCH 2026–2027</span>
-                  <span aria-hidden="true">·</span>
-                  <span>Punjab BISE, PECTAA, IBCC &amp; FBISE Updates</span>
-                  <span aria-hidden="true">·</span>
-                  <span>Classes 9, 10, 11 &amp; 12</span>
-                  <span aria-hidden="true">·</span>
-                  <span className="text-zinc-400">Research cutoff: {lastCheckedTimestamp}</span>
-                </div>
+                <HeroEntranceItem delay={0} duration={0.4} y={10}>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted mb-2 font-mono">
+                    <span className="text-accent font-bold">BOARD WATCH 2026–2027</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Punjab BISE, PECTAA, IBCC &amp; FBISE Updates</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Classes 9, 10, 11 &amp; 12</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="text-zinc-400">Research cutoff: {lastCheckedTimestamp}</span>
+                  </div>
+                </HeroEntranceItem>
 
-                <h1 className="type-title text-white tracking-tight">
-                  Board Watch —{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-amber-300 to-yellow-200">
-                    2026–2027 Hub
-                  </span>
-                </h1>
+                <HeroEntranceItem delay={0.07} duration={0.56} y={14}>
+                  <h1 className="type-title text-white tracking-tight">
+                    Board Watch —{" "}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-amber-300 to-yellow-200">
+                      2026–2027 Hub
+                    </span>
+                  </h1>
+                </HeroEntranceItem>
 
-                <p className="mt-2 text-xs sm:text-sm text-muted max-w-3xl leading-relaxed">
-                  Verified examination schedules, Punjab &amp; FBISE E-Sheet &amp; On-Screen Marking
-                  guides, 2027 PECTAA paper patterns and pairing schemes, IBCC 40% passing &amp;
-                  10-point grading policy, and admission portals for Class 9–12 students.
-                </p>
+                <HeroEntranceItem delay={0.14} duration={0.44} y={12}>
+                  <p className="mt-2 text-xs sm:text-sm text-muted max-w-3xl leading-relaxed">
+                    Verified examination schedules, Punjab &amp; FBISE E-Sheet &amp; On-Screen Marking
+                    guides, 2027 PECTAA paper patterns and pairing schemes, IBCC 40% passing &amp;
+                    10-point grading policy, and admission portals for Class 9–12 students.
+                  </p>
+                </HeroEntranceItem>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <HeroEntranceItem
+                delay={0.2}
+                duration={0.42}
+                y={10}
+                className="flex flex-wrap items-center gap-2 shrink-0"
+              >
                 <button
                   type="button"
                   onClick={() => setActiveTab("esheets")}
-                  className="flex items-center gap-2 rounded-xl bg-accent px-3.5 py-2 text-xs font-heading font-black text-black hover:bg-amber-300 transition-all cursor-pointer shadow-glow"
+                  className="flex items-center gap-2 rounded-xl bg-accent px-3.5 py-2 text-xs font-heading font-black text-black hover:bg-amber-300 active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
                 >
                   <ScanLine size={14} />
                   <span>E-Sheet Guide</span>
@@ -367,7 +402,7 @@ export default function BoardWatchPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("patterns")}
-                  className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3.5 py-2 text-xs font-heading font-bold text-accent hover:bg-accent/20 transition-all cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3.5 py-2 text-xs font-heading font-bold text-accent hover:bg-accent/20 active:scale-[0.98] transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                 >
                   <BookOpen size={14} />
                   <span>Find Your Class &amp; Subject</span>
@@ -376,7 +411,7 @@ export default function BoardWatchPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("boards")}
-                  className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-xs font-heading font-medium text-white hover:bg-white/10 transition-all cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-xs font-heading font-medium text-white hover:bg-white/10 active:scale-[0.98] transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 >
                   <Building2 size={14} className="text-muted" />
                   <span>Board Portals</span>
@@ -385,17 +420,22 @@ export default function BoardWatchPage() {
                 <button
                   type="button"
                   onClick={() => setVerifyModalOpen(true)}
-                  className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-xs font-heading font-medium text-white hover:bg-white/10 transition-all cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-xs font-heading font-medium text-white hover:bg-white/10 active:scale-[0.98] transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 >
                   <FileCheck2 size={14} className="text-muted" />
                   <span>Verify a Circular</span>
                 </button>
-              </div>
+              </HeroEntranceItem>
             </div>
 
             {/* SUMMARY STATS STRIP */}
             <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <div className="rounded-2xl border border-white/10 bg-[#141416] p-3.5 flex flex-col justify-between">
+              <HeroEntranceItem
+                delay={0.18}
+                duration={0.36}
+                y={10}
+                className="rounded-2xl border border-white/10 bg-[#141416] p-3.5 flex flex-col justify-between transition-colors duration-200 hover:border-white/20"
+              >
                 <span className="text-[11px] font-mono text-muted uppercase">Verified Updates</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-heading text-2xl font-black text-white tabular-nums">
@@ -403,9 +443,14 @@ export default function BoardWatchPage() {
                   </span>
                   <span className="text-[10px] text-zinc-400">stories</span>
                 </div>
-              </div>
+              </HeroEntranceItem>
 
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-3.5 flex flex-col justify-between">
+              <HeroEntranceItem
+                delay={0.22}
+                duration={0.36}
+                y={10}
+                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-3.5 flex flex-col justify-between transition-colors duration-200 hover:border-emerald-500/35"
+              >
                 <span className="text-[11px] font-mono text-emerald-400 uppercase">Confirmed</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-heading text-2xl font-black text-emerald-300 tabular-nums">
@@ -413,9 +458,14 @@ export default function BoardWatchPage() {
                   </span>
                   <span className="text-[10px] text-emerald-400/80">verified</span>
                 </div>
-              </div>
+              </HeroEntranceItem>
 
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-3.5 flex flex-col justify-between">
+              <HeroEntranceItem
+                delay={0.26}
+                duration={0.36}
+                y={10}
+                className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-3.5 flex flex-col justify-between transition-colors duration-200 hover:border-amber-500/35"
+              >
                 <span className="text-[11px] font-mono text-amber-400 uppercase">Awaiting Date</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-heading text-2xl font-black text-amber-300 tabular-nums">
@@ -423,9 +473,14 @@ export default function BoardWatchPage() {
                   </span>
                   <span className="text-[10px] text-amber-400/80">pending</span>
                 </div>
-              </div>
+              </HeroEntranceItem>
 
-              <div className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.04] p-3.5 flex flex-col justify-between">
+              <HeroEntranceItem
+                delay={0.3}
+                duration={0.36}
+                y={10}
+                className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.04] p-3.5 flex flex-col justify-between transition-colors duration-200 hover:border-purple-500/35"
+              >
                 <span className="text-[11px] font-mono text-purple-300 uppercase">Reforms / Reported</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-heading text-2xl font-black text-purple-200 tabular-nums">
@@ -433,9 +488,14 @@ export default function BoardWatchPage() {
                   </span>
                   <span className="text-[10px] text-purple-300/80">initiatives</span>
                 </div>
-              </div>
+              </HeroEntranceItem>
 
-              <div className="rounded-2xl border border-zinc-500/25 bg-zinc-500/[0.06] p-3.5 flex flex-col justify-between">
+              <HeroEntranceItem
+                delay={0.34}
+                duration={0.36}
+                y={10}
+                className="rounded-2xl border border-zinc-500/25 bg-zinc-500/[0.06] p-3.5 flex flex-col justify-between transition-colors duration-200 hover:border-zinc-400/40"
+              >
                 <span className="text-[11px] font-mono text-zinc-300 uppercase">Historical 2026</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-heading text-2xl font-black text-zinc-200 tabular-nums">
@@ -443,9 +503,14 @@ export default function BoardWatchPage() {
                   </span>
                   <span className="text-[10px] text-zinc-400">past cycle</span>
                 </div>
-              </div>
+              </HeroEntranceItem>
 
-              <div className="rounded-2xl border border-accent/25 bg-accent/[0.05] p-3.5 flex flex-col justify-between">
+              <HeroEntranceItem
+                delay={0.38}
+                duration={0.36}
+                y={10}
+                className="rounded-2xl border border-accent/25 bg-accent/[0.05] p-3.5 flex flex-col justify-between transition-colors duration-200 hover:border-accent/45"
+              >
                 <span className="text-[11px] font-mono text-accent uppercase">Subject Blueprints</span>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="font-heading text-2xl font-black text-accent tabular-nums">
@@ -453,107 +518,98 @@ export default function BoardWatchPage() {
                   </span>
                   <span className="text-[10px] text-amber-200/80">grades 9–12</span>
                 </div>
-              </div>
+              </HeroEntranceItem>
             </div>
 
             {/* PRIMARY VIEW NAVIGATION TABS */}
-            <div className="mt-8 flex items-center gap-1.5 overflow-x-auto border-b border-white/10 pb-px scrollbar-none">
-              <button
-                type="button"
-                onClick={() => setActiveTab("stream")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                  activeTab === "stream"
-                    ? "border-accent text-accent bg-accent/5"
-                    : "border-transparent text-muted hover:text-white"
-                }`}
-              >
-                <Layers size={14} />
-                <span>All Updates &amp; News ({filteredEntries.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("esheets")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                  activeTab === "esheets"
-                    ? "border-accent text-accent bg-accent/5"
-                    : "border-transparent text-accent/90 hover:text-accent"
-                }`}
-              >
-                <ScanLine size={14} />
-                <span>E-Sheet Guide (Punjab &amp; FBISE)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("patterns")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                  activeTab === "patterns"
-                    ? "border-accent text-accent bg-accent/5"
-                    : "border-transparent text-muted hover:text-white"
-                }`}
-              >
-                <BookOpen size={14} />
-                <span>Find Your Class &amp; Subject ({SUBJECT_PATTERNS.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("timeline")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                  activeTab === "timeline"
-                    ? "border-accent text-accent bg-accent/5"
-                    : "border-transparent text-muted hover:text-white"
-                }`}
-              >
-                <CalendarDays size={14} />
-                <span>2027 Milestones ({EXPECTED_TIMELINE_2027.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("boards")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                  activeTab === "boards"
-                    ? "border-accent text-accent bg-accent/5"
-                    : "border-transparent text-muted hover:text-white"
-                }`}
-              >
-                <Building2 size={14} />
-                <span>Punjab BISE &amp; FBISE Portals</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("rumors")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                  activeTab === "rumors"
-                    ? "border-accent text-accent bg-accent/5"
-                    : "border-transparent text-muted hover:text-white"
-                }`}
-              >
-                <AlertTriangle size={14} />
-                <span>Clarifications ({summaryCounts.rumor})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("workflow")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
-                  activeTab === "workflow"
-                    ? "border-accent text-accent bg-accent/5"
-                    : "border-transparent text-muted hover:text-white"
-                }`}
-              >
-                <Compass size={14} />
-                <span>Verification Standards</span>
-              </button>
-            </div>
+            <nav
+              aria-label="Board Watch Views"
+              className="mt-8 flex items-center gap-1.5 overflow-x-auto border-b border-white/10 pb-px scrollbar-none"
+            >
+              {(
+                [
+                  {
+                    id: "stream" as const,
+                    label: `All Updates & News (${filteredEntries.length})`,
+                    icon: <Layers size={14} />,
+                    highlight: false,
+                  },
+                  {
+                    id: "esheets" as const,
+                    label: "E-Sheet Guide (Punjab & FBISE)",
+                    icon: <ScanLine size={14} />,
+                    highlight: true,
+                  },
+                  {
+                    id: "patterns" as const,
+                    label: `Find Your Class & Subject (${SUBJECT_PATTERNS.length})`,
+                    icon: <BookOpen size={14} />,
+                    highlight: false,
+                  },
+                  {
+                    id: "timeline" as const,
+                    label: `2027 Milestones (${EXPECTED_TIMELINE_2027.length})`,
+                    icon: <CalendarDays size={14} />,
+                    highlight: false,
+                  },
+                  {
+                    id: "boards" as const,
+                    label: "Punjab BISE & FBISE Portals",
+                    icon: <Building2 size={14} />,
+                    highlight: false,
+                  },
+                  {
+                    id: "rumors" as const,
+                    label: `Clarifications (${summaryCounts.rumor})`,
+                    icon: <AlertTriangle size={14} />,
+                    highlight: false,
+                  },
+                  {
+                    id: "workflow" as const,
+                    label: "Verification Standards",
+                    icon: <Compass size={14} />,
+                    highlight: false,
+                  },
+                ]
+              ).map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative flex items-center gap-2 px-4 py-2.5 text-xs font-heading font-bold transition-colors duration-200 whitespace-nowrap cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 rounded-t-lg ${
+                      isActive
+                        ? "text-accent"
+                        : tab.highlight
+                          ? "text-accent/90 hover:text-accent"
+                          : "text-muted hover:text-white"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="board-watch-tab-indicator"
+                        transition={
+                          prefersReducedMotion ? { duration: 0 } : BW_TWEEN_INTERACTIVE
+                        }
+                        className="pointer-events-none absolute inset-0 rounded-t-lg bg-accent/[0.06] border-b-2 border-accent"
+                      />
+                    )}
+                    <span className="relative z-10 inline-flex items-center gap-2">
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </header>
 
         {/* MAIN BODY AREA */}
         <main className="mx-auto max-w-site px-4 sm:px-6 py-8">
+          <TabSwitchPanel panelKey={activeTab}>
           {/* ============================================================
               TAB 1: UPDATES & NEWS STREAM
               ============================================================ */}
@@ -567,14 +623,24 @@ export default function BoardWatchPage() {
                     <button
                       key={topic.id}
                       type="button"
+                      aria-pressed={isActive}
                       onClick={() => setSelectedTopic(topic.id)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-heading font-semibold transition-all cursor-pointer ${
+                      className={`relative rounded-lg px-3 py-1.5 text-xs font-heading transition-colors duration-200 cursor-pointer active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
                         isActive
-                          ? "bg-accent text-black font-bold"
-                          : "border border-white/10 bg-[#141416] text-zinc-300 hover:text-white hover:border-white/25"
+                          ? "text-black font-bold"
+                          : "border border-white/10 bg-[#141416] font-semibold text-zinc-300 hover:text-white hover:border-white/25"
                       }`}
                     >
-                      {topic.label}
+                      {isActive && (
+                        <motion.span
+                          layoutId="board-watch-topic-pill"
+                          transition={
+                            prefersReducedMotion ? { duration: 0 } : BW_TWEEN_INTERACTIVE
+                          }
+                          className="pointer-events-none absolute inset-0 rounded-lg bg-accent"
+                        />
+                      )}
+                      <span className="relative z-10">{topic.label}</span>
                     </button>
                   );
                 })}
@@ -610,7 +676,7 @@ export default function BoardWatchPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("esheets")}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-heading font-black text-black hover:bg-amber-300 transition-colors shrink-0 self-start md:self-center cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-heading font-black text-black hover:bg-amber-300 active:scale-[0.98] transition-all duration-200 shrink-0 self-start md:self-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
                 >
                   <span>Open E-Sheet Guide</span>
                   <ArrowRight size={13} />
@@ -795,15 +861,18 @@ export default function BoardWatchPage() {
                         </div>
 
                         <div className="space-y-4">
-                          {group.items.map((entry) => {
+                          {group.items.map((entry, idx) => {
                             const badge = getCategoryBadge(entry);
                             const isExpanded = expandedEntryId === entry.id;
 
                             return (
-                              <article
+                              <ScrollRevealArticle
                                 key={entry.id}
                                 id={entry.id}
-                                className={`rounded-2xl border p-5 sm:p-6 transition-all shadow-soft ${
+                                delay={Math.min(idx % 3, 2) * 0.06}
+                                duration={0.42}
+                                y={12}
+                                className={`rounded-2xl border p-5 sm:p-6 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 shadow-soft ${
                                   entry.isHistorical
                                     ? "border-zinc-700/60 bg-[#101013] hover:border-zinc-600/80"
                                     : "border-white/10 bg-[#141416] hover:border-white/20"
@@ -911,7 +980,7 @@ export default function BoardWatchPage() {
                                     />
                                   </button>
 
-                                  {isExpanded && (
+                                  <CollapsiblePanel isOpen={isExpanded}>
                                     <div className="mt-3 rounded-xl border border-white/10 bg-black/40 p-3.5 text-xs font-mono space-y-1.5 text-zinc-400">
                                       <p>
                                         <strong className="text-white">Issuing Authority:</strong>{" "}
@@ -926,7 +995,7 @@ export default function BoardWatchPage() {
                                         {entry.lastVerifiedDate}
                                       </p>
                                     </div>
-                                  )}
+                                  </CollapsiblePanel>
                                 </div>
 
                                 <div className="mt-5 pt-4 border-t border-white/10 space-y-2.5 text-xs">
@@ -946,7 +1015,7 @@ export default function BoardWatchPage() {
                                         href={src.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-heading font-semibold transition-colors ${
+                                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-heading font-semibold transition-all duration-150 active:scale-[0.98] ${
                                           src.sourceKind === "official"
                                             ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
                                             : src.sourceKind === "reproduced-copy"
@@ -960,7 +1029,7 @@ export default function BoardWatchPage() {
                                     ))}
                                   </div>
                                 </div>
-                              </article>
+                              </ScrollRevealArticle>
                             );
                           })}
                         </div>
@@ -1005,7 +1074,7 @@ export default function BoardWatchPage() {
               ============================================================ */}
           {activeTab === "timeline" && (
             <div className="space-y-6">
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.05] p-5">
+              <ScrollRevealDiv className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.05] p-5">
                 <div className="flex items-start gap-3">
                   <Clock size={20} className="text-amber-400 shrink-0 mt-0.5" />
                   <div>
@@ -1022,7 +1091,7 @@ export default function BoardWatchPage() {
                     <div className="mt-3">
                       <Link
                         href="/utilities?tab=calendar"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/20 active:scale-[0.98] transition-all duration-200"
                       >
                         <CalendarDays size={13} />
                         <span>Open Live Countdown &amp; Study Calendar Tool</span>
@@ -1031,16 +1100,22 @@ export default function BoardWatchPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </ScrollRevealDiv>
 
               <div className="relative border-l-2 border-white/15 ml-4 sm:ml-6 pl-6 sm:pl-8 space-y-8">
                 {EXPECTED_TIMELINE_2027.map((stage, idx) => (
-                  <div key={stage.id} className="relative group">
+                  <ScrollRevealDiv
+                    key={stage.id}
+                    delay={Math.min(idx % 3, 2) * 0.06}
+                    duration={0.44}
+                    y={12}
+                    className="relative group"
+                  >
                     <div className="absolute -left-[31px] sm:-left-[39px] top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#18181c] border-2 border-accent text-accent font-mono text-[10px] font-bold">
                       {idx + 1}
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-[#141416] p-5 sm:p-6 transition-all hover:border-white/20">
+                    <div className="rounded-2xl border border-white/10 bg-[#141416] p-5 sm:p-6 transition-[border-color,transform] duration-200 hover:border-white/20 hover:-translate-y-0.5">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3 mb-3">
                         <div>
                           <span className="font-mono text-[11px] font-bold text-accent uppercase">
@@ -1079,7 +1154,7 @@ export default function BoardWatchPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </ScrollRevealDiv>
                 ))}
               </div>
             </div>
@@ -1132,9 +1207,9 @@ export default function BoardWatchPage() {
                         key={cls.id}
                         type="button"
                         onClick={() => handlePatternClassChange(cls.id)}
-                        className={`rounded-xl border p-3 text-left transition-all cursor-pointer ${
+                        className={`rounded-xl border p-3 text-left transition-all duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
                           active
-                            ? "border-accent bg-accent text-black font-bold"
+                            ? "border-accent bg-accent text-black font-bold shadow-glow"
                             : "border-white/10 bg-[#141416] text-white hover:border-white/25"
                         }`}
                       >
@@ -1166,7 +1241,7 @@ export default function BoardWatchPage() {
                         key={p.id}
                         type="button"
                         onClick={() => setSelectedPatternId(p.id)}
-                        className={`rounded-xl px-3.5 py-2 text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                        className={`rounded-xl px-3.5 py-2 text-xs font-heading font-bold transition-all duration-200 whitespace-nowrap cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
                           isSelected
                             ? "bg-accent text-black font-black shadow-glow"
                             : "border border-white/10 bg-[#141416] text-zinc-300 hover:text-white hover:border-white/25"
@@ -1181,6 +1256,7 @@ export default function BoardWatchPage() {
 
               {/* Selected Subject Blueprint Card */}
               {selectedPatternSubject && (
+                <TabSwitchPanel panelKey={selectedPatternSubject.id}>
                 <div className="rounded-3xl border border-white/10 bg-[#141416] p-6 sm:p-8 space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
                     <div>
@@ -1334,6 +1410,7 @@ export default function BoardWatchPage() {
                     </div>
                   </div>
                 </div>
+                </TabSwitchPanel>
               )}
             </div>
           )}
@@ -1343,7 +1420,7 @@ export default function BoardWatchPage() {
               ============================================================ */}
           {activeTab === "boards" && (
             <div className="space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-[#121216] p-5">
+              <ScrollRevealDiv className="rounded-2xl border border-white/10 bg-[#121216] p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h2 className="font-heading text-lg font-bold text-white">
@@ -1359,20 +1436,23 @@ export default function BoardWatchPage() {
                     href={PBCC_INFO.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3.5 py-2 text-xs font-heading font-bold text-accent hover:bg-accent/20 transition-all shrink-0"
+                    className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3.5 py-2 text-xs font-heading font-bold text-accent hover:bg-accent/20 active:scale-[0.98] transition-all duration-200 shrink-0"
                   >
                     <Building2 size={14} />
                     <span>Open PBCC Portal</span>
                     <ExternalLink size={12} />
                   </a>
                 </div>
-              </div>
+              </ScrollRevealDiv>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {PUNJAB_BOARDS.map((board) => (
-                  <div
+                {PUNJAB_BOARDS.map((board, idx) => (
+                  <ScrollRevealDiv
                     key={board.id}
-                    className="rounded-2xl border border-white/10 bg-[#141416] p-5 flex flex-col justify-between hover:border-white/20 transition-all shadow-soft"
+                    delay={Math.min(idx % 3, 2) * 0.06}
+                    duration={0.42}
+                    y={12}
+                    className="rounded-2xl border border-white/10 bg-[#141416] p-5 flex flex-col justify-between hover:border-white/20 hover:-translate-y-0.5 transition-[border-color,transform] duration-200 shadow-soft"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -1432,12 +1512,12 @@ export default function BoardWatchPage() {
                         <ExternalLink size={11} />
                       </a>
                     </div>
-                  </div>
+                  </ScrollRevealDiv>
                 ))}
               </div>
 
               {/* Separate Federal Board (FBISE) Reference Card */}
-              <div className="rounded-2xl border border-sky-500/30 bg-sky-950/15 p-5 sm:p-6 space-y-3">
+              <ScrollRevealDiv className="rounded-2xl border border-sky-500/30 bg-sky-950/15 p-5 sm:p-6 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <span className="font-mono text-[10px] font-bold text-sky-400 uppercase">
@@ -1483,7 +1563,7 @@ export default function BoardWatchPage() {
                     <ExternalLink size={11} />
                   </a>
                 </div>
-              </div>
+              </ScrollRevealDiv>
             </div>
           )}
 
@@ -1492,7 +1572,7 @@ export default function BoardWatchPage() {
               ============================================================ */}
           {activeTab === "rumors" && (
             <div className="space-y-6">
-              <div className="rounded-2xl border border-rose-500/30 bg-rose-950/15 p-5">
+              <ScrollRevealDiv className="rounded-2xl border border-rose-500/30 bg-rose-950/15 p-5">
                 <div className="flex items-start gap-3">
                   <AlertTriangle size={20} className="text-rose-400 shrink-0 mt-0.5" />
                   <div>
@@ -1506,10 +1586,10 @@ export default function BoardWatchPage() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </ScrollRevealDiv>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="rounded-2xl border border-amber-500/25 bg-[#141416] p-5 space-y-2">
+                <ScrollRevealDiv delay={0} className="rounded-2xl border border-amber-500/25 bg-[#141416] p-5 space-y-2 transition-colors duration-200 hover:border-amber-500/40">
                   <span className="inline-block font-mono text-[10px] font-bold text-amber-300 uppercase">
                     Reported Schedule Clarity · Class 9 vs Class 10
                   </span>
@@ -1522,9 +1602,9 @@ export default function BoardWatchPage() {
                     final subject-wise date sheets still awaited. Neither reported coverage nor
                     official notices place Class 9 on 16 March 2027.
                   </p>
-                </div>
+                </ScrollRevealDiv>
 
-                <div className="rounded-2xl border border-amber-500/25 bg-[#141416] p-5 space-y-2">
+                <ScrollRevealDiv delay={0.07} className="rounded-2xl border border-amber-500/25 bg-[#141416] p-5 space-y-2 transition-colors duration-200 hover:border-amber-500/40">
                   <span className="inline-block font-mono text-[10px] font-bold text-amber-300 uppercase">
                     Awaiting Confirmation · Intermediate 2027
                   </span>
@@ -1535,9 +1615,9 @@ export default function BoardWatchPage() {
                     Neither 2027 Intermediate exam commencement dates nor 2027 HSSC exam admission
                     fee dates have been notified yet as of 15 November 2026.
                   </p>
-                </div>
+                </ScrollRevealDiv>
 
-                <div className="rounded-2xl border border-emerald-500/25 bg-[#141416] p-5 space-y-2">
+                <ScrollRevealDiv delay={0.14} className="rounded-2xl border border-emerald-500/25 bg-[#141416] p-5 space-y-2 transition-colors duration-200 hover:border-emerald-500/40">
                   <span className="inline-block font-mono text-[10px] font-bold text-emerald-300 uppercase">
                     Syllabus Clarification · PECTAA ALP
                   </span>
@@ -1550,9 +1630,9 @@ export default function BoardWatchPage() {
                     Grades 9–12 in those subjects—prepare full books. Also do not confuse Grade 11
                     notice No. 1256 (Masihi Taleem only) with main Grade 11 notice No. 1239.
                   </p>
-                </div>
+                </ScrollRevealDiv>
 
-                <div className="rounded-2xl border border-sky-500/25 bg-[#141416] p-5 space-y-2">
+                <ScrollRevealDiv delay={0.2} className="rounded-2xl border border-sky-500/25 bg-[#141416] p-5 space-y-2 transition-colors duration-200 hover:border-sky-500/40">
                   <span className="inline-block font-mono text-[10px] font-bold text-sky-300 uppercase">
                     Passing Marks &amp; E-Marking Clarification
                   </span>
@@ -1566,7 +1646,7 @@ export default function BoardWatchPage() {
                     11 Nov 2026, signed circulars naming all exact Matric vs Inter subjects are still
                     awaited as of 18 Nov 2026. Never mix FBISE rules with Punjab BISE circulars.
                   </p>
-                </div>
+                </ScrollRevealDiv>
               </div>
             </div>
           )}
@@ -1575,7 +1655,7 @@ export default function BoardWatchPage() {
               TAB 6: VERIFICATION & CLASSIFICATION STANDARDS
               ============================================================ */}
           {activeTab === "workflow" && (
-            <div className="rounded-3xl border border-white/10 bg-[#141416] p-6 sm:p-10 space-y-8">
+            <ScrollRevealDiv className="rounded-3xl border border-white/10 bg-[#141416] p-6 sm:p-10 space-y-8">
               <div>
                 <span className="font-mono text-xs font-bold text-accent uppercase tracking-wider">
                   Editorial Verification Standard
@@ -1645,14 +1725,28 @@ export default function BoardWatchPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </ScrollRevealDiv>
           )}
+          </TabSwitchPanel>
         </main>
 
         {/* VERIFY / REPORT A CIRCULAR MODAL */}
-        {verifyModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="relative w-full max-w-lg rounded-3xl border border-white/15 bg-[#141418] p-6 shadow-2xl">
+        <AnimatePresence>
+          {verifyModalOpen && (
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.18, ease: BW_EASE }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 12, scale: 0.985 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.985 }}
+                transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.22, ease: BW_EASE }}
+                className="relative w-full max-w-lg rounded-3xl border border-white/15 bg-[#141418] p-6 shadow-2xl"
+              >
               <button
                 type="button"
                 onClick={() => {
@@ -1739,9 +1833,10 @@ export default function BoardWatchPage() {
                   </div>
                 </form>
               )}
-            </div>
-          </div>
-        )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

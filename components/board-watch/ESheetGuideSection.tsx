@@ -1,6 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  BW_TWEEN_INTERACTIVE,
+  CollapsiblePanel,
+  ScrollRevealDiv,
+  ScrollRevealSection,
+  TabSwitchPanel,
+} from "@/components/board-watch/BoardWatchMotion";
 import {
   AlertTriangle,
   ArrowRight,
@@ -91,6 +99,7 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
   const [visualMode, setVisualMode] = useState<"correct" | "incorrect">("correct");
   const [mistakeFilter, setMistakeFilter] = useState<"all" | "Critical" | "High" | "Medium">("all");
   const [openFaqId, setOpenFaqId] = useState<string>(ESHEET_FAQS[0].id);
+  const prefersReducedMotion = useReducedMotion();
 
   const selectedStage =
     PUNJAB_ROLLOUT_TIMELINE.find((s) => s.id === selectedStageId) ?? PUNJAB_ROLLOUT_TIMELINE[0];
@@ -109,7 +118,11 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
   return (
     <div className="space-y-10">
       {/* HERO INTRO + 9-SECTION QUICK NAVIGATION */}
-      <section className="rounded-3xl border border-accent/30 bg-[#121216] p-5 sm:p-8 space-y-5">
+      <ScrollRevealDiv
+        y={10}
+        duration={0.44}
+        className="rounded-3xl border border-accent/30 bg-[#121216] p-5 sm:p-8 space-y-5"
+      >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono">
@@ -141,7 +154,7 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
           <button
             type="button"
             onClick={onOpenNewsFilter}
-            className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-4 py-2.5 text-xs font-heading font-bold text-accent hover:bg-accent/20 transition-colors shrink-0 self-start lg:self-center cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-4 py-2.5 text-xs font-heading font-bold text-accent hover:bg-accent/20 active:scale-[0.98] transition-all duration-200 shrink-0 self-start lg:self-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
           >
             <Layers size={14} />
             <span>Filter E-Sheet News Stories</span>
@@ -160,19 +173,19 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                 key={item.id}
                 type="button"
                 onClick={() => scrollToSection(item.id)}
-                className="rounded-lg border border-white/10 bg-black/50 px-3 py-1.5 text-[11px] font-heading font-semibold text-zinc-200 hover:border-accent/50 hover:text-accent transition-colors cursor-pointer"
+                className="rounded-lg border border-white/10 bg-black/50 px-3 py-1.5 text-[11px] font-heading font-semibold text-zinc-200 hover:border-accent/50 hover:text-accent active:scale-[0.97] transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
               >
                 {item.label}
               </button>
             ))}
           </div>
         </div>
-      </section>
+      </ScrollRevealDiv>
 
       {/* ===================================================================
           1. LATEST E-SHEET NEWS SUMMARY
          =================================================================== */}
-      <section id="esheet-news" className="scroll-mt-24 space-y-4">
+      <ScrollRevealSection id="esheet-news" className="scroll-mt-24 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
           <div>
             <span className="font-mono text-[11px] font-bold uppercase text-accent">
@@ -273,12 +286,12 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
             </ul>
           </div>
         </div>
-      </section>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           2. HOW E-SHEETS & ON-SCREEN MARKING WORK + COMPARISON TABLE
          =================================================================== */}
-      <section id="esheet-how-it-works" className="scroll-mt-24 space-y-5">
+      <ScrollRevealSection id="esheet-how-it-works" className="scroll-mt-24 space-y-5">
         <div>
           <span className="font-mono text-[11px] font-bold uppercase text-accent">
             Section 2 · Visual Workflow &amp; System Clarification
@@ -294,10 +307,13 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
 
         {/* 7-Step Process Pipeline */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {ESHEET_WORKFLOW_STEPS.map((item) => (
-            <div
+          {ESHEET_WORKFLOW_STEPS.map((item, idx) => (
+            <ScrollRevealDiv
               key={item.step}
-              className="rounded-2xl border border-white/10 bg-[#141416] p-4 flex flex-col justify-between space-y-3"
+              delay={Math.min(idx % 4, 3) * 0.05}
+              duration={0.4}
+              y={10}
+              className="rounded-2xl border border-white/10 bg-[#141416] p-4 flex flex-col justify-between space-y-3 transition-colors duration-200 hover:border-white/20"
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
@@ -315,10 +331,15 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                 <strong className="text-accent">Student Note: </strong>
                 {item.studentImpact}
               </div>
-            </div>
+            </ScrollRevealDiv>
           ))}
 
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 p-4 flex flex-col justify-center space-y-2">
+          <ScrollRevealDiv
+            delay={0.12}
+            duration={0.4}
+            y={10}
+            className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 p-4 flex flex-col justify-center space-y-2"
+          >
             <div className="flex items-center gap-2 text-emerald-300 font-heading text-sm font-bold">
               <ScanLine size={16} />
               <span>Important Reality Check</span>
@@ -328,11 +349,11 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
               online computer quiz. You write on special structured paper, and trained subject
               teachers mark your scanned writing on secure screens.
             </p>
-          </div>
+          </ScrollRevealDiv>
         </div>
 
         {/* Comparison Table */}
-        <div className="rounded-2xl border border-white/10 bg-[#141416] p-4 sm:p-5 space-y-3">
+        <ScrollRevealDiv className="rounded-2xl border border-white/10 bg-[#141416] p-4 sm:p-5 space-y-3">
           <h4 className="font-heading text-base font-bold text-white">
             Traditional Copy vs E-Sheet vs On-Screen Marking vs Online Exam
           </h4>
@@ -363,13 +384,13 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
               </tbody>
             </table>
           </div>
-        </div>
-      </section>
+        </ScrollRevealDiv>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           3. INTERACTIVE PUNJAB ROLLOUT TIMELINE (DESCRIPTIVE PHASES ONLY)
          =================================================================== */}
-      <section id="esheet-timeline" className="scroll-mt-24 space-y-4">
+      <ScrollRevealSection id="esheet-timeline" className="scroll-mt-24 space-y-4">
         <div>
           <span className="font-mono text-[11px] font-bold uppercase text-accent">
             Section 3 · Punjab Implementation Plan (Strict Verification)
@@ -390,8 +411,9 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
               <button
                 key={stage.id}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setSelectedStageId(stage.id)}
-                className={`rounded-2xl border p-4 text-left transition-all cursor-pointer ${
+                className={`rounded-2xl border p-4 text-left transition-all duration-200 cursor-pointer active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
                   active
                     ? "border-accent bg-accent/10 shadow-glow"
                     : "border-white/10 bg-[#141416] hover:border-white/25"
@@ -411,55 +433,57 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
         </div>
 
         {/* Active Stage Detail Card */}
-        <div className="rounded-2xl border border-white/10 bg-[#141416] p-5 sm:p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
-            <div>
-              <h4 className="font-heading text-lg font-bold text-white">
-                {selectedStage.stageLabel}
-              </h4>
-              <p className="text-xs font-mono text-zinc-400 mt-0.5">
-                {selectedStage.authorityBasis}
-              </p>
+        <TabSwitchPanel panelKey={selectedStage.id}>
+          <div className="rounded-2xl border border-white/10 bg-[#141416] p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+              <div>
+                <h4 className="font-heading text-lg font-bold text-white">
+                  {selectedStage.stageLabel}
+                </h4>
+                <p className="text-xs font-mono text-zinc-400 mt-0.5">
+                  {selectedStage.authorityBasis}
+                </p>
+              </div>
+              <StatusChip status={selectedStage.statusBadge} />
             </div>
-            <StatusChip status={selectedStage.statusBadge} />
+
+            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+              {selectedStage.scopeSummary}
+            </p>
+
+            <ul className="space-y-1.5 rounded-xl border border-white/10 bg-black/40 p-3.5 text-xs text-zinc-200">
+              {selectedStage.verifiedBoardsAndSubjects.map((line, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <Check size={14} className="text-accent shrink-0 mt-0.5" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] p-3.5">
+                <strong className="block text-emerald-300 font-heading mb-1">
+                  What Is Verified Now:
+                </strong>
+                <p className="text-zinc-300 leading-relaxed">{selectedStage.whatIsConfirmed}</p>
+              </div>
+              <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-3.5">
+                <strong className="block text-amber-300 font-heading mb-1">
+                  What Still Awaits Confirmation:
+                </strong>
+                <p className="text-zinc-300 leading-relaxed">
+                  {selectedStage.whatAwaitsConfirmation}
+                </p>
+              </div>
+            </div>
           </div>
-
-          <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-            {selectedStage.scopeSummary}
-          </p>
-
-          <ul className="space-y-1.5 rounded-xl border border-white/10 bg-black/40 p-3.5 text-xs text-zinc-200">
-            {selectedStage.verifiedBoardsAndSubjects.map((line, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <Check size={14} className="text-accent shrink-0 mt-0.5" />
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] p-3.5">
-              <strong className="block text-emerald-300 font-heading mb-1">
-                What Is Verified Now:
-              </strong>
-              <p className="text-zinc-300 leading-relaxed">{selectedStage.whatIsConfirmed}</p>
-            </div>
-            <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-3.5">
-              <strong className="block text-amber-300 font-heading mb-1">
-                What Still Awaits Confirmation:
-              </strong>
-              <p className="text-zinc-300 leading-relaxed">
-                {selectedStage.whatAwaitsConfirmation}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+        </TabSwitchPanel>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           4. PUNJAB SUBJECT COVERAGE TABLE
          =================================================================== */}
-      <section id="esheet-subjects" className="scroll-mt-24 space-y-4">
+      <ScrollRevealSection id="esheet-subjects" className="scroll-mt-24 space-y-4">
         <div>
           <span className="font-mono text-[11px] font-bold uppercase text-accent">
             Section 4 · Which Subjects Are Covered?
@@ -499,12 +523,12 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
             </table>
           </div>
         </div>
-      </section>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           5. STEP-BY-STEP STUDENT GUIDE & INTERACTIVE SHEET PLACEMENT VISUAL
          =================================================================== */}
-      <section id="esheet-student-guide" className="scroll-mt-24 space-y-5">
+      <ScrollRevealSection id="esheet-student-guide" className="scroll-mt-24 space-y-5">
         <div>
           <span className="font-mono text-[11px] font-bold uppercase text-accent">
             Section 5 · Hall Execution Checklist &amp; Placement Diagram
@@ -573,29 +597,46 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
             <div className="inline-flex rounded-xl border border-white/15 bg-black/60 p-1 shrink-0 self-start">
               <button
                 type="button"
+                aria-pressed={visualMode === "correct"}
                 onClick={() => setVisualMode("correct")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-heading font-bold transition-colors cursor-pointer ${
+                className={`relative rounded-lg px-3 py-1.5 text-xs font-heading font-bold transition-colors duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 ${
                   visualMode === "correct"
-                    ? "bg-emerald-500 text-black"
+                    ? "text-black"
                     : "text-zinc-300 hover:text-white"
                 }`}
               >
-                Correct Attempt
+                {visualMode === "correct" && (
+                  <motion.span
+                    layoutId="esheet-visual-mode-pill"
+                    transition={prefersReducedMotion ? { duration: 0 } : BW_TWEEN_INTERACTIVE}
+                    className="pointer-events-none absolute inset-0 rounded-lg bg-emerald-500"
+                  />
+                )}
+                <span className="relative z-10">Correct Attempt</span>
               </button>
               <button
                 type="button"
+                aria-pressed={visualMode === "incorrect"}
                 onClick={() => setVisualMode("incorrect")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-heading font-bold transition-colors cursor-pointer ${
+                className={`relative rounded-lg px-3 py-1.5 text-xs font-heading font-bold transition-colors duration-200 cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 ${
                   visualMode === "incorrect"
-                    ? "bg-rose-500 text-white"
+                    ? "text-white"
                     : "text-zinc-300 hover:text-white"
                 }`}
               >
-                Common Mistakes
+                {visualMode === "incorrect" && (
+                  <motion.span
+                    layoutId="esheet-visual-mode-pill"
+                    transition={prefersReducedMotion ? { duration: 0 } : BW_TWEEN_INTERACTIVE}
+                    className="pointer-events-none absolute inset-0 rounded-lg bg-rose-500"
+                  />
+                )}
+                <span className="relative z-10">Common Mistakes</span>
               </button>
             </div>
           </div>
 
+          <TabSwitchPanel panelKey={visualMode}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Mock Cover / OMR Bubble Header Visual */}
             <div
@@ -737,14 +778,18 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
               </div>
             </div>
           </div>
+          </TabSwitchPanel>
         </div>
 
         {/* 8-Step Student Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {STUDENT_STEP_BY_STEP_GUIDE.map((step) => (
-            <div
+          {STUDENT_STEP_BY_STEP_GUIDE.map((step, idx) => (
+            <ScrollRevealDiv
               key={step.stepNumber}
-              className="rounded-2xl border border-white/10 bg-[#141416] p-5 space-y-3"
+              delay={Math.min(idx % 2, 1) * 0.06}
+              duration={0.4}
+              y={10}
+              className="rounded-2xl border border-white/10 bg-[#141416] p-5 space-y-3 transition-colors duration-200 hover:border-white/20"
             >
               <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5">
                 <div className="flex items-center gap-2.5">
@@ -786,15 +831,15 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
               </div>
 
               <div className="text-[10px] font-mono text-zinc-500">Basis: {step.sourceRef}</div>
-            </div>
+            </ScrollRevealDiv>
           ))}
         </div>
-      </section>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           6. STATIONERY GUIDE (BOARD-VERIFIED, NO INVENTED UNIVERSAL RULE)
          =================================================================== */}
-      <section id="esheet-stationery" className="scroll-mt-24 space-y-4">
+      <ScrollRevealSection id="esheet-stationery" className="scroll-mt-24 space-y-4">
         <div>
           <span className="font-mono text-[11px] font-bold uppercase text-accent">
             Section 6 · Verified Pen, Marker &amp; Ink Rules
@@ -812,7 +857,7 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {STATIONERY_GUIDE_ITEMS.map((entry) => {
+          {STATIONERY_GUIDE_ITEMS.map((entry, idx) => {
             const borderClass =
               entry.category === "recommended"
                 ? "border-emerald-500/30 bg-emerald-950/10"
@@ -827,7 +872,13 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                   : "text-rose-300";
 
             return (
-              <div key={entry.item} className={`rounded-2xl border p-5 space-y-2.5 ${borderClass}`}>
+              <ScrollRevealDiv
+                key={entry.item}
+                delay={Math.min(idx % 2, 1) * 0.06}
+                duration={0.4}
+                y={10}
+                className={`rounded-2xl border p-5 space-y-2.5 transition-transform duration-200 hover:-translate-y-0.5 ${borderClass}`}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className={`font-mono text-[10px] font-bold uppercase ${labelColor}`}>
                     {entry.statusLabel}
@@ -852,16 +903,16 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                   <strong className="text-accent">Hall Advice: </strong>
                   {entry.practicalAdvice}
                 </div>
-              </div>
+              </ScrollRevealDiv>
             );
           })}
         </div>
-      </section>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           7. HOW TO AVOID LOSING MARKS (14 PITFALLS — ZERO FAKE PENALTIES)
          =================================================================== */}
-      <section id="esheet-mistakes" className="scroll-mt-24 space-y-4">
+      <ScrollRevealSection id="esheet-mistakes" className="scroll-mt-24 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <span className="font-mono text-[11px] font-bold uppercase text-accent">
@@ -877,28 +928,44 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {(["all", "Critical", "High", "Medium"] as const).map((lvl) => (
-              <button
-                key={lvl}
-                type="button"
-                onClick={() => setMistakeFilter(lvl)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-heading font-semibold cursor-pointer ${
-                  mistakeFilter === lvl
-                    ? "bg-accent text-black font-bold"
-                    : "border border-white/10 bg-[#141416] text-zinc-300 hover:text-white"
-                }`}
-              >
-                {lvl === "all" ? "All 14 Pitfalls" : `${lvl} Risk`}
-              </button>
-            ))}
+            {(["all", "Critical", "High", "Medium"] as const).map((lvl) => {
+              const isSelected = mistakeFilter === lvl;
+              return (
+                <button
+                  key={lvl}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => setMistakeFilter(lvl)}
+                  className={`relative rounded-lg px-3 py-1.5 text-xs font-heading transition-colors duration-200 cursor-pointer active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
+                    isSelected
+                      ? "text-black font-bold"
+                      : "border border-white/10 bg-[#141416] font-semibold text-zinc-300 hover:text-white"
+                  }`}
+                >
+                  {isSelected && (
+                    <motion.span
+                      layoutId="esheet-mistake-filter-pill"
+                      transition={prefersReducedMotion ? { duration: 0 } : BW_TWEEN_INTERACTIVE}
+                      className="pointer-events-none absolute inset-0 rounded-lg bg-accent"
+                    />
+                  )}
+                  <span className="relative z-10">
+                    {lvl === "all" ? "All 14 Pitfalls" : `${lvl} Risk`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredMistakes.map((m) => (
-            <div
+          {filteredMistakes.map((m, idx) => (
+            <ScrollRevealDiv
               key={m.id}
-              className="rounded-2xl border border-white/10 bg-[#141416] p-5 space-y-2.5"
+              delay={Math.min(idx % 2, 1) * 0.05}
+              duration={0.38}
+              y={10}
+              className="rounded-2xl border border-white/10 bg-[#141416] p-5 space-y-2.5 transition-colors duration-200 hover:border-white/20"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-[11px] font-bold text-accent">
@@ -935,15 +1002,15 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                 <strong>How to Prevent: </strong>
                 {m.howToPrevent}
               </div>
-            </div>
+            </ScrollRevealDiv>
           ))}
         </div>
-      </section>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           8. SEPARATE FBISE E-SHEET SYSTEM (FEDERAL BOARD ONLY)
          =================================================================== */}
-      <section
+      <ScrollRevealSection
         id="esheet-fbise"
         className="scroll-mt-24 rounded-3xl border border-sky-500/35 bg-sky-950/10 p-5 sm:p-8 space-y-6"
       >
@@ -967,7 +1034,7 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
             href="https://www.fbise.edu.pk/screen_marking.php"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-sky-400/40 bg-sky-500/15 px-4 py-2 text-xs font-heading font-bold text-sky-200 hover:bg-sky-500/25 shrink-0 self-start"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-sky-400/40 bg-sky-500/15 px-4 py-2 text-xs font-heading font-bold text-sky-200 hover:bg-sky-500/25 active:scale-[0.98] transition-all duration-200 shrink-0 self-start"
           >
             <span>FBISE E-Sheets Portal</span>
             <ExternalLink size={12} />
@@ -976,15 +1043,18 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
 
         {/* FBISE Milestones */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {FBISE_MILESTONES.map((item) => (
-            <div
+          {FBISE_MILESTONES.map((item, idx) => (
+            <ScrollRevealDiv
               key={item.year}
+              delay={idx * 0.05}
+              duration={0.38}
+              y={10}
               className="rounded-2xl border border-sky-500/25 bg-black/40 p-4 space-y-1.5"
             >
               <span className="font-mono text-xs font-black text-sky-300">{item.year}</span>
               <h4 className="font-heading text-sm font-bold text-white">{item.title}</h4>
               <p className="text-xs text-zinc-300 leading-relaxed">{item.detail}</p>
-            </div>
+            </ScrollRevealDiv>
           ))}
         </div>
 
@@ -1035,7 +1105,7 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                 href={sample.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-xl border border-white/10 bg-black/45 p-3.5 hover:border-sky-400/50 transition-colors flex flex-col justify-between gap-2"
+                className="rounded-xl border border-white/10 bg-black/45 p-3.5 hover:border-sky-400/50 hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-200 flex flex-col justify-between gap-2"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-sky-300">
@@ -1084,12 +1154,12 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
             </table>
           </div>
         </div>
-      </section>
+      </ScrollRevealSection>
 
       {/* ===================================================================
           9. OFFICIAL SOURCES REGISTRY + FAQ ACCORDION + MANDATORY DISCLAIMER
          =================================================================== */}
-      <section id="esheet-sources-faqs" className="scroll-mt-24 space-y-6">
+      <ScrollRevealSection id="esheet-sources-faqs" className="scroll-mt-24 space-y-6">
         {/* Verified Sources & Links Registry */}
         <div className="rounded-2xl border border-white/10 bg-[#141416] p-5 sm:p-6 space-y-4">
           <div>
@@ -1123,7 +1193,7 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                   href={src.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-white/10 bg-black/40 p-3.5 hover:border-accent/45 transition-colors flex flex-col justify-between gap-2"
+                  className="rounded-xl border border-white/10 bg-black/40 p-3.5 hover:border-accent/45 hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-200 flex flex-col justify-between gap-2"
                 >
                   <div>
                     <span className={`font-mono text-[10px] font-bold uppercase ${badgeColor}`}>
@@ -1164,13 +1234,13 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
               return (
                 <div
                   key={faq.id}
-                  className="rounded-xl border border-white/10 bg-black/40 overflow-hidden"
+                  className="rounded-xl border border-white/10 bg-black/40 overflow-hidden transition-colors duration-200 hover:border-white/20"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaqId(isOpen ? "" : faq.id)}
                     aria-expanded={isOpen}
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.03] transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.03] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   >
                     <div className="space-y-0.5">
                       <span className="font-mono text-[10px] uppercase text-accent">
@@ -1182,16 +1252,16 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
                     </div>
                     <ChevronDown
                       size={16}
-                      className={`text-zinc-400 shrink-0 transition-transform ${
+                      className={`text-zinc-400 shrink-0 transition-transform duration-200 ${
                         isOpen ? "rotate-180 text-accent" : ""
                       }`}
                     />
                   </button>
-                  {isOpen && (
+                  <CollapsiblePanel isOpen={isOpen}>
                     <div className="px-4 pb-4 pt-1 text-xs sm:text-sm text-zinc-300 leading-relaxed border-t border-white/5">
                       {faq.answer}
                     </div>
-                  )}
+                  </CollapsiblePanel>
                 </div>
               );
             })}
@@ -1213,7 +1283,7 @@ export default function ESheetGuideSection({ onOpenNewsFilter }: ESheetGuideSect
             </p>
           </div>
         </div>
-      </section>
+      </ScrollRevealSection>
     </div>
   );
 }
