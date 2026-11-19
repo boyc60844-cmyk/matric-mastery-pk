@@ -43,6 +43,13 @@ import {
   TabSwitchPanel,
 } from "@/components/board-watch/BoardWatchMotion";
 import ESheetGuideSection from "@/components/board-watch/ESheetGuideSection";
+import AcademicIntelligenceHub from "@/components/board-watch/AcademicIntelligenceHub";
+import {
+  AcademicViewLevel,
+  AcademicViewPreferences,
+  AcademicViewSystem,
+  DEFAULT_ACADEMIC_VIEW,
+} from "@/lib/boardWatchIntelligenceData";
 import {
   PUNJAB_BOARDS,
   PBCC_INFO,
@@ -73,6 +80,9 @@ export default function BoardWatchPage() {
   // Find Your Class and Subject state (Tab 3)
   const [patternClass, setPatternClass] = useState<ExamClass>("9th");
   const [selectedPatternId, setSelectedPatternId] = useState<string>("g9-english");
+
+  // Academic View lightweight personalization (prioritizes relevant content without hiding alerts)
+  const [academicView, setAcademicView] = useState<AcademicViewPreferences>(DEFAULT_ACADEMIC_VIEW);
 
   // Interactive UI state
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -184,6 +194,56 @@ export default function BoardWatchPage() {
       return true;
     });
   }, [selectedTopic, selectedCategory, selectedBoard, selectedClass, selectedSession, searchQuery]);
+
+  // Prioritize updates matching My Academic View while never hiding important announcements
+  const prioritizedEntries = useMemo(() => {
+    if (academicView.system === "all" && academicView.level === "all") {
+      return filteredEntries;
+    }
+
+    const scoreEntry = (entry: BoardWatchEntry): number => {
+      let score = 0;
+      if (academicView.system === "fbise") {
+        if (entry.affectedBoards.includes("fbise")) score += 2;
+      } else if (academicView.system === "punjab") {
+        if (entry.affectedBoards.some((b) => b !== "fbise")) score += 2;
+      }
+
+      if (academicView.level === "matric") {
+        if (
+          entry.affectedClasses.includes("9th") ||
+          entry.affectedClasses.includes("10th")
+        ) {
+          score += 1;
+        }
+      } else if (academicView.level === "inter") {
+        if (
+          entry.affectedClasses.includes("11th") ||
+          entry.affectedClasses.includes("12th")
+        ) {
+          score += 1;
+        }
+      }
+      return score;
+    };
+
+    return [...filteredEntries].sort((a, b) => scoreEntry(b) - scoreEntry(a));
+  }, [filteredEntries, academicView]);
+
+  const handleApplyAcademicViewToStream = (
+    system: AcademicViewSystem,
+    level: AcademicViewLevel
+  ) => {
+    if (system === "fbise") {
+      setSelectedBoard("fbise");
+      setSelectedTopic("fbise");
+    } else {
+      setSelectedBoard("all");
+      if (level === "matric") setSelectedTopic("matric-2027");
+      else if (level === "inter") setSelectedTopic("inter-2027");
+      else setSelectedTopic("all");
+    }
+  };
 
   const handleCopyLink = (entryId: string) => {
     if (typeof window !== "undefined") {
@@ -615,6 +675,16 @@ export default function BoardWatchPage() {
               ============================================================ */}
           {activeTab === "stream" && (
             <div className="space-y-6">
+              {/* ACADEMIC INTELLIGENCE OVERVIEW (Live PKT Clock, Session, Countdown, Radar, Watchlist, Change Log) */}
+              <AcademicIntelligenceHub
+                totalStories={summaryCounts.total}
+                confirmedStories={summaryCounts.confirmed}
+                academicView={academicView}
+                onAcademicViewChange={setAcademicView}
+                onJumpToBoardPortals={() => setActiveTab("boards")}
+                onFilterStreamBySystem={handleApplyAcademicViewToStream}
+              />
+
               {/* TOPIC CATEGORY BAR */}
               <div className="flex flex-wrap items-center gap-2">
                 {BOARD_WATCH_TOPIC_FILTERS.map((topic) => {
@@ -801,7 +871,25 @@ export default function BoardWatchPage() {
 
               <div className="flex items-center justify-between text-xs text-muted">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span>Showing {filteredEntries.length} verified stories</span>
+                  <span>Showing {prioritizedEntries.length} verified stories</span>
+                  {(academicView.system !== "all" || academicView.level !== "all") && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="text-zinc-300">
+                        Prioritized for{" "}
+                        {academicView.system === "fbise"
+                          ? "FBISE"
+                          : academicView.system === "punjab"
+                            ? "Punjab BISEs"
+                            : "All Boards"}
+                        {academicView.level === "matric"
+                          ? " · Matric"
+                          : academicView.level === "inter"
+                            ? " · Inter"
+                            : ""}
+                      </span>
+                    </>
+                  )}
                   {selectedTopic !== "all" && (
                     <>
                       <span aria-hidden="true">·</span>
@@ -820,7 +908,7 @@ export default function BoardWatchPage() {
               </div>
 
               {/* LIST OF UPDATE CARDS */}
-              {filteredEntries.length > 0 ? (
+              {prioritizedEntries.length > 0 ? (
                 <div className="space-y-8">
                   {[
                     {
@@ -828,14 +916,14 @@ export default function BoardWatchPage() {
                       heading: "Current 2026–2027 Examination Updates, Policies & Syllabi",
                       subheading:
                         "Verified schedules, E-Sheet & OSM updates, PECTAA ALP & pairing schemes, IBCC 40% passing & grading rules, admissions, and FBISE notices (cutoff: 18 November 2026).",
-                      items: filteredEntries.filter((e) => !e.isHistorical),
+                      items: prioritizedEntries.filter((e) => !e.isHistorical),
                     },
                     {
                       sectionKey: "historical",
                       heading: "Historical 2026 Examination Records (Completed / Commenced)",
                       subheading:
                         "Past 2026 Intermediate cycles retained solely so students never mistake May/Nov 2026 schedules for 2027 dates.",
-                      items: filteredEntries.filter((e) => Boolean(e.isHistorical)),
+                      items: prioritizedEntries.filter((e) => Boolean(e.isHistorical)),
                     },
                   ]
                     .filter((group) => group.items.length > 0)
