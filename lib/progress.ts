@@ -19,7 +19,8 @@ export interface Badge {
 export interface MockTestResult {
   id: string;
   studentName?: string;
-  className: "Class 9" | "Class 10";
+  system?: "punjab" | "fbise";
+  className: "Class 9" | "Class 10" | "Class 11" | "Class 12";
   subject: string;
   chapter: string;
   totalMarks: number;

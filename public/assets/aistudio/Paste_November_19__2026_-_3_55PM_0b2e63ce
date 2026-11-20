@@ -1,0 +1,1069 @@
+MATRIC MASTERY — COMPLETE MOCK TEST PLATFORM & EXAM ENGINE REVAMP
+
+PROJECT
+
+Matric Mastery — independent student-built academic technology platform.
+
+Existing website:
+https://matric-mastery-pk.vercel.app
+
+Stack: Existing React + Vite project, current design system, existing routing, Tailwind/CSS, available libraries and local persistence.
+
+MISSION
+
+Completely replace the existing Mock Tests page and mock-test engine.
+
+The current implementation was originally built primarily for Classes 9 and 10 and contains placeholder/fake questions, arbitrary marks, and random paper construction that does not reliably reflect actual board assessment structures.
+
+That implementation is no longer acceptable.
+
+Build a robust, advanced, genuinely functional assessment platform for:
+
+- Class 9
+- Class 10
+- Class 11
+- Class 12
+
+Across two strictly separated examination systems:
+
+- Punjab Boards / PECTAA
+- FBISE
+
+This is a COMPLETE ENGINE REVAMP—not a UI facelift.
+
+The new engine must be syllabus-aware, blueprint-driven, question-bank-based, mark-validating, exam-state-aware, and analytically useful.
+
+Do not make a fake system that looks advanced but generates unreliable examinations.
+
+---
+
+PHASE 1 — REMOVE THE OLD ENGINE'S FUNDAMENTAL FLAWS
+
+Completely replace old mock-test logic responsible for:
+
+- Placeholder questions
+- Random or fabricated marks
+- Arbitrary question counts
+- Unverified question generation
+- Inaccurate exam section structures
+- Invalid paper totals
+- Incorrect syllabus coverage
+- Generic marking
+- Broken test completion and result logic
+- Fake analytics
+
+Do not preserve bad engine logic merely for backward compatibility.
+
+Preserve only reusable UI, utilities, styles, routing, or components that are genuinely sound and can be adapted without retaining the old flaws.
+
+Do not delete unrelated website features or other pages.
+
+---
+
+PHASE 2 — TWO SEPARATE EXAMINATION SYSTEMS
+
+Create independent assessment configurations for Punjab Boards and FBISE.
+
+Shared infrastructure is allowed. Shared exam rules are not assumed.
+
+A. Punjab Boards
+
+Source authority:
+
+Punjab Education, Curriculum, Training and Assessment Authority (PECTAA)
+
+Official sources:
+
+https://pectaa.edu.pk/curriculum-compliance/
+
+https://pectaa.edu.pk/downloads-2-2/
+
+Current examination cycle:
+Academic Session 2026–27 / Annual Examination 2027
+
+Current official notification references:
+
+- Class 9: PECTAA/C&C Unit/2026/1238 — 6 November 2026
+- Class 11: PECTAA/C&C Unit/2026/1239 — 6 November 2026
+- Class 10: PECTAA/C&C Unit/2026/1257 — 14 November 2026
+- Class 12: PECTAA/C&C Unit/2026/1258 — 14 November 2026
+
+These notifications contain Smart Syllabus/ALP, deleted topics and questions, pairing schemes, and model papers.
+
+Use the current 2026–27 session and Annual Examination 2027 assessment documents as the default current Punjab configuration.
+
+Implement a syllabus eligibility system that supports precise exclusions at topic, subtopic, exercise/question, or unit level wherever specified.
+
+Do not exclude an entire chapter when only part of it is deleted.
+
+No question associated with an excluded syllabus element may enter a current-session Punjab board simulation.
+
+Punjab board assessment configuration must be based on the actual official model papers and pairing schemes, subject by subject.
+
+Do not invent or assume that every subject follows one universal paper pattern.
+
+B. FBISE
+
+Official sources:
+
+https://www.fbise.edu.pk/curriculum_model_paper.php
+
+https://www.fbise.edu.pk/syllabus.php
+
+https://www.fbise.edu.pk/syllabusSSC-I.php
+
+https://www.fbise.edu.pk/syllabusSSC-II.php
+
+https://www.fbise.edu.pk/syllabusHSSC-I.php
+
+https://www.fbise.edu.pk/syllabusHSSC-II.php
+
+FBISE uses its own curricula, assessment frameworks, model papers, SLOs, Tables of Specifications, and subject-level paper structures.
+
+Build FBISE configurations independently.
+
+Where official frameworks map questions to SLOs or cognitive levels, incorporate those mappings into the question bank and paper generation system.
+
+Do not copy Punjab pairing schemes, subject marks, timings, attempt rules, or deleted-topic assumptions into FBISE.
+
+Support curriculum and scheme versioning so newly revised FBISE schemes can be applied without rewriting the engine.
+
+---
+
+PHASE 3 — SYLLABUS AND CURRICULUM DATA ARCHITECTURE
+
+Create a centralized, typed curriculum structure.
+
+Suggested architecture:
+
+/lib/mock-tests/
+curriculum/
+types.ts
+curriculumRegistry.ts
+punjab/
+session-2026-27.ts
+fbise/
+scheme-2024.ts
+eligibilityResolver.ts
+syllabusVersionResolver.ts
+
+Do not create fake chapter/topic lists just to fill dropdowns.
+
+Every curriculum entry must be validated against the applicable current textbook, official syllabus or framework.
+
+The structure should support:
+
+- Examination system
+- Board
+- Class
+- Academic session
+- Curriculum version
+- Subject
+- Subject variant/group
+- Chapter
+- Topic
+- Subtopic where available
+- SLO where available
+- Content eligibility
+- Deleted/excluded content
+- Assessment method
+- Practical/theory classification where applicable
+
+Support subject groups and optional/elective subjects without assuming every student studies the same subjects.
+
+The registry must be maintainable for future 2027–28 and later curriculum revisions.
+
+If the latest official curriculum for a specific subject is not yet verified, mark that subject as unavailable or provisional. Do not silently use outdated syllabus data.
+
+---
+
+PHASE 4 — VERIFIED QUESTION BANK
+
+Build the question bank as the core source of all tests.
+
+Suggested architecture:
+
+/lib/mock-tests/
+question-bank/
+types.ts
+questionRegistry.ts
+validation.ts
+eligibility.ts
+scoring.ts
+bank/
+
+Every question must have structured metadata.
+
+Required question schema
+
+- Unique stable ID
+- Examination system
+- Board, if relevant
+- Class
+- Subject
+- Subject variant/group, if applicable
+- Curriculum version
+- Chapter ID
+- Topic ID
+- Optional subtopic ID
+- SLO ID, if mapped
+- Question type
+- Question content
+- Options, where applicable
+- Correct answer or answer key
+- Accepted answers, where applicable
+- Explanation
+- Fixed marks
+- Difficulty: Easy / Moderate / Challenging
+- Cognitive level, where mapped or authored: Recall / Understand / Apply / Analyze
+- Source/reference mapping
+- Origin: Original authored / Adapted with permitted use
+- Validation status
+- Review metadata
+- Eligibility status
+- Revision/version history
+
+Question quality states
+
+Only fully validated questions are eligible for current board simulations and scoring.
+
+Statuses:
+
+- Verified
+- Needs Review
+- Excluded
+- Outdated
+
+Question validation must verify:
+
+- Correct answer
+- Correct chapter/topic
+- Current syllabus eligibility
+- Correct marks
+- Correct question type
+- Clear wording
+- Appropriate level
+- No duplicate question
+- No contradiction in options
+- Explanation accuracy
+- Board compatibility
+
+Never silently convert AI-generated content into Verified status.
+
+AI-generated questions must NOT be automatically injected into a test simply to fill an empty question pool.
+
+Do not reproduce entire official copyrighted model papers or textbook exercise collections as the site's question bank. Create original practice questions, with source mapping for topic and assessment style.
+
+Question-bank coverage policy
+
+Build only question content that can be validated.
+
+Do not claim full subject/class/board coverage unless it actually exists.
+
+Display a real bank availability indicator when a test is unavailable or under-populated.
+
+Example:
+
+"Validated pool: 18 / 30 required questions"
+
+Offer a smaller supported test instead of fabricating 12 missing questions.
+
+Do not create fake question counts, fake coverage percentages, or fake bank statistics.
+
+---
+
+PHASE 5 — QUESTION TYPES
+
+Implement reusable question rendering and answer-validation support for the following types:
+
+1. Single-answer MCQ
+2. Multiple-select where supported by blueprint
+3. True/False
+4. Fill in the blank
+5. Matching
+6. Classification / categorization
+7. Short answer
+8. Structured multi-part questions
+9. Numerical / calculation questions
+10. Proof / derivation
+11. Diagram labeling / diagram interpretation where supported
+12. Extended response / rubric-based answer
+
+Each question type must define:
+
+- Valid response model
+- Answer validation
+- Scoring model
+- Explanation display
+- Review behavior
+- UI renderer
+
+Do not force unsupported types into subjects.
+
+Question renderers must be accessible, responsive, and capable of displaying equations, symbols, subscripts, superscripts, tables, and diagrams where needed.
+
+Avoid unreliable custom HTML rendering.
+
+---
+
+PHASE 6 — REAL PAPER BLUEPRINT ENGINE
+
+Create a deterministic blueprint-based paper generator.
+
+Suggested architecture:
+
+/lib/mock-tests/
+blueprint/
+types.ts
+blueprintRegistry.ts
+blueprintValidator.ts
+paperGenerator.ts
+randomization.ts
+
+A blueprint must define:
+
+- System
+- Board scope
+- Class
+- Subject
+- Session
+- Curriculum version
+- Paper duration
+- Total marks
+- Sections
+- Section instructions
+- Fixed question counts
+- Question types
+- Marks per item
+- Required attempt count
+- Optional questions
+- Choice groups
+- Chapter allocation
+- Topic allocation
+- Difficulty distribution, where applicable
+- Question order rules
+- Objective/descriptive distribution
+- Eligibility rules
+
+Blueprint validation
+
+Before generating a paper, validate:
+
+- Marks reconcile exactly.
+- Section marks reconcile.
+- Attempt marks reconcile with total score.
+- Attempt counts are feasible.
+- All choice groups are valid.
+- All question types are supported.
+- Question pool is sufficient.
+- No excluded syllabus content exists.
+- No duplicates exist within the generated paper.
+- Subject and class match.
+- Curriculum version is correct.
+- Test duration is valid.
+
+If validation fails, refuse to start the paper and provide a clear explanation.
+
+Controlled randomization
+
+Randomization may select different questions, but must respect the blueprint.
+
+Use constrained random selection rather than unrestricted random sorting.
+
+Preserve:
+
+- Marks
+- Section structure
+- Chapter coverage
+- Topic quotas
+- Question type quotas
+- Choice rules
+- Difficulty balance
+- Question compatibility
+
+Generate and freeze a paper snapshot when a test starts. A refresh must never produce a different paper for the same active attempt.
+
+Use a deterministic seed or frozen question selection for attempt recovery.
+
+---
+
+PHASE 7 — SIX TEST MODES
+
+Create six distinct modes using the same underlying validated engine.
+
+1. BOARD SIMULATION
+
+The flagship mode.
+
+- Official subject-specific blueprint
+- Correct paper duration
+- Correct total marks
+- Actual section structure
+- Required attempt rules
+- Optional question rules
+- Current syllabus eligibility
+- Real board-specific instructions
+- Exam-style navigation
+- Timed attempt
+- Exam-style result
+
+Offer this mode only when the relevant blueprint and question bank are sufficiently validated.
+
+2. CHAPTER TEST
+
+- Select one or more chapters.
+- Select a chapter test length from available validated questions.
+- Include only questions belonging to selected chapters.
+- Optional difficulty selection.
+- Chapter/topic analytics after submission.
+
+3. QUICK TEST
+
+- 5 / 10 / 15 minute presets.
+- Configurable question count based on available pool.
+- Mix eligible questions with balanced marks.
+- No arbitrary marks.
+- Clear practice mode label.
+
+4. WEAK AREAS
+
+Use actual saved attempt data.
+
+- Prioritize topics where the student repeatedly answered incorrectly.
+- Prioritize unanswered or low-confidence areas only if confidence was explicitly captured.
+- Do not claim a topic is weak based on one ambiguous question.
+- Allow students to start a targeted test from the analytics screen.
+
+If no history exists, explain that more tests are needed before personalized targeting becomes useful.
+
+5. CUSTOM TEST
+
+Allow configuration of:
+
+- Chapters
+- Topics
+- Number of questions
+- Available question types
+- Difficulty
+- Practice mode or timed mode
+
+Every selected setting must be validated against the question bank.
+
+6. SLO / CONCEPT PRACTICE
+
+Where the curriculum and bank have reliable mappings:
+
+- Select a concept or learning outcome.
+- Generate a focused test.
+- Show the concept/SLO being assessed.
+- Track performance against that concept.
+
+Do not display fake SLO mappings.
+
+---
+
+PHASE 8 — ADVANCED EXAM INTERFACE
+
+Completely replace the old exam-taking UI.
+
+The exam screen should feel like a serious, polished testing application—not a generic quiz card.
+
+DESKTOP
+
+- Persistent exam header
+- Exam name and subject
+- System/class metadata
+- Countdown timer
+- Section navigation
+- Question navigation grid
+- Question content panel
+- Answer input
+- Mark for review
+- Clear answer
+- Previous / Next
+- Submit exam
+- Section completion information
+- Optional-question instructions
+
+MOBILE
+
+Mobile is a priority.
+
+- Compact header
+- Persistent but unobtrusive timer
+- Collapsible question navigator
+- Large touch targets
+- Comfortable answer controls
+- Sticky bottom Previous/Next controls
+- No horizontal overflow
+- No cramped desktop layout
+- No accidental submission
+- No timer overlap with content
+- Keep navigation accessible while keyboard is open
+
+QUESTION NAVIGATOR
+
+Each question has an accurate state:
+
+- Unanswered
+- Answered
+- Marked for review
+- Answered + marked
+- Current
+
+The navigator must update instantly when an answer is saved.
+
+Allow question jumping when the test rules permit.
+
+TIMER
+
+- Timer based on a reliable deadline, not decrement-only state that loses accuracy after a pause.
+- Persist remaining time/deadline with the attempt.
+- Recover after refresh.
+- Handle tab suspension.
+- Handle time expiration.
+- At zero, automatically finalize the attempt according to exam rules.
+- Warn before submission.
+- Provide a clear final confirmation screen.
+
+Do not allow refresh or navigation to silently reset the timer.
+
+---
+
+PHASE 9 — EXAM ATTEMPT STATE MACHINE
+
+Create a proper attempt lifecycle:
+
+- Ready
+- Started
+- In Progress
+- Paused, only if the test mode permits
+- Submitted
+- Time Expired
+- Scoring
+- Completed
+
+Each attempt must include:
+
+- Unique attempt ID
+- Paper snapshot
+- Frozen question order
+- Frozen options order
+- Start time
+- Deadline
+- Response state
+- Mark-for-review state
+- Section state
+- Submission status
+- Score
+- Results
+- Curriculum/blueprint version
+
+Use a reliable local persistence system compatible with the existing project.
+
+Persist active attempts safely.
+
+Prevent:
+
+- Duplicate submissions
+- Accidental timer resets
+- Paper regeneration during an active attempt
+- Lost answers
+- Inconsistent scores after recovery
+
+Add storage versioning and safe migration/cleanup.
+
+Do not create a fake account or backend-sync feature.
+
+---
+
+PHASE 10 — MARKING ENGINE
+
+Build a transparent marking engine.
+
+Automatically mark
+
+- Single-answer MCQs
+- Supported multiple-select
+- True/False
+- Matching
+- Validated exact responses
+- Numerical questions with configured tolerance
+- Structured items with explicit rubrics
+
+Flexible response validation
+
+Support where applicable:
+
+- Case normalization
+- Whitespace normalization
+- Punctuation normalization
+- Accepted answer variants
+- Equivalent numerical values
+- Unit validation
+- Precision/rounding rules
+- Formula or answer equivalence only where safely defined
+
+Partial marks
+
+Only award partial marks when the question has an explicit scoring rubric.
+
+Never invent partial marks.
+
+Subjective responses
+
+For long/descriptive answers:
+
+- Show model answer.
+- Show marking points.
+- Show rubric.
+- Allow student self-review.
+- Keep the mark status as Pending Review when objective scoring is unavailable.
+
+Do not fake AI grading accuracy.
+
+Do not automatically award full marks or random marks to subjective answers.
+
+Every scored mark must be traceable to a question key or rubric.
+
+---
+
+PHASE 11 — RESULTS & REVIEW SYSTEM
+
+Create a complete result experience.
+
+SCORE OVERVIEW
+
+Show:
+
+- Obtained marks
+- Total marks
+- Percentage
+- Correct
+- Incorrect
+- Unanswered
+- Time spent
+- Accuracy
+- Test mode
+- Difficulty
+- Completion status
+
+TOPIC PERFORMANCE
+
+Show topic/chapter performance using actual question metadata.
+
+Calculate:
+
+- Marks obtained per topic
+- Marks available per topic
+- Accuracy where applicable
+- Question count
+- Incorrect questions
+- Topic trend across attempts
+
+Do not show misleading percentages for tiny samples without context.
+
+QUESTION REVIEW
+
+For every question:
+
+- Original question
+- Student answer
+- Correct answer
+- Marks obtained / maximum
+- Explanation
+- Marking rubric
+- Chapter/topic
+- Difficulty
+- Cognitive level, if mapped
+- Review state
+
+Allow students to filter review by:
+
+- All
+- Incorrect
+- Unanswered
+- Marked for review
+
+NEXT ACTION
+
+Based on actual results, provide useful next steps:
+
+- Retry incorrect questions
+- Practice weakest topic
+- Start chapter test
+- Review explanations
+- Retake with a different validated paper
+- Compare attempts
+
+Recommendations must be grounded in actual student performance.
+
+---
+
+PHASE 12 — PERFORMANCE ANALYTICS
+
+Build a real attempt history.
+
+Store and calculate:
+
+- Attempts by subject
+- Attempts by class
+- Scores
+- Percentages
+- Accuracy
+- Time usage
+- Chapter performance
+- Topic performance
+- Improvement/decline
+- Question history
+- Repeated mistakes
+
+Create a clean analytics dashboard with:
+
+- Recent attempts
+- Score trends
+- Subject performance
+- Weak topics
+- Strong topics
+- Improvement indicators
+
+No fake graph data.
+
+Empty state must be useful and honest:
+
+"Complete a few tests to unlock your performance insights."
+
+Avoid oversized or unnecessarily complex charts.
+
+---
+
+PHASE 13 — MISTAKE NOTEBOOK
+
+Add a persistent mistake-review system derived from real test responses.
+
+Automatically allow students to save missed questions to their mistake notebook.
+
+Store:
+
+- Question reference
+- Student response
+- Correct response
+- Explanation
+- Subject
+- Chapter/topic
+- Date
+- Attempt reference
+- Review status
+
+Students can:
+
+- Review mistakes
+- Mark reviewed
+- Retry
+- Filter by subject/topic
+- Remove a saved mistake
+
+Do not duplicate entire questions unnecessarily across storage. Use stable question IDs and preserve question versions.
+
+---
+
+PHASE 14 — UI/UX DESIGN
+
+Preserve the existing Matric Mastery brand:
+
+- Obsidian black
+- Electric yellow #FFD60A
+- Existing typography
+- Premium editorial design
+- Clean spacing
+- Sharp hierarchy
+- Subtle motion
+- Responsive layout
+- Accessibility
+
+The Mock Tests landing page should be substantially upgraded.
+
+LANDING PAGE
+
+Include:
+
+- Premium hero
+- Concise introduction
+- System selection (Punjab / FBISE)
+- Class selection (9 / 10 / 11 / 12)
+- Subject selection based on available validated curriculum
+- Current academic session / syllabus version
+- Test modes
+- Blueprint preview
+- Question pool readiness indicator
+- Available test cards
+- Recent attempts, when available
+- Performance snapshot, when available
+
+Do not display subjects or tests as available when their content is missing.
+
+TEST CONFIGURATION
+
+Make setup clear and compact.
+
+Display a preview of:
+
+- Subject
+- Chapters
+- Question count
+- Total marks
+- Duration
+- Difficulty
+- Question type
+- Blueprint/pattern
+- Syllabus session
+
+Use a clean progressive setup. Avoid a massive form.
+
+MOTION
+
+Reuse the existing site's motion primitives if appropriate.
+
+- Smooth transitions
+- Subtle entrances
+- Reduced-motion support
+- No excessive animation
+- No visual distraction during active tests
+
+ACCESSIBILITY
+
+- Keyboard navigation
+- Focus states
+- Screen reader labels
+- Accessible timer announcement strategy
+- Accessible question navigation
+- Adequate contrast
+- Reduced-motion support
+- Responsive touch targets
+
+---
+
+PHASE 15 — QUESTION BANK ADMIN / MAINTENANCE WORKFLOW
+
+The platform is currently student-facing. Do not create a public admin dashboard or expose validation controls to students.
+
+However, organize the question bank so the site owner can safely add new content in code later.
+
+Provide a maintainable content-authoring schema or internal documentation describing how to add a question, validate it, map it to the syllabus, and make it eligible.
+
+Question content must be separated from engine UI logic.
+
+Do not add backend or admin infrastructure in this task.
+
+---
+
+PHASE 16 — DATA QUALITY AND HONEST AVAILABILITY
+
+This is a critical requirement.
+
+The platform must not pretend that the entire syllabus has a complete validated question bank.
+
+- Only verified questions enter board simulations.
+- No random placeholder questions.
+- No fabricated question counts.
+- No fake paper coverage.
+- No fabricated board blueprints.
+- No fabricated SLOs.
+- No fake analytics.
+- No unverified current-syllabus claims.
+
+If a subject has insufficient question coverage, clearly mark it as:
+
+- Coming soon
+- Limited question pool
+- Chapter practice available
+- Board simulation unavailable
+
+Explain the limitation without making the platform look broken.
+
+A smaller, accurate question pool is better than a complete fake exam.
+
+---
+
+PHASE 17 — IMPLEMENTATION ARCHITECTURE
+
+Use modular architecture with clear separation between:
+
+1. Curriculum registry
+2. Syllabus eligibility resolver
+3. Question bank
+4. Question validation
+5. Blueprint registry
+6. Blueprint validator
+7. Constrained paper generator
+8. Answer validator
+9. Scoring engine
+10. Attempt lifecycle/state
+11. Persistence
+12. Analytics
+13. Mistake notebook
+14. UI components
+
+Suggested structure (adapt to existing codebase rather than blindly creating every file):
+
+/lib/mock-tests/
+types.ts
+curriculum/
+question-bank/
+blueprint/
+engine/
+scoring/
+attempts/
+persistence/
+analytics/
+
+/components/mock-tests/
+setup/
+exam/
+question-types/
+results/
+review/
+analytics/
+
+Avoid overengineering and avoid creating redundant abstractions.
+
+Use existing libraries already installed.
+
+Do not add dependencies unless absolutely necessary. Prefer existing project capabilities.
+
+---
+
+PHASE 18 — TESTING & VERIFICATION
+
+Add actual unit tests for core engine logic.
+
+BLUEPRINT TESTS
+
+- Exact marks reconciliation
+- Invalid totals rejection
+- Attempt-choice validation
+- Missing question pools
+- Section constraints
+- Chapter/topic quotas
+- Question-type quotas
+
+SYLLABUS TESTS
+
+- Correct Punjab session
+- Correct FBISE session
+- Deleted topic exclusion
+- Retained topics remain eligible
+- Version mismatch rejection
+- Subject/board mismatch rejection
+
+QUESTION TESTS
+
+- Correct answer validation
+- Incorrect response validation
+- Answer normalization
+- Numerical tolerance
+- Units
+- Partial marks/rubrics
+- Invalid questions excluded
+- Duplicate questions prevented
+
+ATTEMPT TESTS
+
+- Start
+- Save answer
+- Mark review
+- Jump navigation
+- Refresh recovery
+- Deadline recovery
+- Timer expiration
+- Submission
+- Duplicate submit prevention
+- Snapshot integrity
+
+ANALYTICS TESTS
+
+- Correct score
+- Correct percentage
+- Topic breakdown
+- Accuracy
+- Attempt trend
+- Empty history
+
+UI TESTING
+
+Verify:
+
+- Desktop
+- Mobile (375px and smaller supported widths)
+- Exam screen
+- Timer
+- Question navigator
+- Answer controls
+- Submission confirmation
+- Results
+- Question review
+- Attempt recovery
+- No horizontal overflow
+- No runtime errors
+- Reduced motion
+
+Run the production build and TypeScript checks.
+
+---
+
+PHASE 19 — STRICT PRESERVATION
+
+Do not modify:
+
+- Board Watch
+- E-Sheet Guide
+- Academic Intelligence
+- Homepage
+- Other study utilities
+- Other pages
+- Global branding
+- Global navigation
+- Unrelated styles
+- Existing AI assistant functionality
+
+Only touch shared code when absolutely required, and ensure it causes no regressions.
+
+Do not deploy.
+
+---
+
+PHASE 20 — EXECUTION REQUIREMENT
+
+Implement the revamp directly.
+
+Do not return merely a proposal, audit, mockup, architecture explanation, or list of future suggestions.
+
+Inspect the existing Mock Tests page and engine, then replace its broken foundations with the new system.
+
+Preserve good existing components and adapt them where appropriate.
+
+Do not ask me to research the syllabus or prepare question data manually as a prerequisite to the code architecture.
+
+Use the official sources and verified information listed above to define the system architecture, current curriculum metadata, and paper configuration.
+
+Where complete verified question-bank content is not realistically available during this implementation, implement the fully functioning engine and mark the content coverage honestly as limited. Do not fabricate questions to claim completion.
+
+Do not invent universal marks, durations, or paper patterns. Populate only configurations that are actually verified against the current official framework.
+
+Deliver the actual implementation in preview.
+
+At completion, report:
+
+- Old engine components removed/replaced
+- New architecture
+- Files created/modified
+- Fully implemented features
+- Verified subject/board/class coverage
+- Question bank counts that are genuinely present
+- Board simulations that are genuinely available
+- Build and TypeScript results
+- Unit tests
+- Mobile and desktop verification
+- Remaining content gaps
+
+Do not deploy to production.
