@@ -98,29 +98,32 @@ export default function MockTestsPage() {
       | "Class 10"
       | "Class 11"
       | "Class 12";
+    const hasObjectiveItems = sc.autoVerifiedMaxMarks > 0;
+    const objTopics = sc.objectiveTopicBreakdown ?? [];
+
     recordMockTestResult({
       id: completed.attemptId,
       system: completed.paper.system,
       className: classLabel,
       subject: completed.paper.subjectName,
       chapter: completed.paper.mode.replace(/_/g, " "),
-      totalMarks: sc.totalMarks,
-      score: sc.obtainedMarks,
-      percentage: sc.percentage,
+      totalMarks: hasObjectiveItems ? sc.autoVerifiedMaxMarks : sc.totalMarks,
+      score: hasObjectiveItems ? sc.autoVerifiedObtainedMarks : 0,
+      percentage: hasObjectiveItems ? (sc.autoVerifiedAccuracy ?? 0) : 0,
       correctCount: sc.correctCount,
       incorrectCount: sc.incorrectCount,
       unansweredCount: sc.unansweredCount,
-      accuracy: sc.autoGradedAccuracy ?? sc.percentage,
+      accuracy: hasObjectiveItems ? (sc.autoVerifiedAccuracy ?? 0) : 0,
       timeUsedSeconds: sc.timeSpentSeconds,
       averageSecondsPerQuestion:
         completed.paper.slots.length > 0
           ? Math.round(sc.timeSpentSeconds / completed.paper.slots.length)
           : 0,
       date: new Date(completed.submittedAtMs ?? Date.now()).toISOString(),
-      topicBreakdown: sc.topicBreakdown.map((t) => ({
+      topicBreakdown: objTopics.map((t) => ({
         topic: t.topicTitle,
-        correct: Math.max(0, t.questionCount - t.incorrectCount - t.pendingReviewCount),
-        total: t.questionCount,
+        correct: Math.max(0, t.autoGradedCount - t.incorrectCount),
+        total: t.autoGradedCount,
       })),
       improvementSuggestions:
         sc.pendingReviewCount > 0

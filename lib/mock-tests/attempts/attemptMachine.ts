@@ -114,7 +114,9 @@ export function pauseAttempt(
   attempt: ExamAttemptRecord,
   nowMs: number = Date.now()
 ): ExamAttemptRecord {
-  if (!attempt.paper.allowPause || attempt.status !== "in_progress") return attempt;
+  if (isAttemptTerminal(attempt) || !attempt.paper.allowPause || attempt.status !== "in_progress") {
+    return attempt;
+  }
   const remainingMs =
     attempt.deadlineMs !== null ? Math.max(0, attempt.deadlineMs - nowMs) : null;
   return {
@@ -129,7 +131,9 @@ export function resumeAttempt(
   attempt: ExamAttemptRecord,
   nowMs: number = Date.now()
 ): ExamAttemptRecord {
-  if (attempt.status !== "paused") return attempt;
+  if (isAttemptTerminal(attempt) || attempt.status !== "paused") {
+    return attempt;
+  }
   const nextDeadlineMs =
     attempt.paper.isTimed && attempt.remainingMsAtPause !== null
       ? nowMs + attempt.remainingMsAtPause
@@ -152,7 +156,7 @@ export function submitAttempt(
   reason: "manual" | "expired" = "manual",
   nowMs: number = Date.now()
 ): ExamAttemptRecord {
-  if (attempt.status === "completed" && attempt.scoring) {
+  if (isAttemptTerminal(attempt) && attempt.scoring) {
     return attempt;
   }
 
@@ -245,6 +249,13 @@ export function extractMistakesFromAttempt(attempt: ExamAttemptRecord): MistakeN
       subjectId: attempt.paper.subjectId,
       chapterId: question.chapterId,
       topicId: question.topicId,
+      promptSnapshot: question.prompt,
+      curriculumVersion: question.curriculumVersion,
+      sourceReference: question.sourceReference,
+      markingNote:
+        item.status === "self_reviewed"
+          ? `Self-reviewed rubric (${item.awardedMarks ?? 0}/${item.maxMarks}m)`
+          : item.feedback,
       studentResponseSummary: formatStudentResponseSummary(question, item.studentResponse),
       correctResponseSummary: formatCorrectResponseSummary(question),
       explanation: question.explanation,

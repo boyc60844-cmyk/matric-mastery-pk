@@ -27,6 +27,20 @@ export type CurriculumVerificationStatus =
   | "provisional"
   | "unavailable";
 
+export type CurriculumScopeStatus = "verified" | "pending_verification";
+
+export type SyllabusPolicyType =
+  | "reduced_alp_active"
+  | "full_syllabus_no_alp"
+  | "slo_national_curriculum";
+
+export type BlueprintReadinessStatus = "verified" | "unavailable";
+
+export type QuestionBankReadinessStatus =
+  | "empty"
+  | "partial"
+  | "simulation_ready";
+
 export type AssessmentTrack = "theory" | "practical" | "combined";
 
 export type DifficultyLevel = "Easy" | "Moderate" | "Challenging";
@@ -34,6 +48,7 @@ export type CognitiveLevel = "Recall" | "Understand" | "Apply" | "Analyze";
 
 export type QuestionValidationStatus =
   | "Verified"
+  | "Provisional"
   | "Needs Review"
   | "Excluded"
   | "Outdated";
@@ -126,6 +141,23 @@ export interface OfficialNotificationRef {
   url: string;
 }
 
+export interface FbiseBilingualPolicy {
+  applies: boolean;
+  notificationCode?: string;
+  notificationDate?: string;
+  effectiveExam?: string;
+  note: string;
+}
+
+export interface FbiseSchemeMetadata {
+  schemeName: string;
+  totalSchemeMarks: number;
+  phasedRolloutLabel: string;
+  legacyExcludedScheme: string;
+  assessmentFrameworkType: string;
+  bilingualPolicy: FbiseBilingualPolicy;
+}
+
 export interface SubjectCurriculum {
   id: string;
   system: ExamSystem;
@@ -142,13 +174,47 @@ export interface SubjectCurriculum {
   hasPracticalComponent: boolean;
   practicalMarks?: number;
   theoryMarks?: number;
+  /** Legacy combined field kept synced from decoupled status dimensions */
   verificationStatus: CurriculumVerificationStatus;
+  /** Independent curriculum authority status */
+  curriculumStatus: CurriculumScopeStatus;
+  /** Explicit syllabus policy: reduced ALP vs verified full syllabus vs SLO curriculum */
+  syllabusPolicy: SyllabusPolicyType;
+  /** Textbook / curriculum framework identifier */
+  textbookRef: string;
+  /** Concise verified exclusion summary (e.g. "Unit 2 excluded" or "None — full syllabus active") */
+  alpExclusionsSummary?: string;
+  /** Optional FBISE-specific scheme of studies & bilingual policy metadata */
+  fbiseSchemeMeta?: FbiseSchemeMetadata;
   verificationNote: string;
   notificationRefs: OfficialNotificationRef[];
   chapters: ChapterDefinition[];
   slos: SLODefinition[];
   /** True only when ALP deletions actually apply; e.g. Tarjama-tul-Quran is full syllabus */
   alpApplied: boolean;
+}
+
+export interface SubjectReadinessProfile {
+  curriculumId: string;
+  system: ExamSystem;
+  grade: GradeLevel;
+  subjectId: string;
+  subjectName: string;
+  curriculumStatus: CurriculumScopeStatus;
+  syllabusPolicy: SyllabusPolicyType;
+  blueprintStatus: BlueprintReadinessStatus;
+  bankStatus: QuestionBankReadinessStatus;
+  practiceAvailable: boolean;
+  boardSimulationReady: boolean;
+  totalRawCount: number;
+  verifiedEligibleCount: number;
+  excludedByAlpCount: number;
+  outdatedCount: number;
+  provisionalCount: number;
+  needsReviewCount: number;
+  requiredBlueprintSlots: number;
+  summaryBadge: string;
+  statusDetail: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -410,6 +476,9 @@ export interface PaperBlueprint {
   sourceDocumentRef: string;
   sourceUrl: string;
   durationMinutes: number;
+  objectiveTimeMinutes?: number;
+  subjectiveTimeMinutes?: number;
+  timingBreakdownNote?: string;
   totalMarks: number;
   passingPercentage: number; // e.g. 40 per IBCC 2026-27 reform
   objectiveMarks: number;
@@ -581,11 +650,22 @@ export interface AttemptScoringSummary {
   autoGradedObtainedMarks: number;
   autoGradedMaxMarks: number;
   selfReviewedObtainedMarks: number;
+  selfReviewedMaxMarks: number;
   pendingReviewMarks: number;
   pendingReviewCount: number;
   totalMarks: number;
   percentage: number;
   autoGradedAccuracy: number | null;
+  /** Strictly separated primary fields */
+  autoVerifiedObtainedMarks: number;
+  autoVerifiedMaxMarks: number;
+  autoVerifiedAccuracy: number | null;
+  selfAssessedObtainedMarks: number;
+  selfAssessedMaxMarks: number;
+  pendingSubjectiveMarks: number;
+  indicativeCombinedMarks: number;
+  indicativeCombinedPercentage: number;
+  hasMixedSelfAssessment: boolean;
   passedByPolicy: boolean;
   passingPercentage: number;
   correctCount: number;
@@ -595,6 +675,11 @@ export interface AttemptScoringSummary {
   notCountedChoiceCount: number;
   timeSpentSeconds: number;
   itemResults: EvaluatedQuestionResult[];
+  /** Strictly auto-verified topic breakdown (never inflated by subjective self-review) */
+  objectiveTopicBreakdown: TopicPerformanceMetric[];
+  /** Separate self-assessed topic breakdown for rubric-checked items */
+  selfAssessedTopicBreakdown: TopicPerformanceMetric[];
+  /** Combined display breakdown kept compatible for existing result cards */
   topicBreakdown: TopicPerformanceMetric[];
   sloBreakdown: SLOPerformanceMetric[];
 }
@@ -632,6 +717,10 @@ export interface MistakeNotebookEntry {
   subjectId: string;
   chapterId: string;
   topicId: string;
+  promptSnapshot?: string;
+  curriculumVersion?: string;
+  sourceReference?: string;
+  markingNote?: string;
   studentResponseSummary: string;
   correctResponseSummary: string;
   explanation: string;
@@ -641,9 +730,13 @@ export interface MistakeNotebookEntry {
   status: MistakeReviewStatus;
 }
 
-export interface PersistedMockTestStoreV2 {
-  schemaVersion: 2;
+export interface PersistedMockTestStoreV3 {
+  schemaVersion: 3;
   activeAttempt: ExamAttemptRecord | null;
   attemptHistory: ExamAttemptRecord[];
   mistakeNotebook: MistakeNotebookEntry[];
 }
+
+/** Alias preserved for non-breaking imports across UI components */
+export type PersistedMockTestStoreV2 = PersistedMockTestStoreV3;
+

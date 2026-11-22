@@ -30,17 +30,40 @@ export function normalizeUnit(raw: string): string {
     .trim();
 }
 
+/**
+ * Safely parses student numerical inputs:
+ * - Standard decimals & signed integers ("-9.8", "1,250.5")
+ * - Simple fractions ("3/4", "-5/2")
+ * - Scientific notation ("1.6×10^-19", "1.6 * 10^(-19)", "1.6 x 10^8", "3e8")
+ * Rejects NaN, Infinity, or malformed tokens cleanly.
+ */
 export function parseNumericInput(raw: string): number | null {
   const cleaned = raw.trim().replace(/,/g, "");
   if (!cleaned) return null;
 
-  // Support simple fraction forms like "3/4" or "-5/2"
+  // Scientific notation: a × 10^b | a x 10^b | a * 10^(b)
+  const sciMatch =
+    /^([+-]?\d+(?:\.\d+)?)\s*(?:×|x|\*)\s*10\s*\^\s*\(?([+-]?\d+)\)?$/i.exec(
+      cleaned
+    );
+  if (sciMatch) {
+    const mantissa = Number(sciMatch[1]);
+    const exp = Number(sciMatch[2]);
+    if (Number.isFinite(mantissa) && Number.isFinite(exp)) {
+      const value = mantissa * Math.pow(10, exp);
+      return Number.isFinite(value) ? value : null;
+    }
+    return null;
+  }
+
+  // Simple fraction forms like "3/4" or "-5/2"
   const fracMatch = /^([+-]?\d+(?:\.\d+)?)\s*\/\s*([+-]?\d+(?:\.\d+)?)$/.exec(cleaned);
   if (fracMatch) {
     const num = Number(fracMatch[1]);
     const den = Number(fracMatch[2]);
-    if (!Number.isNaN(num) && !Number.isNaN(den) && den !== 0) {
-      return num / den;
+    if (Number.isFinite(num) && Number.isFinite(den) && den !== 0) {
+      const value = num / den;
+      return Number.isFinite(value) ? value : null;
     }
     return null;
   }

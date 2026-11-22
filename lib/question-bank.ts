@@ -81,8 +81,25 @@ export const SUBJECTS_CONFIG: TestSyllabusSubject[] = [
     name: "Computer Science",
     classes: ["Class 9", "Class 10"],
     chapters: {
-      "Class 9": ["Problem Solving", "Binary Systems"],
-      "Class 10": ["Ch 1: Introduction to Programming", "Ch 2: User Interaction", "Ch 3: Conditional Logic", "Ch 4: Data & Repetition", "Ch 5: Functions & Entrepreneurship"],
+      "Class 9": [
+        "Unit 1: Introduction to Systems",
+        "Unit 3: Digital Systems and Logic Design",
+        "Unit 4: System Troubleshooting",
+        "Unit 5: Software System",
+        "Unit 6: Introduction to Computer Networks",
+        "Unit 7: Computational Thinking",
+        "Unit 8: Web Development with HTML, CSS and JS",
+        "Unit 9: Data Science and Data Gathering",
+      ],
+      "Class 10": [
+        "Unit 1: Operating Systems: Structure & Services",
+        "Unit 3: Introduction to Python Programming",
+        "Unit 4: Control Structures in Python",
+        "Unit 5: Data Science",
+        "Unit 6: Introduction to AI and Machine Learning",
+        "Unit 7: Applications of AI",
+        "Unit 8: Digital Entrepreneurship",
+      ],
     },
   },
 ];

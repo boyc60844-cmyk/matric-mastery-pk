@@ -4,6 +4,7 @@ import {
   EvaluatedQuestionResult,
   GeneratedPaperSnapshot,
   ItemEvaluationStatus,
+  QuestionType,
   SLOPerformanceMetric,
   StudentResponseValue,
   SubjectiveSelfReviewEntry,
@@ -16,6 +17,12 @@ import {
   normalizeTextAnswer,
   parseNumericInput,
 } from "@/lib/mock-tests/scoring/answerValidator";
+
+const FLOAT_EPSILON = 1e-9;
+
+function isStrictlySubjectiveType(type: QuestionType): boolean {
+  return type === "short_answer" || type === "extended_response" || type === "proof_derivation";
+}
 
 export function evaluateSingleItem(params: {
   question: BankQuestion;
@@ -236,7 +243,7 @@ export function evaluateSingleItem(params: {
       }
       const numVal = parseNumericInput(response.valueText);
       const valOk =
-        numVal !== null && Math.abs(numVal - question.numericAnswer) <= question.tolerance;
+        numVal !== null && Math.abs(numVal - question.numericAnswer) <= question.tolerance + FLOAT_EPSILON;
       const unitOk = checkUnitMatch(response.unitText, question.acceptedUnits);
 
       if (valOk && unitOk) {
@@ -247,7 +254,6 @@ export function evaluateSingleItem(params: {
         };
       }
 
-      // Partial marks ONLY when question defines explicit valueMarks/unitMarks + partial rubric
       if (
         question.rubric?.allowPartialMarks &&
         typeof question.valueMarks === "number" &&
@@ -284,18 +290,20 @@ export function evaluateSingleItem(params: {
         const ans = response.parts[part.id];
         if (!ans || !ans.text.trim()) {
           notes.push(`${part.label}: blank`);
+          if (part.kind === "short_answer") {
+            hasManualPart = true;
+          }
           continue;
         }
         if (part.kind === "numerical" && typeof part.numericAnswer === "number") {
           const val = parseNumericInput(ans.text);
           const tol = part.tolerance ?? 0.05;
-          const valOk = val !== null && Math.abs(val - part.numericAnswer) <= tol;
-          const unitOk = !part.acceptedUnits?.length || !ans.unitText?.trim()
-            ? valOk && (!part.acceptedUnits?.length || checkUnitMatch(ans.unitText || "", part.acceptedUnits))
-            : checkUnitMatch(ans.unitText || "", part.acceptedUnits);
+          const valOk = val !== null && Math.abs(val - part.numericAnswer) <= tol + FLOAT_EPSILON;
+          const unitOk =
+            !part.acceptedUnits?.length ||
+            checkUnitMatch(ans.unitText || "", part.acceptedUnits);
 
-          // If student put unit inside the main numeric field or separate unit field cleanly
-          if (valOk && (!part.acceptedUnits?.length || unitOk)) {
+          if (valOk && unitOk) {
             earned += part.marks;
             notes.push(`${part.label}: ${part.marks}/${part.marks}`);
           } else if (valOk && part.acceptedUnits?.length && !unitOk && question.rubric.allowPartialMarks) {
@@ -324,7 +332,10 @@ export function evaluateSingleItem(params: {
         return {
           awardedMarks: null,
           status: "pending_review",
-          feedback: "Contains open subjective parts — review against the marking rubric.",
+          feedback:
+            earned > 0
+              ? `Objective subparts scored ${earned} marks; open text subparts require rubric self-review.`
+              : "Contains open subjective parts — review against the marking rubric.",
         };
       }
 
@@ -370,12 +381,61 @@ export function evaluateSingleItem(params: {
   }
 }
 
+function buildTopicBreakdownFromItems(
+  items: EvaluatedQuestionResult[],
+  curriculum: ReturnType<typeof getCurriculumByKey>
+): TopicPerformanceMetric[] {
+  const topicMap = new Map<string, TopicPerformanceMetric>();
+  const gradedMarksMap = new Map<string, number>();
+
+  for (const item of items) {
+    if (!item.countedInChoiceGroup) continue;
+    const chap = curriculum?.chapters.find((c) => c.id === item.chapterId);
+    const topic = chap?.topics.find((t) => t.id === item.topicId);
+    const existing = topicMap.get(item.topicId) ?? {
+      topicId: item.topicId,
+      topicTitle: topic?.title || item.topicId,
+      chapterId: item.chapterId,
+      chapterTitle: chap?.title || item.chapterId,
+      questionCount: 0,
+      autoGradedCount: 0,
+      pendingReviewCount: 0,
+      incorrectCount: 0,
+      obtainedMarks: 0,
+      availableMarks: 0,
+      accuracyPercent: null,
+    };
+
+    existing.questionCount += 1;
+    existing.availableMarks += item.maxMarks;
+
+    if (item.status === "pending_review") {
+      existing.pendingReviewCount += 1;
+    } else {
+      existing.autoGradedCount += 1;
+      existing.obtainedMarks += item.effectiveMarks;
+      gradedMarksMap.set(item.topicId, (gradedMarksMap.get(item.topicId) || 0) + item.maxMarks);
+      if (item.status === "incorrect") {
+        existing.incorrectCount += 1;
+      }
+    }
+    topicMap.set(item.topicId, existing);
+  }
+
+  return Array.from(topicMap.values()).map((t) => {
+    const gradedMarks = gradedMarksMap.get(t.topicId) || 0;
+    return {
+      ...t,
+      obtainedMarks: Number(t.obtainedMarks.toFixed(2)),
+      accuracyPercent: gradedMarks > 0 ? Math.round((t.obtainedMarks / gradedMarks) * 100) : null,
+    };
+  });
+}
+
 /**
  * Evaluates a completed or submitted paper deterministically:
- * - Objective / tolerance items are graded accurately.
- * - Subjective items without a selfReview remain `pending_review` (`awardedMarks: null`).
- * - Enforces choiceGroup attempt caps (`requiredAttemptCount`) so students cannot inflate scores
- *   beyond official section/group maximums by answering extra optional questions.
+ * - Objective / tolerance items are auto-verified strictly separate from subjective self-review.
+ * - Choice-group attempt limits follow deterministic paper slot order (first N attempted count; excess become not_counted_choice).
  */
 export function scoreExamAttempt(params: {
   paper: GeneratedPaperSnapshot;
@@ -415,7 +475,9 @@ export function scoreExamAttempt(params: {
     };
   });
 
-  // Apply official choice-group attempt caps where totalQuestions > requiredAttemptCount
+  // Deterministic paper-order choice-group cap:
+  // Within any choice group (e.g. attempt 4 of 6), the first requiredAttemptCount
+  // attempted items in paper slot order are counted; any excess become not_counted_choice.
   const resultBySlotId = new Map(rawItemResults.map((r) => [r.slotId, r]));
   let notCountedChoiceCount = 0;
 
@@ -427,17 +489,10 @@ export function scoreExamAttempt(params: {
         .map((id) => resultBySlotId.get(id))
         .filter((r): r is EvaluatedQuestionResult => Boolean(r));
 
-      // Attempted items prioritized cleanly: reviewed/auto-graded highest scores first, then pending_review
       const attempted = groupResults.filter((r) => r.status !== "unanswered");
       if (attempted.length > group.requiredAttemptCount) {
-        const sortedAttempted = [...attempted].sort((a, b) => {
-          const scoreA = a.awardedMarks ?? -0.5;
-          const scoreB = b.awardedMarks ?? -0.5;
-          return scoreB - scoreA;
-        });
-
         const countedIds = new Set(
-          sortedAttempted.slice(0, group.requiredAttemptCount).map((r) => r.slotId)
+          attempted.slice(0, group.requiredAttemptCount).map((r) => r.slotId)
         );
 
         for (const r of attempted) {
@@ -445,7 +500,7 @@ export function scoreExamAttempt(params: {
             r.countedInChoiceGroup = false;
             r.status = "not_counted_choice";
             r.effectiveMarks = 0;
-            r.feedback = `Extra attempt beyond group limit (${group.requiredAttemptCount}/${group.totalQuestions}) — excluded from total score.`;
+            r.feedback = `Extra attempt beyond group limit (${group.requiredAttemptCount}/${group.totalQuestions}) in paper slot order — excluded from total score.`;
             notCountedChoiceCount += 1;
           }
         }
@@ -453,38 +508,44 @@ export function scoreExamAttempt(params: {
     }
   }
 
-  let obtainedMarks = 0;
-  let autoGradedObtainedMarks = 0;
-  let autoGradedMaxMarks = 0;
-  let selfReviewedObtainedMarks = 0;
-  let pendingReviewMarks = 0;
+  let autoVerifiedObtainedMarks = 0;
+  let autoVerifiedMaxMarks = 0;
+  let selfAssessedObtainedMarks = 0;
+  let selfAssessedMaxMarks = 0;
+  let pendingSubjectiveMarks = 0;
   let pendingReviewCount = 0;
   let correctCount = 0;
   let partialCount = 0;
   let incorrectCount = 0;
   let unansweredCount = 0;
 
-  // Track topic & SLO aggregations strictly for counted items
+  const objectiveItemsForTopics: EvaluatedQuestionResult[] = [];
+  const selfAssessedItemsForTopics: EvaluatedQuestionResult[] = [];
+
   const curriculum = getCurriculumByKey(paper.system, paper.grade, paper.subjectId, paper.curriculumVersion);
-  const topicMap = new Map<string, TopicPerformanceMetric>();
   const sloMap = new Map<string, SLOPerformanceMetric>();
 
   for (const item of rawItemResults) {
     if (!item.countedInChoiceGroup) continue;
 
     if (item.status === "pending_review") {
-      pendingReviewMarks += item.maxMarks;
+      pendingSubjectiveMarks += item.maxMarks;
       pendingReviewCount += 1;
     } else if (item.status === "self_reviewed") {
-      selfReviewedObtainedMarks += item.effectiveMarks;
-      obtainedMarks += item.effectiveMarks;
+      selfAssessedObtainedMarks += item.effectiveMarks;
+      selfAssessedMaxMarks += item.maxMarks;
+      selfAssessedItemsForTopics.push(item);
+    } else if (
+      isStrictlySubjectiveType(item.type) &&
+      item.status === "unanswered"
+    ) {
+      // Unanswered subjective short/long answers contribute 0 marks and stay separate from objective accuracy
+      pendingSubjectiveMarks += 0;
     } else {
-      // Auto-graded (correct, partial, incorrect, or unanswered objective/subjective)
-      if (item.type !== "short_answer" && item.type !== "extended_response" && item.type !== "proof_derivation") {
-        autoGradedMaxMarks += item.maxMarks;
-        autoGradedObtainedMarks += item.effectiveMarks;
-      }
-      obtainedMarks += item.effectiveMarks;
+      // Auto-verified objective / numerical / interactive / exact-key items
+      autoVerifiedMaxMarks += item.maxMarks;
+      autoVerifiedObtainedMarks += item.effectiveMarks;
+      objectiveItemsForTopics.push(item);
     }
 
     if (item.status === "correct") correctCount += 1;
@@ -492,34 +553,7 @@ export function scoreExamAttempt(params: {
     else if (item.status === "incorrect") incorrectCount += 1;
     else if (item.status === "unanswered") unansweredCount += 1;
 
-    // Topic breakdown
-    const chap = curriculum?.chapters.find((c) => c.id === item.chapterId);
-    const topic = chap?.topics.find((t) => t.id === item.topicId);
-    const existingTopic = topicMap.get(item.topicId) ?? {
-      topicId: item.topicId,
-      topicTitle: topic?.title || item.topicId,
-      chapterId: item.chapterId,
-      chapterTitle: chap?.title || item.chapterId,
-      questionCount: 0,
-      autoGradedCount: 0,
-      pendingReviewCount: 0,
-      incorrectCount: 0,
-      obtainedMarks: 0,
-      availableMarks: 0,
-      accuracyPercent: null,
-    };
-    existingTopic.questionCount += 1;
-    existingTopic.availableMarks += item.maxMarks;
-    if (item.status === "pending_review") {
-      existingTopic.pendingReviewCount += 1;
-    } else {
-      existingTopic.autoGradedCount += 1;
-      existingTopic.obtainedMarks += item.effectiveMarks;
-      if (item.status === "incorrect") existingTopic.incorrectCount += 1;
-    }
-    topicMap.set(item.topicId, existingTopic);
-
-    // SLO breakdown
+    // SLO breakdown tracks objective verified vs pending cleanly
     if (item.sloId) {
       const sloDef = curriculum?.slos.find((s) => s.id === item.sloId);
       const existingSlo = sloMap.get(item.sloId) ?? {
@@ -540,35 +574,44 @@ export function scoreExamAttempt(params: {
     }
   }
 
-  // Finalize topic accuracy only over graded/reviewed marks (never fake accuracy for pending review)
-  const topicBreakdown = Array.from(topicMap.values()).map((t) => {
-    const gradedItemsMarks = rawItemResults
-      .filter((r) => r.countedInChoiceGroup && r.topicId === t.topicId && r.status !== "pending_review")
-      .reduce((sum, r) => sum + r.maxMarks, 0);
-    return {
-      ...t,
-      obtainedMarks: Number(t.obtainedMarks.toFixed(2)),
-      accuracyPercent:
-        gradedItemsMarks > 0 ? Math.round((t.obtainedMarks / gradedItemsMarks) * 100) : null,
-    };
-  });
+  const countedItems = rawItemResults.filter((r) => r.countedInChoiceGroup);
+  const objectiveTopicBreakdown = buildTopicBreakdownFromItems(objectiveItemsForTopics, curriculum);
+  const selfAssessedTopicBreakdown = buildTopicBreakdownFromItems(selfAssessedItemsForTopics, curriculum);
+  const topicBreakdown = buildTopicBreakdownFromItems(countedItems, curriculum);
 
-  const roundedObtained = Math.min(paper.totalMarks, Number(obtainedMarks.toFixed(2)));
-  const percentage = paper.totalMarks > 0 ? Math.round((roundedObtained / paper.totalMarks) * 100) : 0;
-  const autoGradedAccuracy =
-    autoGradedMaxMarks > 0 ? Math.round((autoGradedObtainedMarks / autoGradedMaxMarks) * 100) : null;
+  const roundedAutoObtained = Number(autoVerifiedObtainedMarks.toFixed(2));
+  const roundedSelfObtained = Number(selfAssessedObtainedMarks.toFixed(2));
+  const indicativeCombinedMarks = Math.min(
+    paper.totalMarks,
+    Number((roundedAutoObtained + roundedSelfObtained).toFixed(2))
+  );
+  const indicativeCombinedPercentage =
+    paper.totalMarks > 0 ? Math.round((indicativeCombinedMarks / paper.totalMarks) * 100) : 0;
+
+  const autoVerifiedAccuracy =
+    autoVerifiedMaxMarks > 0 ? Math.round((roundedAutoObtained / autoVerifiedMaxMarks) * 100) : null;
 
   return {
-    obtainedMarks: roundedObtained,
-    autoGradedObtainedMarks: Number(autoGradedObtainedMarks.toFixed(2)),
-    autoGradedMaxMarks,
-    selfReviewedObtainedMarks: Number(selfReviewedObtainedMarks.toFixed(2)),
-    pendingReviewMarks,
+    obtainedMarks: indicativeCombinedMarks,
+    autoGradedObtainedMarks: roundedAutoObtained,
+    autoGradedMaxMarks: autoVerifiedMaxMarks,
+    selfReviewedObtainedMarks: roundedSelfObtained,
+    selfReviewedMaxMarks: selfAssessedMaxMarks,
+    pendingReviewMarks: pendingSubjectiveMarks,
     pendingReviewCount,
     totalMarks: paper.totalMarks,
-    percentage,
-    autoGradedAccuracy,
-    passedByPolicy: percentage >= paper.passingPercentage,
+    percentage: indicativeCombinedPercentage,
+    autoGradedAccuracy: autoVerifiedAccuracy,
+    autoVerifiedObtainedMarks: roundedAutoObtained,
+    autoVerifiedMaxMarks,
+    autoVerifiedAccuracy,
+    selfAssessedObtainedMarks: roundedSelfObtained,
+    selfAssessedMaxMarks,
+    pendingSubjectiveMarks,
+    indicativeCombinedMarks,
+    indicativeCombinedPercentage,
+    hasMixedSelfAssessment: selfAssessedMaxMarks > 0,
+    passedByPolicy: indicativeCombinedPercentage >= paper.passingPercentage,
     passingPercentage: paper.passingPercentage,
     correctCount,
     partialCount,
@@ -577,6 +620,8 @@ export function scoreExamAttempt(params: {
     notCountedChoiceCount,
     timeSpentSeconds: Math.max(0, Math.round(timeSpentSeconds)),
     itemResults: rawItemResults,
+    objectiveTopicBreakdown,
+    selfAssessedTopicBreakdown,
     topicBreakdown,
     sloBreakdown: Array.from(sloMap.values()),
   };

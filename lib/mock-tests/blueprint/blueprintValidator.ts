@@ -10,7 +10,7 @@ import { RAW_QUESTION_BANK } from "@/lib/mock-tests/question-bank/questionRegist
 
 /**
  * Validates mathematical consistency, choice-group feasibility, curriculum compatibility,
- * and genuine question-pool readiness for any PaperBlueprint before starting a simulation.
+ * chapter quota/exclusion alignment, and genuine question-pool readiness for any PaperBlueprint.
  */
 export function validateBlueprintAndPool(
   blueprint: PaperBlueprint,
@@ -42,6 +42,8 @@ export function validateBlueprintAndPool(
       message: currCheck.reason || "Blueprint curriculum check failed.",
     });
   }
+
+  const matchedCurriculum = currCheck.curriculum;
 
   // 2. Marks reconciliation across sections & choice groups
   let computedObjectiveMarks = 0;
@@ -103,7 +105,23 @@ export function validateBlueprintAndPool(
         });
       }
 
-      // Check chapter quotas do not exceed totalQuestions
+      // Check allowedChapterIds exist & are non-excluded on matched curriculum
+      if (matchedCurriculum && group.allowedChapterIds?.length) {
+        for (const chId of group.allowedChapterIds) {
+          const ch = matchedCurriculum.chapters.find((c) => c.id === chId);
+          if (!ch || ch.isFullyExcluded) {
+            issues.push({
+              code: "INVALID_CHAPTER_FILTER",
+              severity: "error",
+              message: `Choice group "${group.title}" references missing or ALP-excluded chapter "${chId}".`,
+              sectionId: section.id,
+              choiceGroupId: group.id,
+            });
+          }
+        }
+      }
+
+      // Check chapter quotas do not exceed totalQuestions or point outside allowedChapterIds
       if (group.chapterQuotas?.length) {
         const minSum = group.chapterQuotas.reduce((s, q) => s + q.minCount, 0);
         if (minSum > group.totalQuestions) {
@@ -114,6 +132,29 @@ export function validateBlueprintAndPool(
             sectionId: section.id,
             choiceGroupId: group.id,
           });
+        }
+        for (const quota of group.chapterQuotas) {
+          if (group.allowedChapterIds?.length && !group.allowedChapterIds.includes(quota.chapterId)) {
+            issues.push({
+              code: "QUOTA_OUTSIDE_ALLOWED_CHAPTERS",
+              severity: "error",
+              message: `Quota chapter "${quota.chapterId}" is absent from allowedChapterIds in "${group.title}".`,
+              sectionId: section.id,
+              choiceGroupId: group.id,
+            });
+          }
+          if (matchedCurriculum) {
+            const ch = matchedCurriculum.chapters.find((c) => c.id === quota.chapterId);
+            if (!ch || ch.isFullyExcluded) {
+              issues.push({
+                code: "EXCLUDED_CHAPTER_QUOTA",
+                severity: "error",
+                message: `Quota references missing or ALP-excluded chapter "${quota.chapterId}" in "${group.title}".`,
+                sectionId: section.id,
+                choiceGroupId: group.id,
+              });
+            }
+          }
         }
       }
 
@@ -175,7 +216,6 @@ export function validateBlueprintAndPool(
         return true;
       });
 
-      // Check chapter quotas strictly if configured
       let groupMatched = 0;
       if (group.chapterQuotas?.length) {
         const pickedForGroup = new Set<string>();
@@ -194,7 +234,6 @@ export function validateBlueprintAndPool(
             usedIds.add(chMatches[i].id);
           }
         }
-        // Top up up to totalQuestions from remaining eligible candidates in the group
         for (const c of candidates) {
           if (pickedForGroup.size >= group.totalQuestions) break;
           if (!pickedForGroup.has(c.id) && !usedIds.has(c.id)) {

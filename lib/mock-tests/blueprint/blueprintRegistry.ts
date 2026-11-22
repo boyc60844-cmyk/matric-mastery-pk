@@ -4,13 +4,128 @@ import { FBISE_SCHEME_VERSION } from "@/lib/mock-tests/curriculum/fbise/scheme-2
 
 /**
  * OFFICIAL SUBJECT-BY-SUBJECT BLUEPRINT REGISTRY
- * Strictly enforces independent marks, durations, section counts, and choice groups
- * for Punjab Boards (PECTAA 2026–27) and FBISE (SLO Scheme).
+ * Strictly enforces independent marks, objective/subjective timing, section counts,
+ * and choice groups for Punjab Boards (PECTAA 2026–27) and FBISE (Inclusive Scheme 2024).
  * All blueprint section attempt sums reconcile exactly to `totalMarks`.
  */
 export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
   // =========================================================================
-  // 1. PUNJAB CLASS 10 COMPUTER SCIENCE & ENTREPRENEURSHIP (50 MARKS, 2H)
+  // 1. PUNJAB CLASS 9 COMPUTER SCIENCE & ENTREPRENEURSHIP (PECTAA No. 1255 — 50M, 2H)
+  // =========================================================================
+  {
+    id: "bp-pb-9-cs-2026-27",
+    system: "punjab",
+    boardScope: "All 9 Punjab BISEs (PECTAA No. 1255)",
+    grade: 9,
+    subjectId: "computer-science",
+    subjectName: "Computer Science & Entrepreneurship",
+    session: "Academic Session 2026–27 / Annual 2027",
+    curriculumVersion: PUNJAB_CURRICULUM_VERSION_2026_27,
+    blueprintVersion: "pectaa-1255-cs9-2027.1",
+    sourceDocumentRef: "PECTAA/C&C Unit/2026/1255 (14 Nov 2026)",
+    sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-14.11.2026-1255-1.pdf",
+    durationMinutes: 120,
+    objectiveTimeMinutes: 15,
+    subjectiveTimeMinutes: 105,
+    timingBreakdownNote: "15 min Objective + 1h 45m Subjective (2h Total) per PECTAA No. 1255.",
+    totalMarks: 50,
+    passingPercentage: 40,
+    objectiveMarks: 10,
+    subjectiveMarks: 40,
+    questionOrderRule: "fixed_sections_with_group_shuffle",
+    verifiedForSimulation: true,
+    availabilityNote:
+      "Official No. 1255 blueprint verified (Unit 2 Number Systems excluded). Practice modes active on starter bank; full 31-slot board simulation unlocks at full pool.",
+    sections: [
+      {
+        id: "sec-a",
+        code: "Section A (Part I)",
+        title: "Objective Type — 10 MCQs",
+        category: "objective",
+        instructions: "Attempt all 10 compulsory multiple-choice questions (1 mark each).",
+        recommendedMinutes: 15,
+        choiceGroups: [
+          {
+            id: "cg-q1",
+            title: "Q1. Multiple Choice Questions (Attempt All 10)",
+            totalQuestions: 10,
+            requiredAttemptCount: 10,
+            marksPerQuestion: 1,
+            allowedTypes: ["single_mcq"],
+            allowedChapterIds: [
+              "pb-9-cs-u1",
+              "pb-9-cs-u3",
+              "pb-9-cs-u4",
+              "pb-9-cs-u5",
+              "pb-9-cs-u6",
+              "pb-9-cs-u7",
+              "pb-9-cs-u8",
+              "pb-9-cs-u9",
+            ],
+          },
+        ],
+      },
+      {
+        id: "sec-b",
+        code: "Section B (Part II)",
+        title: "Short Questions (Q2, Q3, Q4)",
+        category: "subjective_short",
+        instructions: "Attempt any FOUR (4) short questions from each group Q2, Q3, and Q4 (2 marks each = 24 marks).",
+        recommendedMinutes: 55,
+        choiceGroups: [
+          {
+            id: "cg-q2",
+            title: "Q2. Units 1 & 4 — Attempt any 4 out of 6",
+            totalQuestions: 6,
+            requiredAttemptCount: 4,
+            marksPerQuestion: 2,
+            allowedTypes: ["short_answer"],
+            allowedChapterIds: ["pb-9-cs-u1", "pb-9-cs-u4"],
+          },
+          {
+            id: "cg-q3",
+            title: "Q3. Units 3, 5 & 7 — Attempt any 4 out of 6",
+            totalQuestions: 6,
+            requiredAttemptCount: 4,
+            marksPerQuestion: 2,
+            allowedTypes: ["short_answer"],
+            allowedChapterIds: ["pb-9-cs-u3", "pb-9-cs-u5", "pb-9-cs-u7"],
+          },
+          {
+            id: "cg-q4",
+            title: "Q4. Units 6, 8 & 9 — Attempt any 4 out of 6",
+            totalQuestions: 6,
+            requiredAttemptCount: 4,
+            marksPerQuestion: 2,
+            allowedTypes: ["short_answer"],
+            allowedChapterIds: ["pb-9-cs-u6", "pb-9-cs-u8", "pb-9-cs-u9"],
+          },
+        ],
+      },
+      {
+        id: "sec-c",
+        code: "Section C (Part III)",
+        title: "Long Questions (Attempt 2 out of 3)",
+        category: "subjective_long",
+        instructions: "Attempt any TWO (2) out of THREE (3) long questions: Q5 (Unit 1), Q6 (Unit 3), Q7 (Unit 6 or Unit 9) — 8 marks each.",
+        recommendedMinutes: 50,
+        choiceGroups: [
+          {
+            id: "cg-long",
+            title: "Long Questions (Q5–Q7) — Attempt any 2 out of 3",
+            totalQuestions: 3,
+            requiredAttemptCount: 2,
+            marksPerQuestion: 8,
+            allowedTypes: ["extended_response"],
+            allowedChapterIds: ["pb-9-cs-u1", "pb-9-cs-u3", "pb-9-cs-u6", "pb-9-cs-u9"],
+          },
+        ],
+      },
+    ],
+  },
+
+  // =========================================================================
+  // 2. PUNJAB CLASS 10 COMPUTER SCIENCE & ENTREPRENEURSHIP (PECTAA No. 1257 — 50M, 2H)
   // =========================================================================
   {
     id: "bp-pb-10-cs-2026-27",
@@ -21,16 +136,21 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
     subjectName: "Computer Science & Entrepreneurship",
     session: "Academic Session 2026–27 / Annual 2027",
     curriculumVersion: PUNJAB_CURRICULUM_VERSION_2026_27,
-    blueprintVersion: "pectaa-1257-2027.1",
+    blueprintVersion: "pectaa-1257-cs10-2027.2",
     sourceDocumentRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
     sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
     durationMinutes: 120,
+    objectiveTimeMinutes: 15,
+    subjectiveTimeMinutes: 105,
+    timingBreakdownNote: "15 min Objective + 1h 45m Subjective (2h Total) per PECTAA No. 1257.",
     totalMarks: 50,
     passingPercentage: 40,
     objectiveMarks: 10,
     subjectiveMarks: 40,
     questionOrderRule: "fixed_sections_with_group_shuffle",
     verifiedForSimulation: true,
+    availabilityNote:
+      "Authentic PECTAA No. 1257 8-unit blueprint (Operating Systems, Python, Data Science, AI/ML, Digital Entrepreneurship; Unit 2 excluded). Practice modes active on verified 2026–27 starter pool; full 31-slot board simulation awaits complete bank authoring.",
     sections: [
       {
         id: "sec-a",
@@ -47,12 +167,23 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
             requiredAttemptCount: 10,
             marksPerQuestion: 1,
             allowedTypes: ["single_mcq"],
+            allowedChapterIds: [
+              "pb-10-cs-u1",
+              "pb-10-cs-u3",
+              "pb-10-cs-u4",
+              "pb-10-cs-u5",
+              "pb-10-cs-u6",
+              "pb-10-cs-u7",
+              "pb-10-cs-u8",
+            ],
             chapterQuotas: [
-              { chapterId: "pb-10-cs-ch1", minCount: 2, maxCount: 3 },
-              { chapterId: "pb-10-cs-ch2", minCount: 2, maxCount: 3 },
-              { chapterId: "pb-10-cs-ch3", minCount: 2, maxCount: 2 },
-              { chapterId: "pb-10-cs-ch4", minCount: 2, maxCount: 2 },
-              { chapterId: "pb-10-cs-ch5", minCount: 2, maxCount: 2 },
+              { chapterId: "pb-10-cs-u1", minCount: 1, maxCount: 2 },
+              { chapterId: "pb-10-cs-u3", minCount: 1, maxCount: 2 },
+              { chapterId: "pb-10-cs-u4", minCount: 1, maxCount: 2 },
+              { chapterId: "pb-10-cs-u5", minCount: 1, maxCount: 2 },
+              { chapterId: "pb-10-cs-u6", minCount: 1, maxCount: 2 },
+              { chapterId: "pb-10-cs-u7", minCount: 1, maxCount: 2 },
+              { chapterId: "pb-10-cs-u8", minCount: 1, maxCount: 2 },
             ],
           },
         ],
@@ -67,30 +198,30 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         choiceGroups: [
           {
             id: "cg-q2",
-            title: "Q2. Chapters 1 & 2 — Attempt any 4 out of 6",
+            title: "Q2. Units 1 & 3 (OS & Python Basics) — Attempt any 4 out of 6",
             totalQuestions: 6,
             requiredAttemptCount: 4,
             marksPerQuestion: 2,
             allowedTypes: ["short_answer"],
-            allowedChapterIds: ["pb-10-cs-ch1", "pb-10-cs-ch2"],
+            allowedChapterIds: ["pb-10-cs-u1", "pb-10-cs-u3"],
           },
           {
             id: "cg-q3",
-            title: "Q3. Chapters 3 & 4 — Attempt any 4 out of 6",
+            title: "Q3. Units 4 & 5 (Python Control & Data Science) — Attempt any 4 out of 6",
             totalQuestions: 6,
             requiredAttemptCount: 4,
             marksPerQuestion: 2,
             allowedTypes: ["short_answer"],
-            allowedChapterIds: ["pb-10-cs-ch3", "pb-10-cs-ch4"],
+            allowedChapterIds: ["pb-10-cs-u4", "pb-10-cs-u5"],
           },
           {
             id: "cg-q4",
-            title: "Q4. Chapters 4 & 5 — Attempt any 4 out of 6",
+            title: "Q4. Units 6, 7 & 8 (AI, ML & Digital Entrepreneurship) — Attempt any 4 out of 6",
             totalQuestions: 6,
             requiredAttemptCount: 4,
             marksPerQuestion: 2,
             allowedTypes: ["short_answer"],
-            allowedChapterIds: ["pb-10-cs-ch4", "pb-10-cs-ch5"],
+            allowedChapterIds: ["pb-10-cs-u6", "pb-10-cs-u7", "pb-10-cs-u8"],
           },
         ],
       },
@@ -99,7 +230,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         code: "Section C (Part III)",
         title: "Extended / Long Questions",
         category: "subjective_long",
-        instructions: "Attempt any TWO (2) out of THREE (3) long questions (8 marks each = 16 marks).",
+        instructions: "Attempt any TWO (2) out of THREE (3) long questions: Q5 (Unit 1), Q6 (Unit 4), Q7 (Unit 6 or Unit 8) — 8 marks each.",
         recommendedMinutes: 50,
         choiceGroups: [
           {
@@ -109,6 +240,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
             requiredAttemptCount: 2,
             marksPerQuestion: 8,
             allowedTypes: ["extended_response"],
+            allowedChapterIds: ["pb-10-cs-u1", "pb-10-cs-u4", "pb-10-cs-u6", "pb-10-cs-u8"],
           },
         ],
       },
@@ -116,21 +248,24 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
   },
 
   // =========================================================================
-  // 2. FBISE SSC-I (CLASS 9) PHYSICS (65 MARKS, 3H — SLO SCHEME)
+  // 3. FBISE SSC-I (CLASS 9) PHYSICS (65 MARKS, 3H — INCLUSIVE SCHEME 2024)
   // =========================================================================
   {
-    id: "bp-fb-9-physics-slo-2024",
+    id: "bp-fb-9-physics-inclusive-2024",
     system: "fbise",
-    boardScope: "FBISE Islamabad (SSC-I SLO Model Scheme)",
+    boardScope: "FBISE Islamabad (SSC-I Inclusive Scheme 2024)",
     grade: 9,
     subjectId: "physics",
     subjectName: "Physics",
-    session: "FBISE 2026–27 SLO Cycle",
+    session: "FBISE Inclusive Scheme 2024 / 2026–27 Cycle",
     curriculumVersion: FBISE_SCHEME_VERSION,
-    blueprintVersion: "fbise-ssc1-phy-2024.1",
-    sourceDocumentRef: "FBISE SSC-I Physics Model Paper & SLO Table of Specifications",
+    blueprintVersion: "fbise-ssc1-phy-inclusive-2024.2",
+    sourceDocumentRef: "FBISE SSC-I Physics SLO Assessment Framework & Model Paper",
     sourceUrl: "https://www.fbise.edu.pk/curriculum_model_paper.php",
     durationMinutes: 180,
+    objectiveTimeMinutes: 20,
+    subjectiveTimeMinutes: 160,
+    timingBreakdownNote: "20 min Section A (OMR/Objective) + 2h 40m Sections B & C (3h Total); Bilingual 2027+.",
     totalMarks: 65,
     passingPercentage: 40,
     objectiveMarks: 12,
@@ -202,7 +337,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
   },
 
   // =========================================================================
-  // 3. OTHER VERIFIED BOARD BLUEPRINTS (HONESTLY CATALOGUED; PARTIAL POOL)
+  // 4. OTHER VERIFIED BOARD BLUEPRINTS (CATALOGUED WITH OFFICIAL TIMINGS)
   // =========================================================================
   {
     id: "bp-pb-9-physics-2026-27",
@@ -217,6 +352,9 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
     sourceDocumentRef: "PECTAA/C&C Unit/2026/1238 (6 Nov 2026)",
     sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-9-Notification-06.11.2026-F_Redacted.pdf",
     durationMinutes: 120,
+    objectiveTimeMinutes: 15,
+    subjectiveTimeMinutes: 105,
+    timingBreakdownNote: "15 min Objective + 1h 45m Subjective (2h Total) per PECTAA No. 1238.",
     totalMarks: 60,
     passingPercentage: 40,
     objectiveMarks: 12,
@@ -231,6 +369,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Objective Type — 12 MCQs",
         category: "objective",
         instructions: "Attempt all 12 MCQs (1 mark each).",
+        recommendedMinutes: 15,
         choiceGroups: [
           { id: "cg-q1", title: "Q1. MCQs (12/12)", totalQuestions: 12, requiredAttemptCount: 12, marksPerQuestion: 1, allowedTypes: ["single_mcq"] },
         ],
@@ -241,6 +380,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Short Questions (Q2, Q3, Q4)",
         category: "subjective_short",
         instructions: "Attempt 5 out of 8 short questions in each of Q2, Q3, Q4 (2 marks each = 30 marks).",
+        recommendedMinutes: 55,
         choiceGroups: [
           { id: "cg-q2", title: "Q2. Short Questions (5/8)", totalQuestions: 8, requiredAttemptCount: 5, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
           { id: "cg-q3", title: "Q3. Short Questions (5/8)", totalQuestions: 8, requiredAttemptCount: 5, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
@@ -253,6 +393,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Long Questions (Attempt 2/3)",
         category: "subjective_long",
         instructions: "Attempt any 2 out of 3 long questions (9 marks each = 18 marks).",
+        recommendedMinutes: 50,
         choiceGroups: [
           { id: "cg-long", title: "Long Questions (2/3)", totalQuestions: 3, requiredAttemptCount: 2, marksPerQuestion: 9, allowedTypes: ["extended_response", "proof_derivation", "structured_multi_part"] },
         ],
@@ -272,6 +413,9 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
     sourceDocumentRef: "PECTAA/C&C Unit/2026/1257 (14 Nov 2026)",
     sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1257.pdf",
     durationMinutes: 150,
+    objectiveTimeMinutes: 20,
+    subjectiveTimeMinutes: 130,
+    timingBreakdownNote: "20 min Objective + 2h 10m Subjective (2h 30m Total) per PECTAA No. 1257.",
     totalMarks: 75,
     passingPercentage: 40,
     objectiveMarks: 15,
@@ -286,6 +430,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Objective — 15 MCQs",
         category: "objective",
         instructions: "Attempt all 15 MCQs (1 mark each).",
+        recommendedMinutes: 20,
         choiceGroups: [
           { id: "cg-q1", title: "Q1. MCQs (15/15)", totalQuestions: 15, requiredAttemptCount: 15, marksPerQuestion: 1, allowedTypes: ["single_mcq"] },
         ],
@@ -296,6 +441,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Short Questions (36 Marks)",
         category: "subjective_short",
         instructions: "Attempt 6 out of 9 short questions in Q2, Q3, and Q4 (2 marks each = 36 marks).",
+        recommendedMinutes: 70,
         choiceGroups: [
           { id: "cg-q2", title: "Q2 (6/9)", totalQuestions: 9, requiredAttemptCount: 6, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
           { id: "cg-q3", title: "Q3 (6/9)", totalQuestions: 9, requiredAttemptCount: 6, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
@@ -308,6 +454,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Part-II & Part-III Long Questions (24 Marks)",
         category: "subjective_long",
         instructions: "Attempt any 2/3 in Part-II (16 marks) and 1/2 in Part-III (8 marks).",
+        recommendedMinutes: 60,
         choiceGroups: [
           { id: "cg-p2", title: "Part-II Long (2/3)", totalQuestions: 3, requiredAttemptCount: 2, marksPerQuestion: 8, allowedTypes: ["extended_response", "structured_multi_part"] },
           { id: "cg-p3", title: "Part-III Long (1/2)", totalQuestions: 2, requiredAttemptCount: 1, marksPerQuestion: 8, allowedTypes: ["proof_derivation", "extended_response"] },
@@ -328,6 +475,9 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
     sourceDocumentRef: "PECTAA/C&C Unit/2026/1239 (6 Nov 2026)",
     sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALP-Notification-Grade-11_Redacted_Redacted.pdf",
     durationMinutes: 180,
+    objectiveTimeMinutes: 20,
+    subjectiveTimeMinutes: 160,
+    timingBreakdownNote: "20 min Objective + 2h 40m Subjective (3h Total) per PECTAA No. 1239.",
     totalMarks: 85,
     passingPercentage: 40,
     objectiveMarks: 17,
@@ -342,6 +492,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Objective — 17 MCQs",
         category: "objective",
         instructions: "Attempt all 17 MCQs (17 marks).",
+        recommendedMinutes: 20,
         choiceGroups: [
           { id: "cg-q1", title: "Q1. MCQs (17/17)", totalQuestions: 17, requiredAttemptCount: 17, marksPerQuestion: 1, allowedTypes: ["single_mcq"] },
         ],
@@ -352,6 +503,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Short Questions (44 Marks)",
         category: "subjective_short",
         instructions: "Attempt 8/12 in Q2, 8/12 in Q3, and 6/9 in Q4 (2 marks each).",
+        recommendedMinutes: 85,
         choiceGroups: [
           { id: "cg-q2", title: "Q2 (8/12)", totalQuestions: 12, requiredAttemptCount: 8, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
           { id: "cg-q3", title: "Q3 (8/12)", totalQuestions: 12, requiredAttemptCount: 8, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
@@ -364,6 +516,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Long Questions (24 Marks)",
         category: "subjective_long",
         instructions: "Attempt any 3 out of 5 long questions (8 marks each).",
+        recommendedMinutes: 75,
         choiceGroups: [
           { id: "cg-long", title: "Long Questions (3/5)", totalQuestions: 5, requiredAttemptCount: 3, marksPerQuestion: 8, allowedTypes: ["extended_response", "proof_derivation"] },
         ],
@@ -383,6 +536,9 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
     sourceDocumentRef: "PECTAA/C&C Unit/2026/1258 (14 Nov 2026)",
     sourceUrl: "https://pectaa.edu.pk/wp-content/uploads/2026/11/ALPs-Notification-14.11.2026-1258-2.pdf",
     durationMinutes: 180,
+    objectiveTimeMinutes: 30,
+    subjectiveTimeMinutes: 150,
+    timingBreakdownNote: "30 min Objective + 2h 30m Subjective (3h Total) per PECTAA No. 1258.",
     totalMarks: 100,
     passingPercentage: 40,
     objectiveMarks: 20,
@@ -397,6 +553,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Objective — 20 MCQs",
         category: "objective",
         instructions: "Attempt all 20 MCQs (20 marks).",
+        recommendedMinutes: 30,
         choiceGroups: [
           { id: "cg-q1", title: "Q1. MCQs (20/20)", totalQuestions: 20, requiredAttemptCount: 20, marksPerQuestion: 1, allowedTypes: ["single_mcq"] },
         ],
@@ -407,6 +564,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Short Questions (50 Marks)",
         category: "subjective_short",
         instructions: "Attempt 8/12 in Q2, 8/12 in Q3, and 9/13 in Q4 (2 marks each).",
+        recommendedMinutes: 80,
         choiceGroups: [
           { id: "cg-q2", title: "Q2 (8/12)", totalQuestions: 12, requiredAttemptCount: 8, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
           { id: "cg-q3", title: "Q3 (8/12)", totalQuestions: 12, requiredAttemptCount: 8, marksPerQuestion: 2, allowedTypes: ["short_answer"] },
@@ -419,6 +577,7 @@ export const PAPER_BLUEPRINTS: PaperBlueprint[] = [
         title: "Long Questions (30 Marks)",
         category: "subjective_long",
         instructions: "Attempt any 3 out of 5 long questions (10 marks each).",
+        recommendedMinutes: 70,
         choiceGroups: [
           { id: "cg-long", title: "Long Questions (3/5)", totalQuestions: 5, requiredAttemptCount: 3, marksPerQuestion: 10, allowedTypes: ["extended_response", "proof_derivation"] },
         ],

@@ -1,10 +1,20 @@
 import { BankQuestion } from "@/lib/mock-tests/types";
+import { getCurriculumByKey } from "@/lib/mock-tests/curriculum/curriculumRegistry";
 import { resolveQuestionSyllabusEligibility } from "@/lib/mock-tests/curriculum/eligibilityResolver";
 
 export interface QuestionValidationResult {
   valid: boolean;
   errors: string[];
   warnings: string[];
+}
+
+export function normalizePromptForDedup(prompt: string): string {
+  return prompt
+    .toLowerCase()
+    .replace(/[`*_~]/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function validateQuestionIntegrity(
@@ -20,9 +30,11 @@ export function validateQuestionIntegrity(
   if (!(question.marks > 0)) errors.push(`Invalid marks (${question.marks}); must be > 0.`);
   if (!question.sourceReference || !question.sourceReference.trim()) errors.push("Missing source/reference mapping.");
 
-  // Validation state gate
+  // Validation state gate — strictly reject Outdated, Provisional, Needs Review, Excluded
   if (question.validationStatus !== "Verified") {
-    errors.push(`Question validationStatus is "${question.validationStatus}" (only Verified questions are eligible).`);
+    errors.push(
+      `Question validationStatus is "${question.validationStatus}" (only "Verified" questions enter live pools).`
+    );
   }
   if (!question.reviewMetadata?.checklistPassed) {
     errors.push("Review metadata checklistPassed is false.");
@@ -36,11 +48,12 @@ export function validateQuestionIntegrity(
     errors.push("Board mismatch: Punjab question references FBISE.");
   }
 
-  // Duplicate check by normalized prompt within system+grade+subject
+  // Duplicate check by strongly normalized prompt within system+grade+subject
   if (seenPrompts) {
-    const key = `${question.system}:${question.grade}:${question.subjectId}:${question.prompt.trim().toLowerCase()}`;
+    const normalized = normalizePromptForDedup(question.prompt);
+    const key = `${question.system}:${question.grade}:${question.subjectId}:${normalized}`;
     if (seenPrompts.has(key)) {
-      errors.push("Duplicate question prompt detected within same system/grade/subject.");
+      errors.push("Duplicate or punctuation-variant duplicate question prompt detected within same system/grade/subject.");
     } else {
       seenPrompts.add(key);
     }
@@ -126,8 +139,8 @@ export function validateQuestionIntegrity(
       break;
     }
     case "numerical": {
-      if (typeof question.numericAnswer !== "number" || Number.isNaN(question.numericAnswer)) {
-        errors.push("Numerical item requires valid numericAnswer.");
+      if (typeof question.numericAnswer !== "number" || !Number.isFinite(question.numericAnswer)) {
+        errors.push("Numerical item requires valid finite numericAnswer.");
       }
       if (question.tolerance < 0) {
         errors.push("Numerical tolerance cannot be negative.");
@@ -135,6 +148,9 @@ export function validateQuestionIntegrity(
       break;
     }
     case "structured_multi_part": {
+      if (!question.subParts?.length) {
+        errors.push("Structured question requires at least one subPart.");
+      }
       const partSum = question.subParts.reduce((sum, p) => sum + p.marks, 0);
       if (partSum !== question.marks) {
         errors.push(`Structured question subParts marks sum (${partSum}) != question.marks (${question.marks}).`);
@@ -160,8 +176,19 @@ export function validateQuestionIntegrity(
     errors.push(syl.reason || "Failed syllabus eligibility.");
   }
 
-  if (question.system === "fbise" && !question.sloId) {
-    warnings.push("FBISE question does not specify an sloId mapping.");
+  // FBISE SLO integrity verification
+  if (question.system === "fbise") {
+    if (!question.sloId) {
+      warnings.push("FBISE question does not specify an sloId mapping.");
+    } else {
+      const curr = getCurriculumByKey(question.system, question.grade, question.subjectId, question.curriculumVersion);
+      if (curr && curr.slos.length > 0) {
+        const exists = curr.slos.some((s) => s.id === question.sloId || s.code === question.sloId);
+        if (!exists) {
+          errors.push(`FBISE sloId "${question.sloId}" does not match any registered SLO in "${curr.id}".`);
+        }
+      }
+    }
   }
 
   return {

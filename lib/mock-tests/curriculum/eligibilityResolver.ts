@@ -28,10 +28,10 @@ export function resolveCurriculumNodeEligibility(
   topicId: string,
   subtopicId?: string
 ): EligibilityDecision {
-  if (curriculum.verificationStatus === "unavailable") {
+  if (curriculum.curriculumStatus !== "verified" || curriculum.verificationStatus === "unavailable") {
     return {
       eligible: false,
-      reason: `Subject curriculum is currently unavailable: ${curriculum.verificationNote}`,
+      reason: `Subject curriculum verification is pending: ${curriculum.verificationNote}`,
     };
   }
 

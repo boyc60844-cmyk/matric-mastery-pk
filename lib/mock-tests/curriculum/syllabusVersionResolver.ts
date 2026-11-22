@@ -1,14 +1,21 @@
 import { ExamSystem, GradeLevel, SubjectCurriculum } from "@/lib/mock-tests/types";
 import { PUNJAB_CURRICULUM_VERSION_2026_27 } from "@/lib/mock-tests/curriculum/punjab/session-2026-27";
-import { FBISE_SCHEME_VERSION } from "@/lib/mock-tests/curriculum/fbise/scheme-2024";
+import {
+  FBISE_LEGACY_EXCLUDED_VERSIONS,
+  FBISE_SCHEME_VERSION,
+} from "@/lib/mock-tests/curriculum/fbise/scheme-2024";
 import { getCurriculumByKey } from "@/lib/mock-tests/curriculum/curriculumRegistry";
 
 /**
  * Resolves the active default curriculum version per examination system
  * and validates version compatibility for incoming blueprints or questions.
+ * Explicitly separates FBISE Inclusive Scheme 2024 from legacy Scheme 2006.
  */
 
-export const ACTIVE_VERSION_BY_SYSTEM: Record<ExamSystem, { version: string; sessionLabel: string; authorityLabel: string }> = {
+export const ACTIVE_VERSION_BY_SYSTEM: Record<
+  ExamSystem,
+  { version: string; sessionLabel: string; authorityLabel: string }
+> = {
   punjab: {
     version: PUNJAB_CURRICULUM_VERSION_2026_27,
     sessionLabel: "Academic Session 2026–27 / Annual 2027",
@@ -16,7 +23,7 @@ export const ACTIVE_VERSION_BY_SYSTEM: Record<ExamSystem, { version: string; ses
   },
   fbise: {
     version: FBISE_SCHEME_VERSION,
-    sessionLabel: "FBISE 2026–27 SLO Cycle",
+    sessionLabel: "FBISE Inclusive Scheme 2024 / 2026–27 Cycle",
     authorityLabel: "FBISE Islamabad",
   },
 };
@@ -31,6 +38,16 @@ export function validateCurriculumCompatibility(params: {
   subjectId: string;
   curriculumVersion: string;
 }): { ok: boolean; curriculum?: SubjectCurriculum; reason?: string } {
+  if (
+    params.system === "fbise" &&
+    (FBISE_LEGACY_EXCLUDED_VERSIONS as readonly string[]).includes(params.curriculumVersion)
+  ) {
+    return {
+      ok: false,
+      reason: `Legacy/superseded FBISE scheme "${params.curriculumVersion}" is excluded; active assessments require "${FBISE_SCHEME_VERSION}" (Inclusive Scheme of Studies 2024).`,
+    };
+  }
+
   const expectedVersion = resolveActiveCurriculumVersion(params.system);
   if (params.curriculumVersion !== expectedVersion) {
     return {
@@ -53,11 +70,11 @@ export function validateCurriculumCompatibility(params: {
     };
   }
 
-  if (curriculum.verificationStatus === "unavailable") {
+  if (curriculum.curriculumStatus !== "verified" || curriculum.verificationStatus === "unavailable") {
     return {
       ok: false,
       curriculum,
-      reason: `Curriculum for ${curriculum.subjectName} (Class ${curriculum.grade}) is marked Unavailable: ${curriculum.verificationNote}`,
+      reason: `Curriculum for ${curriculum.subjectName} (Class ${curriculum.grade}) is pending verification: ${curriculum.verificationNote}`,
     };
   }
 

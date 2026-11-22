@@ -1,16 +1,19 @@
 import {
+  AttemptScoringSummary,
   ExamAttemptRecord,
   MistakeNotebookEntry,
-  PersistedMockTestStoreV2,
+  PersistedMockTestStoreV3,
 } from "@/lib/mock-tests/types";
+import { isResponseEmpty } from "@/lib/mock-tests/scoring/answerValidator";
 
 export const MOCK_ENGINE_STORAGE_KEY = "mm_mock_engine_v2";
+const CURRENT_SCHEMA_VERSION = 3 as const;
 const MAX_HISTORY_RECORDS = 60;
 const MAX_MISTAKE_RECORDS = 200;
 
-export function createEmptyStore(): PersistedMockTestStoreV2 {
+export function createEmptyStore(): PersistedMockTestStoreV3 {
   return {
-    schemaVersion: 2,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     activeAttempt: null,
     attemptHistory: [],
     mistakeNotebook: [],
@@ -18,20 +21,80 @@ export function createEmptyStore(): PersistedMockTestStoreV2 {
 }
 
 /**
- * Loads persisted store safely with schema validation & corruption cleanup.
- * Uses pure in-memory fallback when running outside browser (e.g. Node unit tests).
+ * Normalizes v2 AttemptScoringSummary records cleanly onto v3 separated metrics
+ * so legacy persisted history remains readable without inflated stats.
  */
-export function loadMockEngineStore(): PersistedMockTestStoreV2 {
-  if (typeof window === "undefined") {
-    return createEmptyStore();
+function normalizeScoringSummary(scoring: AttemptScoringSummary): AttemptScoringSummary {
+  if (typeof scoring.autoVerifiedObtainedMarks === "number" && Array.isArray(scoring.objectiveTopicBreakdown)) {
+    return scoring;
   }
+
+  let autoVerifiedObtainedMarks = 0;
+  let autoVerifiedMaxMarks = 0;
+  let selfAssessedObtainedMarks = 0;
+  let selfAssessedMaxMarks = 0;
+
+  for (const item of scoring.itemResults ?? []) {
+    if (!item.countedInChoiceGroup) continue;
+    if (item.status === "self_reviewed") {
+      selfAssessedObtainedMarks += item.effectiveMarks;
+      selfAssessedMaxMarks += item.maxMarks;
+    } else if (
+      item.status !== "pending_review" &&
+      !(
+        item.status === "unanswered" &&
+        (item.type === "short_answer" ||
+          item.type === "extended_response" ||
+          item.type === "proof_derivation")
+      )
+    ) {
+      autoVerifiedObtainedMarks += item.effectiveMarks;
+      autoVerifiedMaxMarks += item.maxMarks;
+    }
+  }
+
+  const autoAcc =
+    autoVerifiedMaxMarks > 0
+      ? Math.round((autoVerifiedObtainedMarks / autoVerifiedMaxMarks) * 100)
+      : null;
+
+  return {
+    ...scoring,
+    selfReviewedMaxMarks: selfAssessedMaxMarks,
+    autoVerifiedObtainedMarks: Number(autoVerifiedObtainedMarks.toFixed(2)),
+    autoVerifiedMaxMarks,
+    autoVerifiedAccuracy: autoAcc,
+    selfAssessedObtainedMarks: Number(selfAssessedObtainedMarks.toFixed(2)),
+    selfAssessedMaxMarks,
+    pendingSubjectiveMarks: scoring.pendingReviewMarks ?? 0,
+    indicativeCombinedMarks: scoring.obtainedMarks,
+    indicativeCombinedPercentage: scoring.percentage,
+    hasMixedSelfAssessment: selfAssessedMaxMarks > 0,
+    objectiveTopicBreakdown: scoring.objectiveTopicBreakdown ?? scoring.topicBreakdown ?? [],
+    selfAssessedTopicBreakdown: scoring.selfAssessedTopicBreakdown ?? [],
+  };
+}
+
+/**
+ * Migrates raw JSON store string cleanly from v2 -> v3, or returns clean empty store
+ * upon incompatible/corrupted data without throwing exceptions.
+ */
+export function parseAndMigrateStoreJson(raw: string | null): {
+  store: PersistedMockTestStoreV3;
+  migratedOrReset: boolean;
+} {
+  if (!raw) return { store: createEmptyStore(), migratedOrReset: false };
+
   try {
-    const raw = window.localStorage.getItem(MOCK_ENGINE_STORAGE_KEY);
-    if (!raw) return createEmptyStore();
-    const parsed = JSON.parse(raw) as Partial<PersistedMockTestStoreV2>;
-    if (!parsed || parsed.schemaVersion !== 2) {
-      // Safe reset if incompatible version or corrupt structure
-      return createEmptyStore();
+    const parsed = JSON.parse(raw) as {
+      schemaVersion?: number;
+      activeAttempt?: ExamAttemptRecord | null;
+      attemptHistory?: ExamAttemptRecord[];
+      mistakeNotebook?: MistakeNotebookEntry[];
+    };
+
+    if (!parsed || (parsed.schemaVersion !== 2 && parsed.schemaVersion !== 3)) {
+      return { store: createEmptyStore(), migratedOrReset: true };
     }
 
     const activeAttempt =
@@ -43,28 +106,58 @@ export function loadMockEngineStore(): PersistedMockTestStoreV2 {
         : null;
 
     const attemptHistory = Array.isArray(parsed.attemptHistory)
-      ? parsed.attemptHistory.filter((a) => a && a.attemptId && a.paper && a.scoring)
+      ? parsed.attemptHistory
+          .filter((a) => a && a.attemptId && a.paper && a.scoring)
+          .map((a) => ({
+            ...a,
+            scoring: a.scoring ? normalizeScoringSummary(a.scoring) : undefined,
+          }))
       : [];
 
     const mistakeNotebook = Array.isArray(parsed.mistakeNotebook)
-      ? parsed.mistakeNotebook.filter((m) => m && m.id && m.questionId)
+      ? parsed.mistakeNotebook
+          .filter((m) => m && m.id && m.questionId)
+          .map((m) => ({
+            ...m,
+            promptSnapshot: m.promptSnapshot || undefined,
+            curriculumVersion: m.curriculumVersion || undefined,
+          }))
       : [];
 
     return {
-      schemaVersion: 2,
-      activeAttempt,
-      attemptHistory: attemptHistory.slice(0, MAX_HISTORY_RECORDS),
-      mistakeNotebook: mistakeNotebook.slice(0, MAX_MISTAKE_RECORDS),
+      store: {
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        activeAttempt,
+        attemptHistory: attemptHistory.slice(0, MAX_HISTORY_RECORDS),
+        mistakeNotebook: mistakeNotebook.slice(0, MAX_MISTAKE_RECORDS),
+      },
+      migratedOrReset: parsed.schemaVersion !== CURRENT_SCHEMA_VERSION,
     };
+  } catch {
+    return { store: createEmptyStore(), migratedOrReset: true };
+  }
+}
+
+export function loadMockEngineStore(): PersistedMockTestStoreV3 {
+  if (typeof window === "undefined") {
+    return createEmptyStore();
+  }
+  try {
+    const raw = window.localStorage.getItem(MOCK_ENGINE_STORAGE_KEY);
+    const { store, migratedOrReset } = parseAndMigrateStoreJson(raw);
+    if (migratedOrReset && raw) {
+      saveMockEngineStore(store);
+    }
+    return store;
   } catch {
     return createEmptyStore();
   }
 }
 
-export function saveMockEngineStore(store: PersistedMockTestStoreV2): boolean {
+export function saveMockEngineStore(store: PersistedMockTestStoreV3): boolean {
   if (typeof window === "undefined") return false;
-  const bounded: PersistedMockTestStoreV2 = {
-    schemaVersion: 2,
+  const bounded: PersistedMockTestStoreV3 = {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     activeAttempt: store.activeAttempt,
     attemptHistory: store.attemptHistory.slice(0, MAX_HISTORY_RECORDS),
     mistakeNotebook: store.mistakeNotebook.slice(0, MAX_MISTAKE_RECORDS),
@@ -74,10 +167,9 @@ export function saveMockEngineStore(store: PersistedMockTestStoreV2): boolean {
     window.localStorage.setItem(MOCK_ENGINE_STORAGE_KEY, JSON.stringify(bounded));
     return true;
   } catch {
-    // Quota trim retry: keep newest 20 attempts and 80 mistakes
     try {
-      const trimmed: PersistedMockTestStoreV2 = {
-        schemaVersion: 2,
+      const trimmed: PersistedMockTestStoreV3 = {
+        schemaVersion: CURRENT_SCHEMA_VERSION,
         activeAttempt: bounded.activeAttempt,
         attemptHistory: bounded.attemptHistory.slice(0, 20),
         mistakeNotebook: bounded.mistakeNotebook.slice(0, 80),
@@ -90,9 +182,9 @@ export function saveMockEngineStore(store: PersistedMockTestStoreV2): boolean {
   }
 }
 
-export function saveActiveAttemptToStore(attempt: ExamAttemptRecord | null): PersistedMockTestStoreV2 {
+export function saveActiveAttemptToStore(attempt: ExamAttemptRecord | null): PersistedMockTestStoreV3 {
   const store = loadMockEngineStore();
-  const next: PersistedMockTestStoreV2 = {
+  const next: PersistedMockTestStoreV3 = {
     ...store,
     activeAttempt: attempt,
   };
@@ -100,14 +192,14 @@ export function saveActiveAttemptToStore(attempt: ExamAttemptRecord | null): Per
   return next;
 }
 
-export function archiveCompletedAttempt(attempt: ExamAttemptRecord): PersistedMockTestStoreV2 {
+export function archiveCompletedAttempt(attempt: ExamAttemptRecord): PersistedMockTestStoreV3 {
   const store = loadMockEngineStore();
   const alreadySaved = store.attemptHistory.some((a) => a.attemptId === attempt.attemptId);
   const nextHistory = alreadySaved
     ? store.attemptHistory.map((a) => (a.attemptId === attempt.attemptId ? attempt : a))
     : [attempt, ...store.attemptHistory];
 
-  const next: PersistedMockTestStoreV2 = {
+  const next: PersistedMockTestStoreV3 = {
     ...store,
     activeAttempt:
       store.activeAttempt?.attemptId === attempt.attemptId ? null : store.activeAttempt,
@@ -117,7 +209,7 @@ export function archiveCompletedAttempt(attempt: ExamAttemptRecord): PersistedMo
   return next;
 }
 
-export function upsertMistakeEntries(entries: MistakeNotebookEntry[]): PersistedMockTestStoreV2 {
+export function upsertMistakeEntries(entries: MistakeNotebookEntry[]): PersistedMockTestStoreV3 {
   const store = loadMockEngineStore();
   const byQuestionKey = new Map<string, MistakeNotebookEntry>();
 
@@ -144,10 +236,13 @@ export function upsertMistakeEntries(entries: MistakeNotebookEntry[]): Persisted
     .sort((a, b) => b.recordedAtMs - a.recordedAtMs)
     .slice(0, MAX_MISTAKE_RECORDS);
 
-  const next: PersistedMockTestStoreV2 = {
+  const next: PersistedMockTestStoreV3 = {
     ...store,
     mistakeNotebook: nextList,
   };
   saveMockEngineStore(next);
   return next;
 }
+
+// Re-export helper so callers checking empty responses have single entry point
+export { isResponseEmpty };

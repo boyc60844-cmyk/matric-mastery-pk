@@ -71,7 +71,7 @@ export function ResultsAndReviewView({
     .filter((i) => i.status === "incorrect" || i.status === "partial")
     .map((i) => i.questionId);
 
-  const weakestTopic = [...scoring.topicBreakdown]
+  const weakestTopic = [...(scoring.objectiveTopicBreakdown ?? scoring.topicBreakdown)]
     .filter((t) => t.accuracyPercent !== null && t.accuracyPercent < 80)
     .sort((a, b) => (a.accuracyPercent ?? 100) - (b.accuracyPercent ?? 100))[0];
 
@@ -152,14 +152,21 @@ export function ResultsAndReviewView({
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="font-mono text-3xl sm:text-4xl font-bold text-white tabular-nums">
-                {scoring.obtainedMarks} / {scoring.totalMarks}
+            <div className="text-right space-y-1">
+              <div className="font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+                {scoring.hasMixedSelfAssessment
+                  ? "Indicative Combined Total"
+                  : scoring.pendingSubjectiveMarks > 0
+                    ? "Verified So Far"
+                    : "Verified Score"}
               </div>
-              <div className="font-mono text-xs text-zinc-400 tabular-nums mt-0.5">
-                {scoring.percentage}%{" "}
+              <div className="font-mono text-3xl sm:text-4xl font-bold text-white tabular-nums">
+                {scoring.indicativeCombinedMarks} / {scoring.totalMarks}
+              </div>
+              <div className="font-mono text-xs text-zinc-400 tabular-nums">
+                {scoring.indicativeCombinedPercentage}%{" "}
                 {scoring.pendingReviewMarks > 0
-                  ? `(Auto + Reviewed so far · ${scoring.pendingReviewMarks}m pending)`
+                  ? `(${scoring.pendingSubjectiveMarks}m pending self-review)`
                   : scoring.passedByPolicy
                     ? "· Meets Pass Threshold"
                     : "· Below 40% Threshold"}
@@ -168,49 +175,50 @@ export function ResultsAndReviewView({
           </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="rounded-xl border border-white/10 bg-black/35 p-3.5">
-            <div className="font-mono text-lg font-bold text-emerald-400 tabular-nums">
-              {scoring.autoGradedObtainedMarks}/{scoring.autoGradedMaxMarks}
+        {/* Strictly Separated Score Dimensions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-4 space-y-1">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-emerald-300">
+              1. Auto-Verified Objective Score
             </div>
-            <div className="font-mono text-[10px] uppercase text-zinc-400 mt-1">
-              Auto-Graded Marks
+            <div className="font-mono text-2xl font-bold text-white tabular-nums">
+              {scoring.autoVerifiedObtainedMarks} / {scoring.autoVerifiedMaxMarks}
             </div>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/35 p-3.5">
-            <div className="font-mono text-lg font-bold text-[#FFD60A] tabular-nums">
-              {scoring.pendingReviewMarks}
-            </div>
-            <div className="font-mono text-[10px] uppercase text-zinc-400 mt-1">
-              Pending Self-Review ({scoring.pendingReviewCount})
+            <div className="font-mono text-xs text-emerald-300/90 tabular-nums">
+              Accuracy:{" "}
+              {scoring.autoVerifiedAccuracy !== null ? `${scoring.autoVerifiedAccuracy}%` : "N/A"} ·
+              Synced to Analytics &amp; XP
             </div>
           </div>
-          <div className="rounded-xl border border-white/10 bg-black/35 p-3.5">
-            <div className="font-mono text-lg font-bold text-white tabular-nums">
-              {scoring.autoGradedAccuracy !== null ? `${scoring.autoGradedAccuracy}%` : "N/A"}
+
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.05] p-4 space-y-1">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-amber-300">
+              2. Self-Assessed Subjective (Rubric)
             </div>
-            <div className="font-mono text-[10px] uppercase text-zinc-400 mt-1">
-              Auto-Graded Accuracy
+            <div className="font-mono text-2xl font-bold text-white tabular-nums">
+              {scoring.selfAssessedObtainedMarks} / {scoring.selfAssessedMaxMarks}
+            </div>
+            <div className="font-mono text-xs text-amber-200/80 tabular-nums">
+              {scoring.selfAssessedMaxMarks > 0
+                ? "Student rubric self-check — never alters objective accuracy"
+                : `${scoring.pendingSubjectiveMarks}m awaiting rubric self-check`}
             </div>
           </div>
-          <div className="rounded-xl border border-white/10 bg-black/35 p-3.5">
-            <div className="font-mono text-lg font-bold text-emerald-300 tabular-nums">
-              {scoring.correctCount}
+
+          <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-1">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+              3. Indicative Combined Summary
             </div>
-            <div className="font-mono text-[10px] uppercase text-zinc-400 mt-1">Full Correct</div>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/35 p-3.5">
-            <div className="font-mono text-lg font-bold text-red-400 tabular-nums">
-              {scoring.incorrectCount}
+            <div className="font-mono text-2xl font-bold text-[#FFD60A] tabular-nums">
+              {scoring.indicativeCombinedMarks} / {scoring.totalMarks} ({scoring.indicativeCombinedPercentage}%)
             </div>
-            <div className="font-mono text-[10px] uppercase text-zinc-400 mt-1">Incorrect</div>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/35 p-3.5">
-            <div className="font-mono text-lg font-bold text-zinc-300 tabular-nums">
-              {scoring.unansweredCount}
+            <div className="font-mono text-xs text-zinc-400 tabular-nums">
+              {scoring.correctCount} correct · {scoring.incorrectCount} wrong ·{" "}
+              {scoring.unansweredCount} blank
+              {scoring.notCountedChoiceCount > 0
+                ? ` · ${scoring.notCountedChoiceCount} choice overflow`
+                : ""}
             </div>
-            <div className="font-mono text-[10px] uppercase text-zinc-400 mt-1">Unanswered</div>
           </div>
         </div>
 
@@ -222,8 +230,8 @@ export function ResultsAndReviewView({
                 {scoring.pendingReviewCount} descriptive / derivation item(s) ({scoring.pendingReviewMarks} marks)
                 await Student Rubric Self-Review below.
               </strong>{" "}
-              Unlike auto-graded MCQs and numericals, subjective answers are never guessed by fake
-              AI scoring — check the marking rubric criteria below to update your verified total.
+              Subjective answers are never guessed by fake AI scoring — check marking criteria below
+              to update your Indicative Combined score. Auto-Verified Objective Accuracy remains strictly isolated.
             </div>
           </div>
         )}
@@ -233,11 +241,14 @@ export function ResultsAndReviewView({
       {(scoring.topicBreakdown.length > 0 || scoring.sloBreakdown.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section className="rounded-2xl border border-white/10 bg-[#121215] p-5 space-y-4">
-            <h2 className="font-heading text-base font-bold text-white">
-              Chapter &amp; Topic Breakdown
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-heading text-base font-bold text-white">
+                Auto-Verified Objective Topic Breakdown
+              </h2>
+              <span className="font-mono text-[10px] uppercase text-emerald-400">Objective Only</span>
+            </div>
             <div className="space-y-2.5">
-              {scoring.topicBreakdown.map((t) => (
+              {(scoring.objectiveTopicBreakdown ?? scoring.topicBreakdown).map((t) => (
                 <div
                   key={`${t.chapterId}:${t.topicId}`}
                   className="rounded-xl border border-white/10 bg-black/35 p-3 space-y-1.5"
@@ -245,17 +256,43 @@ export function ResultsAndReviewView({
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="font-medium text-white">{t.topicTitle}</span>
                     <span className="font-mono text-zinc-300 tabular-nums">
-                      {t.accuracyPercent !== null ? `${t.accuracyPercent}%` : "Pending Review"} (
+                      {t.accuracyPercent !== null ? `${t.accuracyPercent}%` : "N/A"} (
                       {t.obtainedMarks}/{t.availableMarks}m)
                     </span>
                   </div>
                   <div className="text-[11px] font-mono text-zinc-400">
-                    {t.chapterTitle} · {t.questionCount} items
-                    {t.pendingReviewCount > 0 ? ` · ${t.pendingReviewCount} pending rubric` : ""}
+                    {t.chapterTitle} · {t.questionCount} objective item(s)
                   </div>
                 </div>
               ))}
+              {(scoring.objectiveTopicBreakdown ?? scoring.topicBreakdown).length === 0 && (
+                <p className="text-xs text-zinc-400">
+                  No auto-verified objective items counted in this paper.
+                </p>
+              )}
             </div>
+
+            {scoring.selfAssessedTopicBreakdown && scoring.selfAssessedTopicBreakdown.length > 0 && (
+              <div className="pt-3 border-t border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-heading text-xs font-bold uppercase tracking-wider text-amber-300">
+                    Self-Assessed Subjective Topics
+                  </h3>
+                  <span className="font-mono text-[10px] text-zinc-400">Rubric Self-Check</span>
+                </div>
+                {scoring.selfAssessedTopicBreakdown.map((t) => (
+                  <div
+                    key={`self-${t.chapterId}:${t.topicId}`}
+                    className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-2.5 flex items-center justify-between gap-2 text-xs"
+                  >
+                    <span className="text-zinc-200">{t.topicTitle}</span>
+                    <span className="font-mono text-amber-200 tabular-nums">
+                      {t.obtainedMarks}/{t.availableMarks}m ({t.questionCount} item)
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {scoring.sloBreakdown.length > 0 && (
@@ -335,11 +372,18 @@ export function ResultsAndReviewView({
                 ? "text-emerald-400"
                 : item.status === "partial" || item.status === "self_reviewed"
                   ? "text-amber-300"
-                  : item.status === "pending_review"
-                    ? "text-[#FFD60A]"
-                    : item.status === "incorrect"
-                      ? "text-red-400"
-                      : "text-zinc-400";
+                  : item.status === "not_counted_choice"
+                    ? "text-amber-400"
+                    : item.status === "pending_review"
+                      ? "text-[#FFD60A]"
+                      : item.status === "incorrect"
+                        ? "text-red-400"
+                        : "text-zinc-400";
+
+            const statusLabel =
+              item.status === "not_counted_choice"
+                ? "Excluded (Choice Overflow)"
+                : item.status.replace(/_/g, " ");
 
             return (
               <article
@@ -351,7 +395,7 @@ export function ResultsAndReviewView({
                     <span className="font-bold text-[#FFD60A]">{item.displayNumber}</span>
                     <span className="text-zinc-500">·</span>
                     <span className={`font-semibold uppercase ${badgeColor}`}>
-                      {item.status.replace(/_/g, " ")}
+                      {statusLabel}
                     </span>
                     {mistakeIds.has(q.id) && (
                       <>
