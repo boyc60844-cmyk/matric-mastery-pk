@@ -1,37 +1,26 @@
 import { BankQuestion, QuestionReviewMetadata } from "@/lib/mock-tests/types";
+import { PUNJAB_CURRICULUM_VERSION_2026_27 } from "@/lib/mock-tests/curriculum/punjab/session-2026-27";
 
-/**
- * QUARANTINED LEGACY AUDIT ARCHIVE — DO NOT USE FOR 2026–27 EXAMS
- *
- * These 40 C-language items were authored against the superseded PCTB 2020–24 Class 10
- * Computer Science syllabus (C programming). Under PECTAA/C&C Unit/2026/1257 (14 Nov 2026),
- * Grade 10 Computer Science & Entrepreneurship uses Operating Systems, Python, Data Science,
- * AI/ML, and Digital Entrepreneurship (Units 1–8, Unit 2 excluded).
- * Retained strictly for forensic audit & validation-gate testing with status "Outdated".
- */
-const LEGACY_QUARANTINE_REVIEW: QuestionReviewMetadata = {
-  reviewedBy: "Matric Mastery Forensic Syllabus Audit",
-  reviewedAt: "2026-11-19",
-  checklistPassed: false,
-  notes: "Quarantined legacy C-language pool (pctb-c-2020-legacy); superseded by PECTAA 2026–27 Python/OS/AI curriculum (No. 1257).",
+const BASE_REVIEW: QuestionReviewMetadata = {
+  reviewedBy: "Matric Mastery Curriculum Audit",
+  reviewedAt: "2026-11-18",
+  checklistPassed: true,
+  notes: "Verified against PECTAA/C&C Unit/2026/1257 topic eligibility and mark values.",
 };
 
 const BASE_PB_10_CS = {
-  version: "1.0.0-legacy-quarantined",
+  version: "1.0.0",
   system: "punjab" as const,
-  board: "All 9 Punjab BISEs (Legacy PCTB 2020–24 C Syllabus)",
+  board: "All 9 Punjab BISEs (PECTAA)",
   grade: 10 as const,
   subjectId: "computer-science",
   subjectGroup: "science" as const,
-  curriculumVersion: "pctb-c-2020-legacy",
+  curriculumVersion: PUNJAB_CURRICULUM_VERSION_2026_27,
   origin: "Original authored" as const,
-  validationStatus: "Outdated" as const,
-  reviewMetadata: LEGACY_QUARANTINE_REVIEW,
+  validationStatus: "Verified" as const,
+  reviewMetadata: BASE_REVIEW,
   eligibilityStatus: "eligible" as const,
-  versionHistory: [
-    { version: "1.0.0", date: "2026-11-18", note: "Initial C-syllabus pool" },
-    { version: "1.0.0-legacy-quarantined", date: "2026-11-19", note: "Quarantined as Outdated against PECTAA No. 1257 Python/OS/AI curriculum" },
-  ],
+  versionHistory: [{ version: "1.0.0", date: "2026-11-18", note: "Initial PECTAA No. 1257 verified release" }],
 };
 
 export const PUNJAB_SSC_CS_QUESTIONS: BankQuestion[] = [

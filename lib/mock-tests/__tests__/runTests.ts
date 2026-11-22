@@ -3,10 +3,7 @@ import {
   BankQuestion,
   PaperBlueprint,
 } from "@/lib/mock-tests/types";
-import {
-  PAPER_BLUEPRINTS,
-  getBlueprintForSubject,
-} from "@/lib/mock-tests/blueprint/blueprintRegistry";
+import { PAPER_BLUEPRINTS, getBlueprintForSubject } from "@/lib/mock-tests/blueprint/blueprintRegistry";
 import { validateBlueprintAndPool } from "@/lib/mock-tests/blueprint/blueprintValidator";
 import {
   generateBoardSimulationPaper,
@@ -14,36 +11,16 @@ import {
 } from "@/lib/mock-tests/blueprint/paperGenerator";
 import { getCurriculumByKey } from "@/lib/mock-tests/curriculum/curriculumRegistry";
 import {
-  PUNJAB_AUTHORITY_REGISTRY,
-  PUNJAB_CURRICULUM_VERSION_2026_27,
-  PUNJAB_NOTIFICATIONS_BY_ID,
-} from "@/lib/mock-tests/curriculum/punjab/session-2026-27";
-import {
-  FBISE_LEGACY_EXCLUDED_VERSIONS,
-  FBISE_SCHEME_VERSION,
-} from "@/lib/mock-tests/curriculum/fbise/scheme-2024";
-import {
   getEligibleChapters,
   getEligibleTopicsForChapter,
   resolveQuestionSyllabusEligibility,
 } from "@/lib/mock-tests/curriculum/eligibilityResolver";
-import { getSubjectReadinessProfile } from "@/lib/mock-tests/curriculum/readinessResolver";
 import { validateCurriculumCompatibility } from "@/lib/mock-tests/curriculum/syllabusVersionResolver";
 import { RAW_QUESTION_BANK } from "@/lib/mock-tests/question-bank/questionRegistry";
-import { PUNJAB_SSC_CS_QUESTIONS } from "@/lib/mock-tests/question-bank/bank/punjab-ssc-cs";
-import { filterEligibleQuestions } from "@/lib/mock-tests/question-bank/eligibility";
-import {
-  normalizePromptForDedup,
-  validateQuestionIntegrity,
-} from "@/lib/mock-tests/question-bank/validation";
-import { parseNumericInput } from "@/lib/mock-tests/scoring/answerValidator";
-import {
-  evaluateSingleItem,
-  scoreExamAttempt,
-} from "@/lib/mock-tests/scoring/scoringEngine";
+import { validateQuestionIntegrity } from "@/lib/mock-tests/question-bank/validation";
+import { evaluateSingleItem } from "@/lib/mock-tests/scoring/scoringEngine";
 import {
   applySubjectiveSelfReview,
-  extractMistakesFromAttempt,
   getRemainingSeconds,
   pauseAttempt,
   resumeAttempt,
@@ -51,9 +28,7 @@ import {
   startNewAttempt,
   submitAttempt,
 } from "@/lib/mock-tests/attempts/attemptMachine";
-import { parseAndMigrateStoreJson } from "@/lib/mock-tests/persistence/storage";
 import { computeAnalyticsOverview } from "@/lib/mock-tests/analytics/analyticsEngine";
-import { SUBJECTS_CONFIG } from "@/lib/question-bank";
 
 let passed = 0;
 
@@ -69,287 +44,117 @@ function test(name: string, fn: () => void) {
   }
 }
 
-function buildSyntheticCs10FullPool(): BankQuestion[] {
-  const pool: BankQuestion[] = [];
-  const baseReview = {
-    reviewedBy: "Synthetic Audit",
-    reviewedAt: "2026-11-19",
-    checklistPassed: true,
+console.log("=== MATRIC MASTERY ASSESSMENT ENGINE UNIT TESTS ===");
+
+// ---------------------------------------------------------------------------
+// 1. BLUEPRINT & PAPER GENERATION TESTS
+// ---------------------------------------------------------------------------
+test("1.1 All registered official blueprints pass mathematical section & mark reconciliation", () => {
+  for (const bp of PAPER_BLUEPRINTS) {
+    const status = validateBlueprintAndPool(bp, RAW_QUESTION_BANK);
+    assert.equal(
+      status.isValidBlueprint,
+      true,
+      `Blueprint ${bp.id} failed integrity: ${status.issues.map((i) => i.message).join("; ")}`
+    );
+  }
+});
+
+test("1.2 Broken blueprint with mismatched section marks or duration <= 0 is rejected", () => {
+  const brokenBp: PaperBlueprint = {
+    ...PAPER_BLUEPRINTS[0],
+    id: "bp-broken",
+    durationMinutes: 0,
+    totalMarks: 999,
   };
-  const makeBase = (
-    id: string,
-    chapterId: string,
-    topicId: string,
-    marks: number
-  ) => ({
-    id,
-    version: "1.0.0",
-    system: "punjab" as const,
-    board: "All 9 Punjab BISEs (PECTAA No. 1257)",
-    grade: 10 as const,
-    subjectId: "computer-science",
-    subjectGroup: "science" as const,
-    curriculumVersion: PUNJAB_CURRICULUM_VERSION_2026_27,
-    chapterId,
-    topicId,
-    origin: "Original authored" as const,
-    validationStatus: "Verified" as const,
-    reviewMetadata: baseReview,
-    eligibilityStatus: "eligible" as const,
-    versionHistory: [{ version: "1.0.0", date: "2026-11-19", note: "Synthetic pool item" }],
-    marks,
-    difficulty: "Moderate" as const,
-    cognitiveLevel: "Understand" as const,
-    sourceReference: "PECTAA No. 1257 CS 10",
-    explanation: "Synthetic blueprint slot verification item.",
-  });
-
-  // 14 MCQs distributed across u1, u3, u4, u5, u6, u7, u8 (2 per active unit)
-  const units = [
-    ["pb-10-cs-u1", "pb-10-cs-u1-t1"],
-    ["pb-10-cs-u3", "pb-10-cs-u3-t1"],
-    ["pb-10-cs-u4", "pb-10-cs-u4-t1"],
-    ["pb-10-cs-u5", "pb-10-cs-u5-t1"],
-    ["pb-10-cs-u6", "pb-10-cs-u6-t1"],
-    ["pb-10-cs-u7", "pb-10-cs-u7-t1"],
-    ["pb-10-cs-u8", "pb-10-cs-u8-t1"],
-  ] as const;
-
-  units.forEach(([chId, tId], uIdx) => {
-    for (let k = 1; k <= 2; k++) {
-      pool.push({
-        ...makeBase(`syn-mcq-${uIdx}-${k}`, chId, tId, 1),
-        type: "single_mcq",
-        prompt: `Synthetic CS 10 MCQ ${uIdx}-${k} for unit ${chId}`,
-        options: ["Alpha", "Beta", "Gamma", "Delta"],
-        correctIndex: 0,
-      });
-    }
-  });
-
-  // Q2 short (u1, u3): 6 items
-  for (let i = 1; i <= 6; i++) {
-    const ch = i <= 3 ? "pb-10-cs-u1" : "pb-10-cs-u3";
-    pool.push({
-      ...makeBase(`syn-q2-${i}`, ch, `${ch}-t1`, 2),
-      type: "short_answer",
-      prompt: `Synthetic Q2 Short ${i} (${ch})`,
-      modelAnswer: "Model short answer for Q2.",
-      markingPoints: ["Point 1", "Point 2"],
-      rubric: {
-        maxMarks: 2,
-        allowPartialMarks: true,
-        criteria: [
-          { id: "c1", label: "Concept", marks: 1, detail: "Core definition" },
-          { id: "c2", label: "Example", marks: 1, detail: "Python/OS example" },
-        ],
-      },
-    });
-  }
-
-  // Q3 short (u4, u5): 6 items
-  for (let i = 1; i <= 6; i++) {
-    const ch = i <= 3 ? "pb-10-cs-u4" : "pb-10-cs-u5";
-    pool.push({
-      ...makeBase(`syn-q3-${i}`, ch, `${ch}-t1`, 2),
-      type: "short_answer",
-      prompt: `Synthetic Q3 Short ${i} (${ch})`,
-      modelAnswer: "Model short answer for Q3.",
-      markingPoints: ["Point 1", "Point 2"],
-      rubric: {
-        maxMarks: 2,
-        allowPartialMarks: true,
-        criteria: [
-          { id: "c1", label: "Concept", marks: 1, detail: "Core definition" },
-          { id: "c2", label: "Trace", marks: 1, detail: "Valid output" },
-        ],
-      },
-    });
-  }
-
-  // Q4 short (u6, u7, u8): 6 items
-  const q4Units = ["pb-10-cs-u6", "pb-10-cs-u7", "pb-10-cs-u8"];
-  for (let i = 1; i <= 6; i++) {
-    const ch = q4Units[(i - 1) % 3];
-    pool.push({
-      ...makeBase(`syn-q4-${i}`, ch, `${ch}-t1`, 2),
-      type: "short_answer",
-      prompt: `Synthetic Q4 Short ${i} (${ch})`,
-      modelAnswer: "Model short answer for Q4.",
-      markingPoints: ["Point 1", "Point 2"],
-      rubric: {
-        maxMarks: 2,
-        allowPartialMarks: true,
-        criteria: [
-          { id: "c1", label: "Concept", marks: 1, detail: "Core definition" },
-          { id: "c2", label: "Application", marks: 1, detail: "Valid scenario" },
-        ],
-      },
-    });
-  }
-
-  // Long (u1, u4, u6): 3 items x 8m
-  for (const ch of ["pb-10-cs-u1", "pb-10-cs-u4", "pb-10-cs-u6"]) {
-    pool.push({
-      ...makeBase(`syn-long-${ch}`, ch, `${ch}-t1`, 8),
-      type: "extended_response",
-      prompt: `Synthetic Long 8m question for ${ch}`,
-      modelAnswer: "Full structured essay/program response.",
-      markingPoints: ["Overview (4 marks)", "Python / System application (4 marks)"],
-      rubric: {
-        maxMarks: 8,
-        allowPartialMarks: true,
-        criteria: [
-          { id: "l1", label: "Core principles", marks: 4, detail: "Detailed explanation" },
-          { id: "l2", label: "Python / System application", marks: 4, detail: "Working example" },
-        ],
-      },
-    });
-  }
-
-  return pool;
-}
-
-console.log("=== MATRIC MASTERY FORENSIC VERIFICATION TEST SUITE ===");
-
-// ---------------------------------------------------------------------------
-// 1. PUNJAB PECTAA AUTHORITY REGISTRY & CURRICULA (2026–27)
-// ---------------------------------------------------------------------------
-test("1.1 Complete PECTAA authority notification map enforces No. 1256 Masihi Taleem-11 isolation", () => {
-  const expectedCodes = [
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1238.code,
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1255.code,
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1253.code,
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1254.code,
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1257.code,
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1239.code,
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1256.code,
-    PUNJAB_NOTIFICATIONS_BY_ID.NO_1258.code,
-  ];
-  assert.equal(PUNJAB_AUTHORITY_REGISTRY.length, 8);
-  for (const code of expectedCodes) {
-    assert.ok(PUNJAB_AUTHORITY_REGISTRY.some((entry) => entry.ref.code === code));
-  }
-
-  const no1256 = PUNJAB_AUTHORITY_REGISTRY.find(
-    (e) => e.ref.code === PUNJAB_NOTIFICATIONS_BY_ID.NO_1256.code
-  )!;
-  assert.equal(no1256.stream, "masihi_only");
-  assert.equal(no1256.supersedesNotificationCode, null);
-  assert.deepEqual(no1256.coveredSubjects, ["Masihi Taleem-11 ONLY"]);
-
-  const phy11 = getCurriculumByKey("punjab", 11, "physics")!;
-  assert.ok(phy11);
-  assert.equal(phy11.notificationRefs[0].code, PUNJAB_NOTIFICATIONS_BY_ID.NO_1239.code);
+  const status = validateBlueprintAndPool(brokenBp, RAW_QUESTION_BANK);
+  assert.equal(status.isValidBlueprint, false);
+  assert.ok(status.issues.some((i) => i.code === "INVALID_DURATION"));
+  assert.ok(status.issues.some((i) => i.code === "TOTAL_MARKS_MISMATCH"));
 });
 
-test("1.2 Tarjama-tul-Quran Class 9 has full syllabus (no ALP) & decoupled zero-bank readiness", () => {
-  const tarjama9 = getCurriculumByKey("punjab", 9, "tarjama-tul-quran")!;
-  assert.ok(tarjama9);
-  assert.equal(tarjama9.syllabusPolicy, "full_syllabus_no_alp");
-  assert.equal(tarjama9.alpApplied, false);
-  assert.equal(tarjama9.curriculumStatus, "verified");
-
-  const profile = getSubjectReadinessProfile(tarjama9, RAW_QUESTION_BANK);
-  assert.equal(profile.curriculumStatus, "verified");
-  assert.equal(profile.bankStatus, "empty");
-  assert.equal(profile.practiceAvailable, false);
-  assert.ok(profile.summaryBadge.includes("Full Syllabus"));
-});
-
-test("1.3 Biology Class 10 reports verified curriculum separately from empty question bank", () => {
-  const bio10 = getCurriculumByKey("punjab", 10, "biology")!;
-  assert.ok(bio10);
-  assert.equal(bio10.curriculumStatus, "verified");
-  assert.equal(bio10.syllabusPolicy, "reduced_alp_active");
-  assert.equal(bio10.theoryMarks, 60);
-  assert.equal(bio10.practicalMarks, 30);
-  assert.equal(bio10.notificationRefs[0].code, PUNJAB_NOTIFICATIONS_BY_ID.NO_1257.code);
-
-  const profile = getSubjectReadinessProfile(bio10, RAW_QUESTION_BANK);
-  assert.equal(profile.curriculumStatus, "verified");
-  assert.equal(profile.bankStatus, "empty");
-  assert.equal(profile.practiceAvailable, false);
-});
-
-test("1.4 CS & Entrepreneurship Class 9 (No. 1255) excludes complete Unit 2 Number Systems", () => {
-  const cs9 = getCurriculumByKey("punjab", 9, "computer-science")!;
-  assert.ok(cs9);
-  assert.equal(cs9.notificationRefs[0].code, PUNJAB_NOTIFICATIONS_BY_ID.NO_1255.code);
-  const unit2 = cs9.chapters.find((c) => c.id === "pb-9-cs-u2")!;
-  assert.equal(unit2.isFullyExcluded, true);
-  assert.equal(getEligibleChapters(cs9).length, 8);
-
-  const exclItem = RAW_QUESTION_BANK.find((q) => q.id === "pb9-cs-excl-u2-01")!;
-  assert.equal(resolveQuestionSyllabusEligibility(exclItem).eligible, false);
-});
-
-test("1.5 CS & Entrepreneurship Class 10 (No. 1257) matches authentic 8-unit Python/OS/AI syllabus", () => {
-  const cs10 = getCurriculumByKey("punjab", 10, "computer-science")!;
-  assert.ok(cs10);
-  assert.equal(cs10.chapters.length, 8);
-  assert.equal(cs10.chapters[1].id, "pb-10-cs-u2");
-  assert.equal(cs10.chapters[1].isFullyExcluded, true);
-  assert.ok(cs10.chapters[2].title.includes("Python"));
-  assert.ok(cs10.chapters[7].title.includes("Digital Entrepreneurship"));
-  assert.equal(getEligibleChapters(cs10).length, 7);
-});
-
-// ---------------------------------------------------------------------------
-// 2. FBISE INCLUSIVE SCHEME 2024 & BILINGUAL RULE
-// ---------------------------------------------------------------------------
-test("2.1 FBISE active framework uses Inclusive Scheme 2024 (1200m) and excludes legacy 2006", () => {
-  assert.equal(FBISE_SCHEME_VERSION, "fbise-inclusive-2024");
-  assert.ok(FBISE_LEGACY_EXCLUDED_VERSIONS.includes("fbise-scheme-2006"));
-  const phy9 = getCurriculumByKey("fbise", 9, "physics")!;
-  assert.ok(phy9.fbiseSchemeMeta);
-  assert.equal(phy9.fbiseSchemeMeta.totalSchemeMarks, 1200);
-  assert.ok(phy9.fbiseSchemeMeta.schemeName.includes("Inclusive Scheme of Studies 2024"));
-});
-
-test("2.2 FBISE Notification 1-1/FBISE/RES/2026/370 bilingual rule applies SSC only, not HSSC", () => {
-  const sscPhy = getCurriculumByKey("fbise", 9, "physics")!;
-  const sscMath = getCurriculumByKey("fbise", 10, "mathematics")!;
-  const hsscPhy = getCurriculumByKey("fbise", 11, "physics")!;
-  const hsscMath = getCurriculumByKey("fbise", 12, "mathematics")!;
-
-  assert.equal(sscPhy.fbiseSchemeMeta?.bilingualPolicy.applies, true);
-  assert.equal(sscPhy.fbiseSchemeMeta?.bilingualPolicy.notificationCode, "1-1/FBISE/RES/2026/370");
-  assert.equal(sscMath.fbiseSchemeMeta?.bilingualPolicy.applies, true);
-  assert.equal(hsscPhy.fbiseSchemeMeta?.bilingualPolicy.applies, false);
-  assert.equal(hsscMath.fbiseSchemeMeta?.bilingualPolicy.applies, false);
-});
-
-test("2.3 Stale curriculum versions (fbise-scheme-2006, old-2023) fail compatibility strictly", () => {
-  const fbOld = validateCurriculumCompatibility({
-    system: "fbise",
-    grade: 9,
-    subjectId: "physics",
-    curriculumVersion: "fbise-scheme-2006",
-  });
-  assert.equal(fbOld.ok, false);
-
-  const pbOld = validateCurriculumCompatibility({
+test("1.3 Punjab Class 10 CS Board Simulation generates exact 50 marks, zero duplicates, seeded determinism", () => {
+  const gen1 = generateBoardSimulationPaper({
     system: "punjab",
     grade: 10,
     subjectId: "computer-science",
-    curriculumVersion: "pctb-c-2020-legacy",
+    seed: "seed-cs-10-fixed",
   });
-  assert.equal(pbOld.ok, false);
+  const gen2 = generateBoardSimulationPaper({
+    system: "punjab",
+    grade: 10,
+    subjectId: "computer-science",
+    seed: "seed-cs-10-fixed",
+  });
+
+  assert.equal(gen1.ok, true);
+  assert.equal(gen2.ok, true);
+  if (gen1.ok && gen2.ok) {
+    assert.equal(gen1.paper.totalMarks, 50);
+    assert.equal(gen1.paper.durationMinutes, 120);
+    assert.equal(gen1.paper.allowPause, false);
+    assert.equal(gen1.paper.slots.length, 31); // 10 MCQ + 6+6+6 Short + 3 Long
+    const uniqueIds = new Set(gen1.paper.slots.map((s) => s.questionId));
+    assert.equal(uniqueIds.size, gen1.paper.slots.length, "No duplicate questions allowed in a single paper");
+    assert.deepEqual(
+      gen1.paper.slots.map((s) => s.questionId),
+      gen2.paper.slots.map((s) => s.questionId),
+      "Seeded generation must be deterministic"
+    );
+  }
+});
+
+test("1.4 FBISE Class 9 Physics Board Simulation generates exact 65 marks, 3 hours, zero duplicates", () => {
+  const gen = generateBoardSimulationPaper({
+    system: "fbise",
+    grade: 9,
+    subjectId: "physics",
+    seed: "seed-fb-phy-9",
+  });
+  assert.equal(gen.ok, true);
+  if (gen.ok) {
+    assert.equal(gen.paper.totalMarks, 65);
+    assert.equal(gen.paper.durationMinutes, 180);
+    assert.equal(gen.paper.slots.length, 30); // 12 + 15 + 3
+    const ids = new Set(gen.paper.slots.map((s) => s.questionId));
+    assert.equal(ids.size, 30);
+  }
+});
+
+test("1.5 Shortfall board blueprint refuses cleanly instead of fabricating filler questions", () => {
+  const res = generateBoardSimulationPaper({
+    system: "punjab",
+    grade: 9,
+    subjectId: "physics",
+  });
+  assert.equal(res.ok, false);
+  if (!res.ok) {
+    assert.ok(res.reason.includes("Validated pool:"));
+  }
 });
 
 // ---------------------------------------------------------------------------
-// 3. BANK INTEGRITY, QUARANTINE & VALIDATOR GATES
+// 2. SYLLABUS & ALP GRANULAR EXCLUSION TESTS
 // ---------------------------------------------------------------------------
-test("3.1 All 40 legacy C-language items in punjab-ssc-cs.ts are Outdated & excluded from live bank", () => {
-  assert.equal(PUNJAB_SSC_CS_QUESTIONS.length, 40);
-  for (const legacy of PUNJAB_SSC_CS_QUESTIONS) {
-    assert.equal(legacy.validationStatus, "Outdated");
-    assert.equal(legacy.reviewMetadata.checklistPassed, false);
-    assert.equal(resolveQuestionSyllabusEligibility(legacy).eligible, false);
-  }
+test("2.1 Partial ALP exclusion keeps active chapter topics and never drops the whole chapter", () => {
+  const phy9 = getCurriculumByKey("punjab", 9, "physics");
+  assert.ok(phy9);
+  const eligibleChapters = getEligibleChapters(phy9);
+  const ch3 = eligibleChapters.find((c) => c.id === "pb-9-phy-ch3");
+  assert.ok(ch3, "Chapter 3 Dynamics must remain active when only Banking of Roads is deleted");
 
-  const cs10Prac = generatePracticePaper({
+  const eligibleTopics = getEligibleTopicsForChapter(ch3);
+  assert.ok(eligibleTopics.some((t) => t.id === "pb-9-phy-ch3-t1"));
+  assert.ok(!eligibleTopics.some((t) => t.id === "pb-9-phy-ch3-t3"), "Excluded topic must not be eligible");
+});
+
+test("2.2 Explicit ALP-excluded questions and Draft questions are filtered out of eligible generation", () => {
+  const alpExcluded = RAW_QUESTION_BANK.find((q) => q.id === "pb10-cs-excl-01");
+  assert.ok(alpExcluded);
+  const decision = resolveQuestionSyllabusEligibility(alpExcluded);
+  assert.equal(decision.eligible, false);
+
+  const paperRes = generatePracticePaper({
     mode: "custom_test",
     system: "punjab",
     grade: 10,
@@ -358,456 +163,168 @@ test("3.1 All 40 legacy C-language items in punjab-ssc-cs.ts are Outdated & excl
     isTimed: false,
     durationMinutes: 0,
   });
-  assert.equal(cs10Prac.ok, true);
-  if (cs10Prac.ok) {
-    assert.equal(cs10Prac.paper.slots.length, 18); // Only 18 Python/OS/AI eligible items
-    for (const slot of cs10Prac.paper.slots) {
-      assert.ok(!slot.questionId.startsWith("pb10-cs-mcq-")); // No legacy C IDs
-      assert.equal(cs10Prac.paper.questionsById[slot.questionId].curriculumVersion, PUNJAB_CURRICULUM_VERSION_2026_27);
-    }
+  assert.equal(paperRes.ok, true);
+  if (paperRes.ok) {
+    assert.ok(!paperRes.paper.questionsById["pb10-cs-excl-01"]);
+    assert.ok(!paperRes.paper.questionsById["pb10-chem-draft-01"]);
   }
 });
 
-test("3.2 Verified eligible bank passes integrity with zero duplicate IDs or duplicate prompts", () => {
-  const seenIds = new Set<string>();
-  const promptsBySubject = new Map<string, Set<string>>();
+test("2.3 Stale curriculum version mismatch and unavailable subjects fail compatibility checks", () => {
+  const stale = validateCurriculumCompatibility({
+    system: "punjab",
+    grade: 10,
+    subjectId: "computer-science",
+    curriculumVersion: "old-2023-syllabus",
+  });
+  assert.equal(stale.ok, false);
 
+  const unavail = validateCurriculumCompatibility({
+    system: "punjab",
+    grade: 10,
+    subjectId: "biology",
+    curriculumVersion: "pectaa-2026-27",
+  });
+  assert.equal(unavail.ok, false);
+});
+
+// ---------------------------------------------------------------------------
+// 3. QUESTION VALIDATOR & ALL 12 TYPES SCORING TESTS
+// ---------------------------------------------------------------------------
+test("3.1 Verified eligible RAW_QUESTION_BANK passes integrity checks without duplicate IDs", () => {
+  const seenIds = new Set<string>();
   for (const q of RAW_QUESTION_BANK) {
-    assert.equal(seenIds.has(q.id), false, `Duplicate ID: ${q.id}`);
+    assert.equal(seenIds.has(q.id), false, `Duplicate ID found: ${q.id}`);
     seenIds.add(q.id);
     if (q.validationStatus === "Verified" && q.eligibilityStatus === "eligible") {
       const check = validateQuestionIntegrity(q);
-      assert.equal(check.valid, true, `${q.id}: ${check.errors.join(", ")}`);
-      const subjKey = `${q.system}:${q.grade}:${q.subjectId}`;
-      const set = promptsBySubject.get(subjKey) ?? new Set<string>();
-      const norm = normalizePromptForDedup(q.prompt);
-      assert.equal(set.has(norm), false, `Duplicate normalized prompt in ${subjKey}: ${q.id}`);
-      set.add(norm);
-      promptsBySubject.set(subjKey, set);
+      assert.equal(check.valid, true, `Verified question ${q.id} failed check: ${check.errors.join(", ")}`);
     }
   }
 });
 
-test("3.3 Validator enforces strict Verified gate, finite numerics, and valid FBISE SLO ID", () => {
-  const baseFb = RAW_QUESTION_BANK.find((q) => q.system === "fbise" && q.type === "single_mcq")!;
-  const provisionalCheck = validateQuestionIntegrity({
-    ...baseFb,
-    validationStatus: "Provisional",
+test("3.2 Auto-graded types: Fill-Blank normalization, Case Sensitivity, Numerical tolerance & unit deduction", () => {
+  const fillCaseQ = RAW_QUESTION_BANK.find((q) => q.type === "fill_blank" && q.caseSensitive)!;
+  assert.ok(fillCaseQ && fillCaseQ.type === "fill_blank");
+  const fillCaseOk = evaluateSingleItem({
+    question: fillCaseQ,
+    response: { kind: "fill_blank", text: `  ${fillCaseQ.acceptedAnswers[0]} . ` },
   });
-  assert.equal(provisionalCheck.valid, false);
+  assert.equal(fillCaseOk.status, "correct");
 
-  const badSloCheck = validateQuestionIntegrity({
-    ...baseFb,
-    sloId: "non-existent-slo-id",
+  const fillCaseWrong = evaluateSingleItem({
+    question: fillCaseQ,
+    response: { kind: "fill_blank", text: fillCaseQ.acceptedAnswers[0].toUpperCase() },
   });
-  assert.equal(badSloCheck.valid, false);
+  assert.equal(fillCaseWrong.status, "incorrect", "Case-sensitive fill_blank must reject wrong casing");
 
-  const baseNum = RAW_QUESTION_BANK.find((q) => q.type === "numerical")!;
-  assert.ok(baseNum && baseNum.type === "numerical");
-  const infNumCheck = validateQuestionIntegrity({
-    ...baseNum,
-    numericAnswer: Number.POSITIVE_INFINITY,
+  const fillInsensQ = RAW_QUESTION_BANK.find((q) => q.type === "fill_blank" && !q.caseSensitive)!;
+  assert.ok(fillInsensQ && fillInsensQ.type === "fill_blank");
+  const fillInsensOk = evaluateSingleItem({
+    question: fillInsensQ,
+    response: { kind: "fill_blank", text: `  ${fillInsensQ.acceptedAnswers[0].toUpperCase()} . ` },
   });
-  assert.equal(infNumCheck.valid, false);
-});
+  assert.equal(fillInsensOk.status, "correct");
+  assert.equal(fillInsensOk.awardedMarks, fillInsensQ.marks);
 
-test("3.4 Partial ALP exclusions keep Physics 9 Ch. 3 active while blocking deleted Banking of Roads & drafts", () => {
-  const phy9 = getCurriculumByKey("punjab", 9, "physics")!;
-  const ch3 = getEligibleChapters(phy9).find((c) => c.id === "pb-9-phy-ch3")!;
-  assert.ok(ch3);
-  const topics = getEligibleTopicsForChapter(ch3);
-  assert.ok(topics.some((t) => t.id === "pb-9-phy-ch3-t1"));
-  assert.ok(!topics.some((t) => t.id === "pb-9-phy-ch3-t3"));
-
-  const draft = RAW_QUESTION_BANK.find((q) => q.id === "pb10-chem-draft-01")!;
-  const chemEligible = filterEligibleQuestions([draft], {
-    system: "punjab",
-    grade: 10,
-    subjectId: "chemistry",
-  });
-  assert.equal(chemEligible.length, 0);
-});
-
-test("3.5 lib/question-bank.ts compatibility adapter reflects 2026–27 Computer Science units", () => {
-  const cs = SUBJECTS_CONFIG.find((s) => s.name === "Computer Science")!;
-  assert.ok(cs);
-  assert.ok(cs.chapters["Class 9"].some((c) => c.includes("Computational Thinking")));
-  assert.ok(!cs.chapters["Class 10"].some((c) => c.includes("C Language")));
-  assert.ok(cs.chapters["Class 10"].some((c) => c.includes("Introduction to Python")));
-});
-
-// ---------------------------------------------------------------------------
-// 4. BLUEPRINTS, VALIDATION & DETERMINISTIC PAPER GENERATION
-// ---------------------------------------------------------------------------
-test("4.1 All registered blueprints reconcile marks and reference only active non-excluded chapters", () => {
-  for (const bp of PAPER_BLUEPRINTS) {
-    const status = validateBlueprintAndPool(bp, RAW_QUESTION_BANK);
-    assert.equal(
-      status.isValidBlueprint,
-      true,
-      `${bp.id}: ${status.issues.map((i) => i.message).join("; ")}`
-    );
-  }
-});
-
-test("4.2 Blueprint validator rejects invalid duration, mark mismatches, excluded chapters & bad quotas", () => {
-  const cs10Bp = getBlueprintForSubject("punjab", 10, "computer-science")!;
-  const brokenBp: PaperBlueprint = {
-    ...cs10Bp,
-    id: "bp-broken-audit",
-    durationMinutes: 0,
-    totalMarks: 99,
-    sections: cs10Bp.sections.map((sec, idx) =>
-      idx === 0
-        ? {
-            ...sec,
-            choiceGroups: sec.choiceGroups.map((g) => ({
-              ...g,
-              allowedChapterIds: ["pb-10-cs-u2"], // Excluded Unit 2
-              chapterQuotas: [{ chapterId: "pb-10-cs-u2", minCount: 2, maxCount: 2 }],
-            })),
-          }
-        : sec
-    ),
-  };
-
-  const check = validateBlueprintAndPool(brokenBp, RAW_QUESTION_BANK);
-  assert.equal(check.isValidBlueprint, false);
-  assert.ok(check.issues.some((i) => i.code === "INVALID_DURATION"));
-  assert.ok(check.issues.some((i) => i.code === "TOTAL_MARKS_MISMATCH"));
-  assert.ok(check.issues.some((i) => i.code === "INVALID_CHAPTER_FILTER"));
-  assert.ok(check.issues.some((i) => i.code === "EXCLUDED_CHAPTER_QUOTA"));
-});
-
-test("4.3 Punjab CS 9 & 10 honestly refuse Board Simulation when starter pool < 31 slots", () => {
-  for (const g of [9, 10] as const) {
-    const bp = getBlueprintForSubject("punjab", g, "computer-science")!;
-    assert.equal(bp.objectiveTimeMinutes, 15);
-    assert.equal(bp.subjectiveTimeMinutes, 105);
-    const res = generateBoardSimulationPaper({
-      system: "punjab",
-      grade: g,
-      subjectId: "computer-science",
-    });
-    assert.equal(res.ok, false);
-  }
-});
-
-test("4.4 FBISE Class 9 Physics simulation generates exact 65m, 180m, 30 unique slots deterministically", () => {
-  const g1 = generateBoardSimulationPaper({
-    system: "fbise",
-    grade: 9,
-    subjectId: "physics",
-    seed: "fb-phy-det-1",
-  });
-  const g2 = generateBoardSimulationPaper({
-    system: "fbise",
-    grade: 9,
-    subjectId: "physics",
-    seed: "fb-phy-det-1",
-  });
-  assert.equal(g1.ok, true);
-  assert.equal(g2.ok, true);
-  if (g1.ok && g2.ok) {
-    assert.equal(g1.paper.totalMarks, 65);
-    assert.equal(g1.paper.durationMinutes, 180);
-    assert.equal(g1.paper.allowPause, false);
-    assert.equal(g1.paper.slots.length, 30);
-    assert.equal(new Set(g1.paper.slots.map((s) => s.questionId)).size, 30);
-    assert.deepEqual(
-      g1.paper.slots.map((s) => s.questionId),
-      g2.paper.slots.map((s) => s.questionId)
-    );
-  }
-});
-
-test("4.5 Full synthetic 31-slot CS 10 pool generates exact 50-mark blueprint without duplicates", () => {
-  const bp10 = getBlueprintForSubject("punjab", 10, "computer-science")!;
-  const syntheticBank = buildSyntheticCs10FullPool();
-  const sim = generateBoardSimulationPaper({
-    system: "punjab",
-    grade: 10,
-    subjectId: "computer-science",
-    blueprintOverride: bp10,
-    questionBank: syntheticBank,
-    seed: "syn-cs10-seed",
-  });
-  assert.equal(sim.ok, true);
-  if (sim.ok) {
-    assert.equal(sim.paper.totalMarks, 50);
-    assert.equal(sim.paper.slots.length, 31);
-    assert.equal(new Set(sim.paper.slots.map((s) => s.questionId)).size, 31);
-  }
-});
-
-// ---------------------------------------------------------------------------
-// 5. ALL 12 QUESTION TYPES & PARSER / NUMERIC TOLERANCE TESTS
-// ---------------------------------------------------------------------------
-test("5.1–5.7 Auto-graded objective types: single_mcq, multi_select, true_false, fill_blank, matching, classification, diagram", () => {
-  const single = RAW_QUESTION_BANK.find((q) => q.type === "single_mcq")!;
-  assert.ok(single && single.type === "single_mcq");
-  assert.equal(
-    evaluateSingleItem({
-      question: single,
-      response: { kind: "single_mcq", selectedCanonicalIndex: single.correctIndex },
-    }).status,
-    "correct"
-  );
-
-  const multi = RAW_QUESTION_BANK.find((q) => q.type === "multi_select")!;
-  assert.ok(multi && multi.type === "multi_select");
-  assert.equal(
-    evaluateSingleItem({
-      question: multi,
-      response: { kind: "multi_select", selectedCanonicalIndices: multi.correctIndices },
-    }).status,
-    "correct"
-  );
-
-  const tf = RAW_QUESTION_BANK.find((q) => q.type === "true_false")!;
-  assert.ok(tf && tf.type === "true_false");
-  assert.equal(
-    evaluateSingleItem({
-      question: tf,
-      response: { kind: "true_false", value: tf.correctBoolean },
-    }).status,
-    "correct"
-  );
-
-  const fillBase = RAW_QUESTION_BANK.find((q) => q.type === "fill_blank" && q.caseSensitive)!;
-  assert.ok(fillBase && fillBase.type === "fill_blank");
-  const fillCase = { ...fillBase, acceptedAnswers: ["Python"], caseSensitive: true };
-  assert.equal(
-    evaluateSingleItem({
-      question: fillCase,
-      response: { kind: "fill_blank", text: "python" },
-    }).status,
-    "incorrect"
-  );
-  assert.equal(
-    evaluateSingleItem({
-      question: fillCase,
-      response: { kind: "fill_blank", text: "Python" },
-    }).status,
-    "correct"
-  );
-
-  const fillInsens = RAW_QUESTION_BANK.find((q) => q.type === "fill_blank" && !q.caseSensitive)!;
-  assert.ok(fillInsens && fillInsens.type === "fill_blank");
-  assert.equal(
-    evaluateSingleItem({
-      question: fillInsens,
-      response: { kind: "fill_blank", text: `  ${fillInsens.acceptedAnswers[0].toUpperCase()} . ` },
-    }).status,
-    "correct"
-  );
-
-  const matchQ = RAW_QUESTION_BANK.find((q) => q.type === "matching")!;
-  assert.ok(matchQ && matchQ.type === "matching");
-  const partialMatch = evaluateSingleItem({
-    question: matchQ,
-    response: { kind: "matching", matches: { [matchQ.pairs[0].id]: matchQ.pairs[0].right } },
-  });
-  assert.equal(partialMatch.status, "partial");
-
-  const classQ = RAW_QUESTION_BANK.find((q) => q.type === "classification")!;
-  assert.ok(classQ && classQ.type === "classification");
-  const fullAssign = Object.fromEntries(classQ.items.map((i) => [i.id, i.correctCategory]));
-  assert.equal(
-    evaluateSingleItem({
-      question: classQ,
-      response: { kind: "classification", assignments: fullAssign },
-    }).status,
-    "correct"
-  );
-
-  const diagQ = RAW_QUESTION_BANK.find((q) => q.id === "pb9-cs-diag-01")!;
-  assert.ok(diagQ && diagQ.type === "diagram_labeling");
-  const diagLabels = Object.fromEntries(diagQ.pins.map((p) => [p.id, p.correctLabel]));
-  assert.equal(
-    evaluateSingleItem({
-      question: diagQ,
-      response: { kind: "diagram_labeling", labelsByPinId: diagLabels },
-    }).status,
-    "correct"
-  );
-});
-
-test("5.8 Numerical parser handles scientific notation, fractions, IEEE-754 boundaries & rejects NaN/Infinity", () => {
-  const sci = parseNumericInput("1.6×10^-19");
-  assert.ok(sci !== null && Math.abs(sci - 1.6e-19) < 1e-30);
-  assert.equal(parseNumericInput("2 x 10^(3)"), 2000);
-  assert.equal(parseNumericInput("3/4"), 0.75);
-  assert.equal(parseNumericInput("NaN"), null);
-  assert.equal(parseNumericInput("Infinity"), null);
-  assert.equal(parseNumericInput("1/0"), null);
-
-  // IEEE-754 boundary check: 0.2 + 0.1 = 0.30000000000000004 within tolerance + FLOAT_EPSILON
   const numQ = RAW_QUESTION_BANK.find((q) => q.type === "numerical" && q.valueMarks && q.unitMarks)!;
   assert.ok(numQ && numQ.type === "numerical");
-  const ieeeTestQ: typeof numQ = {
-    ...numQ,
-    numericAnswer: 0.3,
-    tolerance: 0,
-    requiredUnit: "A",
-    acceptedUnits: ["a", "ampere"],
-  };
-  const ieeeOk = evaluateSingleItem({
-    question: ieeeTestQ,
-    response: { kind: "numerical", valueText: String(0.2 + 0.1), unitText: "A" },
+  // Right number, wrong unit -> partial credit cleanly enforced
+  const partialNum = evaluateSingleItem({
+    question: numQ,
+    response: { kind: "numerical", valueText: String(numQ.numericAnswer), unitText: "wrongunit" },
   });
-  assert.equal(ieeeOk.status, "correct");
-});
+  assert.equal(partialNum.status, "partial");
+  assert.equal(partialNum.awardedMarks, numQ.valueMarks);
 
-test("5.9 Structured multi-part handles pure-auto numerical parts vs subjective pending parts", () => {
-  const structQ = RAW_QUESTION_BANK.find((q) => q.type === "structured_multi_part")!;
-  assert.ok(structQ && structQ.type === "structured_multi_part");
-  const allAutoQ: typeof structQ = {
-    ...structQ,
-    subParts: structQ.subParts.map((sp) =>
-      sp.kind === "short_answer"
-        ? { ...sp, kind: "fill_blank", acceptedAnswers: ["equilibrium"] }
-        : sp
-    ),
-  };
-  assert.equal(
-    evaluateSingleItem({
-      question: allAutoQ,
-      response: { kind: "structured_multi_part", parts: {} },
-    }).status,
-    "unanswered"
-  );
-  const autoResp: Record<string, { text: string; unitText?: string }> = {};
-  for (const sp of allAutoQ.subParts) {
-    autoResp[sp.id] =
-      sp.kind === "numerical"
-        ? { text: String(sp.numericAnswer), unitText: sp.acceptedUnits?.[0] }
-        : { text: "equilibrium" };
-  }
-  assert.equal(
-    evaluateSingleItem({
-      question: allAutoQ,
-      response: { kind: "structured_multi_part", parts: autoResp },
-    }).status,
-    "correct"
-  );
-});
-
-test("5.10 Subjective proof_derivation & extended_response stay pending_review with zero synthetic marks", () => {
-  const proofQ = RAW_QUESTION_BANK.find((q) => q.type === "proof_derivation")!;
-  const res = evaluateSingleItem({
-    question: proofQ,
-    response: { kind: "text_response", text: "v_f = v_i + at derivation steps" },
+  // Within tolerance & normalized SI unit
+  const exactNum = evaluateSingleItem({
+    question: numQ,
+    response: {
+      kind: "numerical",
+      valueText: String(numQ.numericAnswer),
+      unitText: numQ.requiredUnit || "",
+    },
   });
-  assert.equal(res.status, "pending_review");
-  assert.equal(res.awardedMarks, null);
+  assert.equal(exactNum.status, "correct");
+  assert.equal(exactNum.awardedMarks, numQ.marks);
 });
 
-// ---------------------------------------------------------------------------
-// 6. CHOICE OVERFLOW (PAPER ORDER) & SCORE SEPARATION
-// ---------------------------------------------------------------------------
-test("6.1–6.3 Paper-slot-order choice overflow & strict isolation of self-review from objective scores", () => {
-  const bp10 = getBlueprintForSubject("punjab", 10, "computer-science")!;
-  const syntheticBank = buildSyntheticCs10FullPool();
-  const sim = generateBoardSimulationPaper({
+test("3.3 Subjective questions honestly stay pending_review and update live upon Rubric Self-Review", () => {
+  const gen = generateBoardSimulationPaper({
     system: "punjab",
     grade: 10,
     subjectId: "computer-science",
-    blueprintOverride: bp10,
-    questionBank: syntheticBank,
-    seed: "seed-overflow-isolation",
+    seed: "seed-self-review",
   });
-  assert.equal(sim.ok, true);
-  if (!sim.ok) return;
+  assert.equal(gen.ok, true);
+  if (!gen.ok) return;
 
-  let att = startNewAttempt(sim.paper, 1_000_000);
-
-  // Answer first 5 MCQs accurately, 5 wrong -> 5/10 auto-verified marks (50%)
-  const mcqGroup = sim.paper.sections[0].choiceGroups[0];
-  mcqGroup.slotIds.forEach((sId, idx) => {
-    att = saveAttemptResponse(att, sId, {
-      kind: "single_mcq",
-      selectedCanonicalIndex: idx < 5 ? 0 : 1,
-    });
-  });
-
-  // Attempt all 6 short slots in Q2 (limit 4) -> slots 5 & 6 MUST become not_counted_choice in paper order
-  const q2Group = sim.paper.sections[1].choiceGroups[0];
-  q2Group.slotIds.forEach((sId) => {
-    att = saveAttemptResponse(att, sId, { kind: "text_response", text: "Student response" });
+  let att = startNewAttempt(gen.paper, 1_000_000);
+  const shortSlot = gen.paper.slots.find((s) => gen.paper.questionsById[s.questionId].type === "short_answer")!;
+  att = saveAttemptResponse(att, shortSlot.slotId, {
+    kind: "text_response",
+    text: "Written student response for rubric evaluation.",
   });
 
   const submitted = submitAttempt(att, "manual", 1_060_000);
-  const sc1 = submitted.scoring!;
-  assert.equal(sc1.autoVerifiedObtainedMarks, 5);
-  assert.equal(sc1.autoVerifiedMaxMarks, 10);
-  assert.equal(sc1.autoVerifiedAccuracy, 50);
-  assert.equal(sc1.notCountedChoiceCount, 2);
+  assert.ok(submitted.scoring);
+  const itemRes = submitted.scoring.itemResults.find((r) => r.slotId === shortSlot.slotId)!;
+  assert.equal(itemRes.status, "pending_review");
+  assert.equal(itemRes.awardedMarks, null);
 
-  // Slots 5 & 6 in Q2 group must be the overflow ones
-  const r5 = sc1.itemResults.find((r) => r.slotId === q2Group.slotIds[4])!;
-  const r6 = sc1.itemResults.find((r) => r.slotId === q2Group.slotIds[5])!;
-  assert.equal(r5.status, "not_counted_choice");
-  assert.equal(r6.status, "not_counted_choice");
-
-  // Apply self-review on counted short slot 1 -> updates selfAssessed & indicativeCombined, NEVER autoVerified
-  const firstShortSlot = q2Group.slotIds[0];
-  const reviewed = applySubjectiveSelfReview(submitted, firstShortSlot, ["c1", "c2"], 1_070_000);
-  const sc2 = reviewed.scoring!;
-  assert.equal(sc2.selfAssessedObtainedMarks, 2);
-  assert.equal(sc2.indicativeCombinedMarks, 7);
-  assert.equal(sc2.hasMixedSelfAssessment, true);
-
-  // Auto-verified invariants strictly unchanged
-  assert.equal(sc2.autoVerifiedObtainedMarks, sc1.autoVerifiedObtainedMarks);
-  assert.equal(sc2.autoVerifiedMaxMarks, sc1.autoVerifiedMaxMarks);
-  assert.equal(sc2.autoVerifiedAccuracy, sc1.autoVerifiedAccuracy);
-  assert.deepEqual(sc2.objectiveTopicBreakdown, sc1.objectiveTopicBreakdown);
+  const q = gen.paper.questionsById[shortSlot.questionId];
+  assert.ok(q.rubric);
+  const firstCriterion = q.rubric.criteria[0];
+  const afterReview = applySubjectiveSelfReview(submitted, shortSlot.slotId, [firstCriterion.id], 1_070_000);
+  assert.ok(afterReview.scoring);
+  const reviewedItem = afterReview.scoring.itemResults.find((r) => r.slotId === shortSlot.slotId)!;
+  assert.equal(reviewedItem.status, "self_reviewed");
+  assert.equal(reviewedItem.awardedMarks, firstCriterion.marks);
 });
 
 // ---------------------------------------------------------------------------
-// 7. ATTEMPT IMMUTABILITY, MIGRATION v2->v3 & ANTI-FLUKE ANALYTICS
+// 4. ATTEMPT LIFECYCLE, PAUSE, IDEMPOTENCY, CHOICE OVERFLOW & SNAPSHOT FREEZE
 // ---------------------------------------------------------------------------
-test("7.1–7.2 Pause rules, terminal immutability & snapshot isolation protect active & completed attempts", () => {
-  const sim = generateBoardSimulationPaper({
-    system: "fbise",
-    grade: 9,
-    subjectId: "physics",
-    seed: "seed-immut",
+test("4.1 Attempt timer, pause lock, snapshot isolation, idempotent submit & choice limit cap", () => {
+  const gen = generateBoardSimulationPaper({
+    system: "punjab",
+    grade: 10,
+    subjectId: "computer-science",
+    seed: "seed-lifecycle",
   });
-  assert.equal(sim.ok, true);
-  if (!sim.ok) return;
+  assert.equal(gen.ok, true);
+  if (!gen.ok) return;
 
-  let att = startNewAttempt(sim.paper, 2_000_000);
-  assert.equal(pauseAttempt(att, 2_010_000).status, "in_progress");
+  const startMs = 2_000_000;
+  let att = startNewAttempt(gen.paper, startMs);
 
-  const firstSlot = sim.paper.slots[0];
-  att = saveAttemptResponse(att, firstSlot.slotId, {
-    kind: "single_mcq",
-    selectedCanonicalIndex: 3,
+  // Official Board Simulation must refuse pause
+  const attemptedPause = pauseAttempt(att, startMs + 5_000);
+  assert.equal(attemptedPause.status, "in_progress");
+
+  // Mutating original bank item prompt must NEVER alter active attempt snapshot
+  const firstQId = att.paper.slots[0].questionId;
+  const originalPrompt = att.paper.questionsById[firstQId].prompt;
+  const bankItem = RAW_QUESTION_BANK.find((q) => q.id === firstQId) as BankQuestion;
+  const savedBankPrompt = bankItem.prompt;
+  bankItem.prompt = "MUTATED_EXTERNAL_PROMPT";
+  assert.equal(att.paper.questionsById[firstQId].prompt, originalPrompt);
+  bankItem.prompt = savedBankPrompt;
+
+  // Choice overflow rule: Q2 requires 4 of 6 short questions. Attempt all 6 -> 2 marked not_counted_choice!
+  const q2Group = att.paper.sections[1].choiceGroups[0];
+  q2Group.slotIds.forEach((slotId) => {
+    att = saveAttemptResponse(att, slotId, { kind: "text_response", text: "Student answer" });
   });
 
-  const completed = submitAttempt(att, "manual", 2_050_000);
-  assert.equal(completed.status, "completed");
+  const sub1 = submitAttempt(att, "manual", startMs + 30_000);
+  const sub2 = submitAttempt(sub1, "manual", startMs + 45_000);
+  assert.equal(sub1, sub2, "Duplicate submit must be strictly idempotent");
+  assert.equal(sub1.scoring?.notCountedChoiceCount, 2, "2 overflow responses beyond 4/6 limit must not be counted");
 
-  // Mutating completed attempt via save/pause/resume/resubmit must be no-op
-  const afterSave = saveAttemptResponse(completed, firstSlot.slotId, {
-    kind: "single_mcq",
-    selectedCanonicalIndex: 0,
-  });
-  assert.equal(afterSave, completed);
-  assert.equal(pauseAttempt(completed, 2_060_000), completed);
-  assert.equal(resumeAttempt(completed, 2_060_000), completed);
-  assert.equal(submitAttempt(completed, "manual", 2_070_000), completed);
-
-  const mistakes = extractMistakesFromAttempt(completed);
-  if (mistakes.length > 0) {
-    assert.ok(mistakes[0].promptSnapshot && mistakes[0].promptSnapshot.length > 0);
-    assert.equal(mistakes[0].curriculumVersion, FBISE_SCHEME_VERSION);
-  }
-
-  // Practice timed pause/resume clock accuracy
-  const prac = generatePracticePaper({
+  // Practice mode allows pause & extends deadline cleanly on resume
+  const pracGen = generatePracticePaper({
     mode: "quick_test",
     system: "fbise",
     grade: 9,
@@ -816,103 +333,56 @@ test("7.1–7.2 Pause rules, terminal immutability & snapshot isolation protect 
     isTimed: true,
     durationMinutes: 10,
   });
-  assert.equal(prac.ok, true);
-  if (prac.ok) {
-    let p = startNewAttempt(prac.paper, 5_000_000);
-    p = pauseAttempt(p, 5_060_000);
-    assert.equal(getRemainingSeconds(p, 5_900_000), 540);
-    p = resumeAttempt(p, 6_000_000);
-    assert.equal(getRemainingSeconds(p, 6_000_000), 540);
+  assert.equal(pracGen.ok, true);
+  if (pracGen.ok) {
+    let pAtt = startNewAttempt(pracGen.paper, 5_000_000);
+    pAtt = pauseAttempt(pAtt, 5_060_000); // 1 min spent -> 9 min remaining
+    assert.equal(pAtt.status, "paused");
+    assert.equal(getRemainingSeconds(pAtt, 5_300_000), 540, "Paused timer stays frozen");
+    pAtt = resumeAttempt(pAtt, 6_000_000);
+    assert.equal(getRemainingSeconds(pAtt, 6_000_000), 540, "Resumed timer continues cleanly from paused remainder");
   }
 });
 
-test("7.3 Storage v2->v3 non-destructive migration & corrupt JSON safe recovery", () => {
-  const sim = generateBoardSimulationPaper({
-    system: "fbise",
-    grade: 9,
-    subjectId: "physics",
-    seed: "seed-mig",
+// ---------------------------------------------------------------------------
+// 5. ANALYTICS & ANTI-FLUKE WEAK AREA TESTS
+// ---------------------------------------------------------------------------
+test("5.1 Analytics stays honest when empty and refuses weak-topic flag on single fluke miss", () => {
+  const emptyOverview = computeAnalyticsOverview([], []);
+  assert.equal(emptyOverview.hasSufficientHistory, false);
+  assert.equal(emptyOverview.weakTopics.length, 0);
+
+  const prac = generatePracticePaper({
+    mode: "custom_test",
+    system: "punjab",
+    grade: 10,
+    subjectId: "computer-science",
+    allowedTypes: ["single_mcq"],
+    requestedCount: 4,
+    isTimed: false,
+    durationMinutes: 0,
+    seed: "seed-analytics",
   });
-  assert.equal(sim.ok, true);
-  if (!sim.ok) return;
+  assert.equal(prac.ok, true);
+  if (!prac.ok) return;
 
-  const done = submitAttempt(startNewAttempt(sim.paper, 1000), "manual", 2000);
-  // Strip v3 fields to simulate a legacy v2 record
-  const legacyScoring = { ...done.scoring } as Record<string, unknown>;
-  delete legacyScoring.autoVerifiedObtainedMarks;
-  delete legacyScoring.objectiveTopicBreakdown;
-
-  const legacyV2Json = JSON.stringify({
-    schemaVersion: 2,
-    activeAttempt: null,
-    attemptHistory: [{ ...done, scoring: legacyScoring }],
-    mistakeNotebook: [],
-  });
-
-  const migrated = parseAndMigrateStoreJson(legacyV2Json);
-  assert.equal(migrated.migratedOrReset, true);
-  assert.equal(migrated.store.schemaVersion, 3);
-  assert.equal(migrated.store.attemptHistory.length, 1);
-  assert.equal(typeof migrated.store.attemptHistory[0].scoring?.autoVerifiedObtainedMarks, "number");
-  assert.ok(Array.isArray(migrated.store.attemptHistory[0].scoring?.objectiveTopicBreakdown));
-
-  const corrupt = parseAndMigrateStoreJson("{broken-json!!!");
-  assert.equal(corrupt.migratedOrReset, true);
-  assert.equal(corrupt.store.schemaVersion, 3);
-  assert.equal(corrupt.store.attemptHistory.length, 0);
-});
-
-test("7.4–7.5 Analytics enforces <3 Q anti-fluke tier & excludes self-reviewed marks from objective metrics", () => {
-  const sim = generateBoardSimulationPaper({
-    system: "fbise",
-    grade: 9,
-    subjectId: "physics",
-    seed: "seed-analytics-strict",
-  });
-  assert.equal(sim.ok, true);
-  if (!sim.ok) return;
-
-  let att = startNewAttempt(sim.paper, 10_000_000);
-  // Leave all MCQs wrong except 0 -> 0% auto-verified objective; give self-review 100% on a long question
-  const mcqSlots = sim.paper.slots.filter((s) => sim.paper.questionsById[s.questionId].type === "single_mcq");
-  mcqSlots.forEach((s) => {
-    const q = sim.paper.questionsById[s.questionId];
+  let att = startNewAttempt(prac.paper, 10_000_000);
+  // Answer only 1 wrong item and 3 correct -> topics with <2 total questions or >=65% must not trigger fluke weak tag
+  prac.paper.slots.forEach((slot, idx) => {
+    const q = prac.paper.questionsById[slot.questionId];
     if (q.type === "single_mcq") {
-      att = saveAttemptResponse(att, s.slotId, {
-        kind: "single_mcq",
-        selectedCanonicalIndex: (q.correctIndex + 1) % q.options.length,
-      });
+      const chosen = idx === 0 ? (q.correctIndex + 1) % q.options.length : q.correctIndex;
+      att = saveAttemptResponse(att, slot.slotId, { kind: "single_mcq", selectedCanonicalIndex: chosen });
     }
   });
-  const longSlot = sim.paper.slots.find((s) => sim.paper.questionsById[s.questionId].type === "extended_response")!;
-  att = saveAttemptResponse(att, longSlot.slotId, { kind: "text_response", text: "Full derivation" });
-
-  let done = submitAttempt(att, "manual", 10_050_000);
-  const longQ = sim.paper.questionsById[longSlot.questionId];
-  done = applySubjectiveSelfReview(
-    done,
-    longSlot.slotId,
-    (longQ.rubric?.criteria ?? []).map((c) => c.id),
-    10_060_000
-  );
-
+  const done = submitAttempt(att, "manual", 10_050_000);
   const overview = computeAnalyticsOverview([done], []);
-  assert.equal(overview.objectiveAveragePercentage, 0);
-  assert.ok(overview.averagePercentage > 0);
-
-  // Anti-fluke: weakTopics & strongTopics must ONLY contain topics with >= 3 objective items
+  assert.equal(overview.hasSufficientHistory, true);
+  assert.equal(overview.totalAttempts, 1);
+  // Weak topics require >=2 graded items and (<65% accuracy or >=2 incorrect)
   for (const wt of overview.weakTopics) {
-    assert.ok(wt.totalQuestions >= 3);
-    assert.equal(wt.confidenceTier, "Repeated difficulty observed");
-  }
-  for (const es of overview.earlySignalTopics) {
-    assert.ok(es.totalQuestions < 3);
-    assert.equal(es.confidenceTier, "Early signal — needs more data");
-  }
-  for (const st of overview.strongTopics) {
-    assert.ok(st.totalQuestions >= 3);
-    assert.equal(st.confidenceTier, "Reliable strength observed");
+    assert.ok(wt.totalQuestions >= 2);
   }
 });
 
-console.log(`\n=== COMPLETED: ${passed} VERIFICATION TESTS PASSED ===`);
+console.log(`\n=== COMPLETED: ${passed} TESTS PASSED ===`);

@@ -20,7 +20,6 @@ import {
   MistakeReviewStatus,
 } from "@/lib/mock-tests/types";
 import { computeAnalyticsOverview } from "@/lib/mock-tests/analytics/analyticsEngine";
-import { FormattedContent } from "@/components/mock-tests/question-types/FormattedContent";
 
 interface AnalyticsViewProps {
   history: ExamAttemptRecord[];
@@ -67,38 +66,31 @@ export function AnalyticsOverviewPanel({
             Completed Tests
           </div>
         </div>
-        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.04] p-4">
-          <div className="font-mono text-2xl font-bold text-emerald-400 tabular-nums">
-            {overview.objectiveAveragePercentage !== null
-              ? `${overview.objectiveAveragePercentage}%`
-              : "N/A"}
-          </div>
-          <div className="font-mono text-[11px] uppercase text-zinc-400 mt-1">
-            Auto-Verified Objective Avg
-          </div>
-        </div>
         <div className="rounded-2xl border border-white/10 bg-[#121215] p-4">
           <div className="font-mono text-2xl font-bold text-[#FFD60A] tabular-nums">
             {overview.averagePercentage}%
           </div>
           <div className="font-mono text-[11px] uppercase text-zinc-400 mt-1">
-            Mean Indicative Score
+            Mean Score
+          </div>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-[#121215] p-4">
+          <div className="font-mono text-2xl font-bold text-white tabular-nums">
+            {Math.round(overview.totalTimeSpentSeconds / 60)}m
+          </div>
+          <div className="font-mono text-[11px] uppercase text-zinc-400 mt-1">
+            Total Exam Time
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#121215] p-4">
           <div className="font-mono text-2xl font-bold text-zinc-200 tabular-nums">
-            {mistakes.filter((m) => m.status !== "mastered").length} ·{" "}
-            {Math.round(overview.totalTimeSpentSeconds / 60)}m
+            {mistakes.filter((m) => m.status !== "mastered").length}
           </div>
           <div className="font-mono text-[11px] uppercase text-zinc-400 mt-1">
-            Active Mistakes · Study Time
+            Active Mistakes
           </div>
         </div>
       </div>
-
-      <p className="text-[11px] font-mono text-zinc-400">
-        Objective accuracy and topic mastery strictly exclude subjective self-review marks. All history is saved locally in this browser.
-      </p>
 
       {/* Subject Performance & Weak/Strong Topics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -120,13 +112,8 @@ export function AnalyticsOverviewPanel({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono text-sm font-bold text-emerald-400 tabular-nums">
-                    {sub.objectiveAveragePercentage !== null
-                      ? `${sub.objectiveAveragePercentage}% obj`
-                      : "No obj"}
-                  </div>
-                  <div className="font-mono text-[11px] text-zinc-400 tabular-nums">
-                    {sub.averagePercentage}% combined avg
+                  <div className="font-mono text-base font-bold text-white tabular-nums">
+                    {sub.averagePercentage}% avg
                   </div>
                   {sub.trendDelta !== null && (
                     <div
@@ -149,29 +136,25 @@ export function AnalyticsOverviewPanel({
         </section>
 
         <section className="lg:col-span-6 rounded-2xl border border-white/10 bg-[#121215] p-5 space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-heading text-base font-bold text-white">
-              Verified Objective Topic Signals
-            </h2>
-            <span className="font-mono text-[10px] text-zinc-400">≥ 3 Qs for confirmed tier</span>
-          </div>
-          {overview.weakTopics.length === 0 &&
-          overview.earlySignalTopics.length === 0 &&
-          overview.strongTopics.length === 0 ? (
+          <h2 className="font-heading text-base font-bold text-white">
+            Verified Weak &amp; Strong Topics
+          </h2>
+          {overview.weakTopics.length === 0 && overview.strongTopics.length === 0 ? (
             <p className="text-xs text-zinc-400">
-              Not enough attempts yet — complete objective questions across topics to observe early signals (&lt;3 Qs) or confirmed weak/strong patterns (≥3 Qs).
+              Complete at least 2 questions within a topic across your attempts before weakness or
+              mastery classifications are assigned.
             </p>
           ) : (
             <div className="space-y-3">
               {overview.weakTopics.map((wt) => (
                 <div
                   key={`${wt.subjectId}:${wt.topicId}`}
-                  className="rounded-xl border border-amber-500/35 bg-amber-500/[0.06] p-3 flex items-center justify-between gap-3"
+                  className="rounded-xl border border-amber-500/25 bg-amber-500/[0.05] p-3 flex items-center justify-between gap-3"
                 >
                   <div>
                     <div className="text-xs font-semibold text-white">{wt.topicTitle}</div>
                     <div className="font-mono text-[11px] text-amber-300 tabular-nums">
-                      {wt.confidenceTier} · {wt.accuracyPercent}% ({wt.totalQuestions} obj Qs)
+                      {wt.accuracyPercent}% accuracy · {wt.totalQuestions} graded Qs
                     </div>
                   </div>
                   <button
@@ -186,22 +169,6 @@ export function AnalyticsOverviewPanel({
                   </button>
                 </div>
               ))}
-              {overview.earlySignalTopics.map((es) => (
-                <div
-                  key={`early-${es.subjectId}:${es.topicId}`}
-                  className="rounded-xl border border-white/10 bg-black/35 p-3 flex items-center justify-between gap-3"
-                >
-                  <div>
-                    <div className="text-xs font-semibold text-zinc-200">{es.topicTitle}</div>
-                    <div className="font-mono text-[11px] text-zinc-400 tabular-nums">
-                      {es.confidenceTier} · {es.accuracyPercent}% ({es.totalQuestions}/3 Qs so far)
-                    </div>
-                  </div>
-                  <span className="font-mono text-[10px] uppercase text-zinc-400 shrink-0">
-                    Early Signal
-                  </span>
-                </div>
-              ))}
               {overview.strongTopics.map((st) => (
                 <div
                   key={`${st.subjectId}:${st.topicId}`}
@@ -210,7 +177,7 @@ export function AnalyticsOverviewPanel({
                   <div>
                     <div className="text-xs font-semibold text-white">{st.topicTitle}</div>
                     <div className="font-mono text-[11px] text-emerald-400 tabular-nums">
-                      {st.confidenceTier} · {st.accuracyPercent}% ({st.totalQuestions} obj Qs)
+                      {st.accuracyPercent}% accuracy · {st.totalQuestions} graded Qs
                     </div>
                   </div>
                   <span className="font-mono text-[10px] uppercase text-emerald-400">Strong</span>
@@ -361,7 +328,6 @@ export function MistakeNotebookPanel({
               <div className="text-zinc-400">
                 <span className="text-[#FFD60A] font-bold">{m.questionId}</span> ·{" "}
                 {m.system.toUpperCase()} Class {m.grade} · {m.subjectId} · Missed {m.wrongCount}x
-                {m.curriculumVersion ? ` · ${m.curriculumVersion}` : ""}
               </div>
               <div className="flex items-center gap-2">
                 <select
@@ -384,17 +350,6 @@ export function MistakeNotebookPanel({
                 </button>
               </div>
             </div>
-
-            {m.promptSnapshot && (
-              <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-zinc-100">
-                <FormattedContent content={m.promptSnapshot} />
-                {m.sourceReference && (
-                  <p className="font-mono text-[10px] text-zinc-500 mt-1.5">
-                    Source: {m.sourceReference}
-                  </p>
-                )}
-              </div>
-            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
               <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-3">

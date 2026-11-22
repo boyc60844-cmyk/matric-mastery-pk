@@ -135,29 +135,6 @@ export function ExamWorkspace({
     };
   }, [paper.slots, attempt.responses, attempt.markedForReview]);
 
-  const slotChoiceStateMap = useMemo(() => {
-    const map: Record<string, "counted" | "overflow" | "unattempted"> = {};
-    for (const sec of paper.sections) {
-      for (const grp of sec.choiceGroups) {
-        let countedSoFar = 0;
-        for (const sId of grp.slotIds) {
-          if (isResponseEmpty(attempt.responses[sId])) {
-            map[sId] = "unattempted";
-          } else if (
-            grp.slotIds.length <= grp.requiredAttemptCount ||
-            countedSoFar < grp.requiredAttemptCount
-          ) {
-            map[sId] = "counted";
-            countedSoFar += 1;
-          } else {
-            map[sId] = "overflow";
-          }
-        }
-      }
-    }
-    return map;
-  }, [paper.sections, attempt.responses]);
-
   const currentSection = paper.sections.find((sec) => sec.id === currentSlot?.sectionId);
   const currentGroup = currentSection?.choiceGroups.find(
     (g) => g.id === currentSlot?.choiceGroupId
@@ -173,10 +150,6 @@ export function ExamWorkspace({
   const groupLimitExceeded =
     Boolean(currentGroup) &&
     currentGroupAnsweredCount > (currentGroup?.requiredAttemptCount ?? 0);
-
-  const currentSlotChoiceState = currentSlot
-    ? slotChoiceStateMap[currentSlot.slotId] ?? "unattempted"
-    : "unattempted";
 
   const isCriticalTime =
     remainingSeconds !== null && remainingSeconds > 0 && remainingSeconds <= 300;
@@ -312,7 +285,7 @@ export function ExamWorkspace({
           <div className="lg:col-span-8 space-y-4">
             {/* Section & Choice Group Context Bar */}
             {currentSection && currentGroup && (
-              <div className="rounded-xl border border-white/10 bg-[#121215] p-3.5 space-y-2">
+              <div className="rounded-xl border border-white/10 bg-[#121215] p-3.5 space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="font-heading font-bold text-white">
                     {currentSection.code} · {currentGroup.title}
@@ -327,27 +300,6 @@ export function ExamWorkspace({
                     total)
                   </span>
                 </div>
-                {currentGroup.totalQuestions > currentGroup.requiredAttemptCount && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
-                    {currentSlotChoiceState === "overflow" ? (
-                      <span className="text-amber-300 font-semibold">
-                        Current slot status: Overflow — exceeds {currentGroup.requiredAttemptCount} required in paper order and will NOT count
-                      </span>
-                    ) : currentSlotChoiceState === "counted" ? (
-                      <span className="text-emerald-400">
-                        Current slot status: Counted toward group ({currentGroup.requiredAttemptCount} max)
-                      </span>
-                    ) : currentGroupAnsweredCount >= currentGroup.requiredAttemptCount ? (
-                      <span className="text-amber-300">
-                        Group limit already filled — answering this later slot will mark it Overflow unless an earlier slot is cleared
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400">
-                        Counting rule: First {currentGroup.requiredAttemptCount} attempted slots in paper order count toward score
-                      </span>
-                    )}
-                  </div>
-                )}
                 {groupLimitExceeded && (
                   <p className="text-[11px] font-mono text-amber-300 flex items-center gap-1.5">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
@@ -459,38 +411,24 @@ export function ExamWorkspace({
                     {sec.choiceGroups.flatMap((g) => g.slotIds).map((slotId) => {
                       const idx = paper.slots.findIndex((s) => s.slotId === slotId);
                       const status = slotStatusMap[slotId];
-                      const isOverflow = slotChoiceStateMap[slotId] === "overflow";
                       const style =
                         status === "current"
-                          ? isOverflow
-                            ? "border-amber-400 bg-[#FFD60A] text-black font-bold ring-2 ring-amber-400/60"
-                            : "border-[#FFD60A] bg-[#FFD60A] text-black font-bold"
-                          : isOverflow
-                            ? "border-amber-500/70 bg-amber-500/15 text-amber-300"
-                            : status === "answered_marked"
-                              ? "border-purple-400 bg-emerald-500/20 text-purple-200"
-                              : status === "marked"
-                                ? "border-purple-400/70 bg-purple-500/15 text-purple-200"
-                                : status === "answered"
-                                  ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
-                                  : "border-white/10 bg-black/40 text-zinc-400 hover:border-white/25";
+                          ? "border-[#FFD60A] bg-[#FFD60A] text-black font-bold"
+                          : status === "answered_marked"
+                            ? "border-purple-400 bg-emerald-500/20 text-purple-200"
+                            : status === "marked"
+                              ? "border-purple-400/70 bg-purple-500/15 text-purple-200"
+                              : status === "answered"
+                                ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
+                                : "border-white/10 bg-black/40 text-zinc-400 hover:border-white/25";
                       return (
                         <button
                           key={slotId}
                           type="button"
-                          title={isOverflow ? "Choice group overflow — not counted" : undefined}
                           onClick={() => onNavigate(idx)}
-                          className={`relative h-9 rounded-lg border font-mono text-xs tabular-nums transition-colors ${style}`}
+                          className={`h-9 rounded-lg border font-mono text-xs tabular-nums transition-colors ${style}`}
                         >
                           {idx + 1}
-                          {isOverflow && (
-                            <span
-                              aria-label="Overflow"
-                              className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-400 text-[9px] font-bold leading-3 text-black"
-                            >
-                              !
-                            </span>
-                          )}
                         </button>
                       );
                     })}
@@ -509,9 +447,6 @@ export function ExamWorkspace({
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-sm bg-purple-400/80" /> Review
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm bg-amber-400/80" /> Overflow
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-sm border border-white/25 bg-black/40" />{" "}
@@ -568,17 +503,14 @@ export function ExamWorkspace({
             <div className="grid grid-cols-6 gap-2">
               {paper.slots.map((slot, idx) => {
                 const status = slotStatusMap[slot.slotId];
-                const isOverflow = slotChoiceStateMap[slot.slotId] === "overflow";
                 const style =
                   status === "current"
                     ? "border-[#FFD60A] bg-[#FFD60A] text-black font-bold"
-                    : isOverflow
-                      ? "border-amber-500/70 bg-amber-500/15 text-amber-300"
-                      : status === "answered_marked" || status === "marked"
-                        ? "border-purple-400 bg-purple-500/15 text-purple-200"
-                        : status === "answered"
-                          ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
-                          : "border-white/10 bg-black/40 text-zinc-400";
+                    : status === "answered_marked" || status === "marked"
+                      ? "border-purple-400 bg-purple-500/15 text-purple-200"
+                      : status === "answered"
+                        ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
+                        : "border-white/10 bg-black/40 text-zinc-400";
                 return (
                   <button
                     key={slot.slotId}
@@ -587,14 +519,9 @@ export function ExamWorkspace({
                       onNavigate(idx);
                       setMobilePaletteOpen(false);
                     }}
-                    className={`relative h-11 rounded-lg border font-mono text-xs tabular-nums ${style}`}
+                    className={`h-11 rounded-lg border font-mono text-xs tabular-nums ${style}`}
                   >
                     {idx + 1}
-                    {isOverflow && (
-                      <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-400 text-[9px] font-bold leading-3 text-black">
-                        !
-                      </span>
-                    )}
                   </button>
                 );
               })}

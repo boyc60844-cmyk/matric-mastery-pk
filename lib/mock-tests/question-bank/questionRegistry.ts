@@ -1,6 +1,5 @@
 import { BankQuestion, ExamSystem, GradeLevel } from "@/lib/mock-tests/types";
 import { PUNJAB_SSC_CS_QUESTIONS } from "@/lib/mock-tests/question-bank/bank/punjab-ssc-cs";
-import { PUNJAB_SSC_CS_2027_QUESTIONS } from "@/lib/mock-tests/question-bank/bank/punjab-ssc-cs-2027";
 import { FBISE_SSC_PHYSICS_QUESTIONS } from "@/lib/mock-tests/question-bank/bank/fbise-ssc-physics";
 import { PUNJAB_SSC_STEM_QUESTIONS } from "@/lib/mock-tests/question-bank/bank/punjab-ssc-stem";
 import { HSSC_AND_FBISE_EXTRA_QUESTIONS } from "@/lib/mock-tests/question-bank/bank/hssc-verified-bank";
@@ -8,7 +7,6 @@ import { validateQuestionIntegrity } from "@/lib/mock-tests/question-bank/valida
 import { filterEligibleQuestions } from "@/lib/mock-tests/question-bank/eligibility";
 
 export const RAW_QUESTION_BANK: BankQuestion[] = [
-  ...PUNJAB_SSC_CS_2027_QUESTIONS,
   ...PUNJAB_SSC_CS_QUESTIONS,
   ...FBISE_SSC_PHYSICS_QUESTIONS,
   ...PUNJAB_SSC_STEM_QUESTIONS,
@@ -22,8 +20,6 @@ export interface SubjectPoolInventory {
   totalRawCount: number;
   verifiedEligibleCount: number;
   excludedByAlpCount: number;
-  outdatedCount: number;
-  provisionalCount: number;
   needsReviewOrRejectedCount: number;
   countsByChapter: Record<string, number>;
   countsByType: Record<string, number>;
@@ -65,18 +61,12 @@ export function getSubjectPoolInventory(
   const eligibleIds = new Set(eligible.map((q) => q.id));
 
   let excludedByAlpCount = 0;
-  let outdatedCount = 0;
-  let provisionalCount = 0;
   let needsReviewOrRejectedCount = 0;
 
   for (const q of rawMatching) {
     if (eligibleIds.has(q.id)) continue;
-    if (q.eligibilityStatus === "excluded_by_alp" || q.validationStatus === "Excluded") {
+    if (q.eligibilityStatus === "excluded_by_alp") {
       excludedByAlpCount += 1;
-    } else if (q.validationStatus === "Outdated") {
-      outdatedCount += 1;
-    } else if (q.validationStatus === "Provisional") {
-      provisionalCount += 1;
     } else {
       needsReviewOrRejectedCount += 1;
     }
@@ -96,8 +86,6 @@ export function getSubjectPoolInventory(
     totalRawCount: rawMatching.length,
     verifiedEligibleCount: eligible.length,
     excludedByAlpCount,
-    outdatedCount,
-    provisionalCount,
     needsReviewOrRejectedCount,
     countsByChapter,
     countsByType,

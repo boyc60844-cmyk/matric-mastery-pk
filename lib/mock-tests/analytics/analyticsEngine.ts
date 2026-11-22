@@ -6,12 +6,6 @@ import {
 } from "@/lib/mock-tests/types";
 import { getCurriculumByKey } from "@/lib/mock-tests/curriculum/curriculumRegistry";
 
-export type AnalyticsConfidenceTier =
-  | "Not enough attempts yet"
-  | "Early signal — needs more data"
-  | "Repeated difficulty observed"
-  | "Reliable strength observed";
-
 export interface TopicAnalyticsSummary {
   topicId: string;
   topicTitle: string;
@@ -24,7 +18,6 @@ export interface TopicAnalyticsSummary {
   obtainedMarks: number;
   availableMarks: number;
   accuracyPercent: number;
-  confidenceTier: AnalyticsConfidenceTier;
 }
 
 export interface SubjectAnalyticsSummary {
@@ -35,18 +28,14 @@ export interface SubjectAnalyticsSummary {
   subjectName: string;
   attemptCount: number;
   averagePercentage: number;
-  objectiveAveragePercentage: number | null;
   bestPercentage: number;
   latestPercentage: number;
-  trendDelta: number | null;
+  trendDelta: number | null; // latest minus previous
 }
 
 export interface AnalyticsOverview {
   hasSufficientHistory: boolean;
   totalAttempts: number;
-  /** Strictly reflects auto-verified objective performance across attempts when available */
-  objectiveAveragePercentage: number | null;
-  /** Combined/indicative average kept separate for historical attempt records */
   averagePercentage: number;
   totalTimeSpentSeconds: number;
   recentAttempts: {
@@ -58,8 +47,6 @@ export interface AnalyticsOverview {
     subjectName: string;
     mode: string;
     percentage: number;
-    autoVerifiedAccuracy: number | null;
-    hasMixedSelfAssessment: boolean;
     obtainedMarks: number;
     totalMarks: number;
     pendingReviewCount: number;
@@ -67,28 +54,13 @@ export interface AnalyticsOverview {
   }[];
   subjectSummaries: SubjectAnalyticsSummary[];
   weakTopics: TopicAnalyticsSummary[];
-  earlySignalTopics: TopicAnalyticsSummary[];
   strongTopics: TopicAnalyticsSummary[];
   weakQuestionIds: string[];
 }
 
-function classifyConfidenceTier(params: {
-  totalQuestions: number;
-  incorrectCount: number;
-  accuracyPercent: number;
-}): AnalyticsConfidenceTier {
-  if (params.totalQuestions === 0) return "Not enough attempts yet";
-  if (params.totalQuestions < 3) return "Early signal — needs more data";
-  if (params.accuracyPercent < 65 || params.incorrectCount >= 2) {
-    return "Repeated difficulty observed";
-  }
-  return "Reliable strength observed";
-}
-
 /**
  * Computes real student analytics purely from saved completed attempts and mistake history.
- * Strictly isolates auto-verified objective performance from subjective self-review marks
- * so self-assessed marks never inflate objective accuracy or distort weak-topic classification.
+ * Never fabricates trend lines or weak topics from insufficient single ambiguous errors.
  */
 export function computeAnalyticsOverview(
   history: ExamAttemptRecord[],
@@ -107,13 +79,11 @@ export function computeAnalyticsOverview(
     return {
       hasSufficientHistory: false,
       totalAttempts: 0,
-      objectiveAveragePercentage: null,
       averagePercentage: 0,
       totalTimeSpentSeconds: 0,
       recentAttempts: [],
       subjectSummaries: [],
       weakTopics: [],
-      earlySignalTopics: [],
       strongTopics: [],
       weakQuestionIds: [],
     };
@@ -122,18 +92,6 @@ export function computeAnalyticsOverview(
   const ordered = [...filtered].sort(
     (a, b) => (b.submittedAtMs ?? b.startedAtMs) - (a.submittedAtMs ?? a.startedAtMs)
   );
-
-  // Strictly objective weighted accuracy
-  let totalObjObtained = 0;
-  let totalObjMax = 0;
-  for (const att of ordered) {
-    if (!att.scoring) continue;
-    totalObjObtained += att.scoring.autoVerifiedObtainedMarks;
-    totalObjMax += att.scoring.autoVerifiedMaxMarks;
-  }
-
-  const objectiveAveragePercentage =
-    totalObjMax > 0 ? Math.round((totalObjObtained / totalObjMax) * 100) : null;
 
   const avgPct = Math.round(
     ordered.reduce((sum, a) => sum + (a.scoring?.percentage ?? 0), 0) / ordered.length
@@ -154,13 +112,6 @@ export function computeAnalyticsOverview(
 
   const subjectSummaries: SubjectAnalyticsSummary[] = Array.from(subjMap.entries()).map(
     ([key, list]) => {
-      let sObjObt = 0;
-      let sObjMax = 0;
-      for (const a of list) {
-        if (!a.scoring) continue;
-        sObjObt += a.scoring.autoVerifiedObtainedMarks;
-        sObjMax += a.scoring.autoVerifiedMaxMarks;
-      }
       const avg = Math.round(
         list.reduce((s, a) => s + (a.scoring?.percentage ?? 0), 0) / list.length
       );
@@ -175,7 +126,6 @@ export function computeAnalyticsOverview(
         subjectName: list[0].paper.subjectName,
         attemptCount: list.length,
         averagePercentage: avg,
-        objectiveAveragePercentage: sObjMax > 0 ? Math.round((sObjObt / sObjMax) * 100) : null,
         bestPercentage: best,
         latestPercentage: latest,
         trendDelta: typeof prev === "number" ? latest - prev : null,
@@ -183,11 +133,8 @@ export function computeAnalyticsOverview(
     }
   );
 
-  // Strict auto-verified objective topic aggregation ONLY (excludes pending_review & self_reviewed)
-  const topicAgg = new Map<
-    string,
-    Omit<TopicAnalyticsSummary, "confidenceTier"> & { seenAttempts: Set<string> }
-  >();
+  // Topic aggregation across graded/reviewed items
+  const topicAgg = new Map<string, TopicAnalyticsSummary & { seenAttempts: Set<string> }>();
   const questionWrongFreq = new Map<string, number>();
 
   for (const att of ordered) {
@@ -195,17 +142,7 @@ export function computeAnalyticsOverview(
     const curriculum = getCurriculumByKey(att.paper.system, att.paper.grade, att.paper.subjectId);
 
     for (const item of att.scoring.itemResults) {
-      if (!item.countedInChoiceGroup) continue;
-      if (item.status === "pending_review" || item.status === "self_reviewed") continue;
-      if (
-        item.status === "unanswered" &&
-        (item.type === "short_answer" ||
-          item.type === "extended_response" ||
-          item.type === "proof_derivation")
-      ) {
-        continue;
-      }
-
+      if (!item.countedInChoiceGroup || item.status === "pending_review") continue;
       const isWrong = item.status === "incorrect" || item.status === "unanswered";
       if (isWrong || item.status === "partial") {
         questionWrongFreq.set(item.questionId, (questionWrongFreq.get(item.questionId) || 0) + 1);
@@ -240,45 +177,33 @@ export function computeAnalyticsOverview(
     }
   }
 
-  const finalizedTopics: TopicAnalyticsSummary[] = Array.from(topicAgg.values()).map((t) => {
-    const accuracyPercent =
-      t.availableMarks > 0 ? Math.round((t.obtainedMarks / t.availableMarks) * 100) : 0;
-    return {
-      topicId: t.topicId,
-      topicTitle: t.topicTitle,
-      subjectId: t.subjectId,
-      system: t.system,
-      grade: t.grade,
-      attemptsCount: t.attemptsCount,
-      totalQuestions: t.totalQuestions,
-      incorrectCount: t.incorrectCount,
-      obtainedMarks: Number(t.obtainedMarks.toFixed(2)),
-      availableMarks: t.availableMarks,
-      accuracyPercent,
-      confidenceTier: classifyConfidenceTier({
-        totalQuestions: t.totalQuestions,
-        incorrectCount: t.incorrectCount,
-        accuracyPercent,
-      }),
-    };
-  });
+  const finalizedTopics: TopicAnalyticsSummary[] = Array.from(topicAgg.values()).map((t) => ({
+    topicId: t.topicId,
+    topicTitle: t.topicTitle,
+    subjectId: t.subjectId,
+    system: t.system,
+    grade: t.grade,
+    attemptsCount: t.attemptsCount,
+    totalQuestions: t.totalQuestions,
+    incorrectCount: t.incorrectCount,
+    obtainedMarks: Number(t.obtainedMarks.toFixed(2)),
+    availableMarks: t.availableMarks,
+    accuracyPercent:
+      t.availableMarks > 0 ? Math.round((t.obtainedMarks / t.availableMarks) * 100) : 0,
+  }));
 
-  // Require >= 3 objective items to trigger confirmed "Repeated difficulty observed" weak topic
+  // Guard against declaring a topic weak from a single accidental miss
   const weakTopics = finalizedTopics
-    .filter((t) => t.confidenceTier === "Repeated difficulty observed")
-    .sort((a, b) => a.accuracyPercent - b.accuracyPercent)
-    .slice(0, 6);
-
-  const earlySignalTopics = finalizedTopics
-    .filter((t) => t.confidenceTier === "Early signal — needs more data" && t.incorrectCount >= 1)
+    .filter((t) => t.totalQuestions >= 2 && (t.incorrectCount >= 2 || t.accuracyPercent < 65))
     .sort((a, b) => a.accuracyPercent - b.accuracyPercent)
     .slice(0, 6);
 
   const strongTopics = finalizedTopics
-    .filter((t) => t.totalQuestions >= 3 && t.accuracyPercent >= 80)
+    .filter((t) => t.totalQuestions >= 2 && t.accuracyPercent >= 80)
     .sort((a, b) => b.accuracyPercent - a.accuracyPercent)
     .slice(0, 6);
 
+  // Merge repeated wrong questions from history + unreviewed mistakes
   for (const m of mistakes) {
     if (filter?.system && m.system !== filter.system) continue;
     if (filter?.grade && m.grade !== filter.grade) continue;
@@ -295,7 +220,6 @@ export function computeAnalyticsOverview(
   return {
     hasSufficientHistory: ordered.length >= 1,
     totalAttempts: ordered.length,
-    objectiveAveragePercentage,
     averagePercentage: avgPct,
     totalTimeSpentSeconds: totalTime,
     recentAttempts: ordered.slice(0, 12).map((a) => ({
@@ -307,8 +231,6 @@ export function computeAnalyticsOverview(
       subjectName: a.paper.subjectName,
       mode: a.paper.mode,
       percentage: a.scoring?.percentage ?? 0,
-      autoVerifiedAccuracy: a.scoring?.autoVerifiedAccuracy ?? null,
-      hasMixedSelfAssessment: a.scoring?.hasMixedSelfAssessment ?? false,
       obtainedMarks: a.scoring?.obtainedMarks ?? 0,
       totalMarks: a.paper.totalMarks,
       pendingReviewCount: a.scoring?.pendingReviewCount ?? 0,
@@ -316,7 +238,6 @@ export function computeAnalyticsOverview(
     })),
     subjectSummaries,
     weakTopics,
-    earlySignalTopics,
     strongTopics,
     weakQuestionIds,
   };

@@ -312,11 +312,11 @@ export function QuestionInputRenderer({
                 </label>
                 <input
                   type="text"
-                  inputMode="text"
+                  inputMode="decimal"
                   disabled={disabled}
                   value={cur.valueText}
                   onChange={(e) => onChange({ ...cur, valueText: e.target.value })}
-                  placeholder="e.g. 1.6, 3/4, or 1.6×10^-19"
+                  placeholder="e.g. 1.6 or 3/4"
                   className="w-full min-h-[46px] rounded-xl border border-white/15 bg-black/50 px-3.5 py-2.5 font-mono text-sm text-white placeholder-zinc-500 focus:border-[#FFD60A] focus:outline-none"
                 />
               </div>
@@ -506,7 +506,7 @@ export function QuestionInputRenderer({
               placeholder={
                 question.type === "short_answer"
                   ? "Write concise key points, formula, or working (self-checked against official rubric after submit)..."
-                  : "Write structured headings, derivations, or Python / source code cleanly (scored via rubric verification after submit)..."
+                  : "Write structured headings, derivations, or C code cleanly (scored via rubric verification after submit)..."
               }
               className="w-full rounded-xl border border-white/15 bg-black/50 p-3.5 text-sm text-white placeholder-zinc-500 focus:border-[#FFD60A] focus:outline-none leading-relaxed font-sans"
             />

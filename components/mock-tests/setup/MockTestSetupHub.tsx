@@ -41,7 +41,6 @@ import {
   getEligibleTopicsForChapter,
 } from "@/lib/mock-tests/curriculum/eligibilityResolver";
 import { ACTIVE_VERSION_BY_SYSTEM } from "@/lib/mock-tests/curriculum/syllabusVersionResolver";
-import { getSubjectReadinessProfile } from "@/lib/mock-tests/curriculum/readinessResolver";
 import { getBlueprintForSubject } from "@/lib/mock-tests/blueprint/blueprintRegistry";
 import { validateBlueprintAndPool } from "@/lib/mock-tests/blueprint/blueprintValidator";
 import {
@@ -196,11 +195,6 @@ export function MockTestSetupHub({
     [blueprint]
   );
 
-  const activeReadiness = useMemo(
-    () => (activeCurriculum ? getSubjectReadinessProfile(activeCurriculum, RAW_QUESTION_BANK) : null),
-    [activeCurriculum]
-  );
-
   const eligibleChapters = useMemo(
     () => (activeCurriculum ? getEligibleChapters(activeCurriculum) : []),
     [activeCurriculum]
@@ -243,9 +237,7 @@ export function MockTestSetupHub({
     setSelectedSloId("");
     const nextList = getCurriculaForSystemAndGrade(system, nextGrade);
     if (nextList.length > 0) {
-      const preferred =
-        nextList.find((c) => getSubjectReadinessProfile(c, RAW_QUESTION_BANK).practiceAvailable) ??
-        nextList[0];
+      const preferred = nextList.find((c) => c.verificationStatus !== "unavailable") ?? nextList[0];
       setSubjectId(preferred.subjectId);
     }
   };
@@ -281,13 +273,13 @@ export function MockTestSetupHub({
 
   const handleLaunch = (overrideMode?: TestMode) => {
     setLaunchError(null);
-    if (!activeCurriculum || !activeReadiness) {
+    if (!activeCurriculum) {
       setLaunchError("No subject curriculum is available for this selection.");
       return;
     }
-    if (!activeReadiness.practiceAvailable) {
+    if (activeCurriculum.verificationStatus === "unavailable") {
       setLaunchError(
-        `${activeCurriculum.subjectName} (Class ${activeCurriculum.grade}): ${activeReadiness.statusDetail}`
+        `${activeCurriculum.subjectName} (Class ${activeCurriculum.grade}) is marked Unavailable: ${activeCurriculum.verificationNote}`
       );
       return;
     }
@@ -451,12 +443,10 @@ export function MockTestSetupHub({
             </h1>
             <p className="text-sm text-zinc-400 leading-relaxed">
               Curriculum-verified assessment across{" "}
-              <span className="text-zinc-200 font-medium">Punjab Boards (PECTAA 2026–27 ALP)</span>{" "}
+              <span className="text-zinc-200 font-medium">Punjab Boards (PECTAA 2026–27)</span>{" "}
               and{" "}
-              <span className="text-zinc-200 font-medium">
-                FBISE Islamabad (Inclusive Scheme 2024)
-              </span>
-              . Attempts, analytics, and your Mistake Notebook save locally in this browser.
+              <span className="text-zinc-200 font-medium">FBISE (SLO Framework)</span>. Every
+              question, mark weight, and choice group is validated against official session records.
             </p>
           </div>
 
@@ -568,7 +558,7 @@ export function MockTestSetupHub({
                     {
                       id: "fbise" as const,
                       title: "FBISE Islamabad",
-                      detail: "Inclusive Scheme 2024 (SLO)",
+                      detail: "SLO & Cognitive Scheme",
                     },
                   ].map((item) => {
                     const active = system === item.id;
@@ -594,30 +584,6 @@ export function MockTestSetupHub({
                 <p className="text-[11px] font-mono text-zinc-400">
                   Active cycle: {systemMeta.sessionLabel} · {systemMeta.authorityLabel}
                 </p>
-                {system === "fbise" && activeCurriculum?.fbiseSchemeMeta && (
-                  <div className="rounded-xl border border-white/10 bg-black/40 p-3 space-y-1 text-[11px] text-zinc-300">
-                    <div className="font-mono text-[#FFD60A] font-semibold">
-                      {activeCurriculum.fbiseSchemeMeta.schemeName} (
-                      {activeCurriculum.fbiseSchemeMeta.totalSchemeMarks} Marks)
-                    </div>
-                    <p className="text-zinc-400">
-                      {activeCurriculum.fbiseSchemeMeta.phasedRolloutLabel}. Legacy{" "}
-                      {activeCurriculum.fbiseSchemeMeta.legacyExcludedScheme}.
-                    </p>
-                    <p
-                      className={`font-mono ${
-                        activeCurriculum.fbiseSchemeMeta.bilingualPolicy.applies
-                          ? "text-emerald-300"
-                          : "text-zinc-400"
-                      }`}
-                    >
-                      Bilingual Rule (No. 1-1/FBISE/RES/2026/370):{" "}
-                      {activeCurriculum.fbiseSchemeMeta.bilingualPolicy.applies
-                        ? `Applies (${activeCurriculum.fbiseSchemeMeta.bilingualPolicy.effectiveExam})`
-                        : activeCurriculum.fbiseSchemeMeta.bilingualPolicy.note}
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Class Selector */}
@@ -681,15 +647,11 @@ export function MockTestSetupHub({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {curriculaForGrade.map((cur) => {
-                  const profile = getSubjectReadinessProfile(cur, RAW_QUESTION_BANK);
+                  const inv = getSubjectPoolInventory(cur.system, cur.grade, cur.subjectId);
                   const bp = getBlueprintForSubject(cur.system, cur.grade, cur.subjectId);
+                  const bpStat = bp ? validateBlueprintAndPool(bp, RAW_QUESTION_BANK) : null;
                   const isSelected = cur.subjectId === effectiveSubjectId;
-                  const policyShort =
-                    cur.syllabusPolicy === "full_syllabus_no_alp"
-                      ? "Full syllabus (No ALP)"
-                      : cur.syllabusPolicy === "slo_national_curriculum"
-                        ? "SLO Scheme"
-                        : "ALP filtered";
+                  const isUnavailable = cur.verificationStatus === "unavailable";
 
                   return (
                     <button
@@ -700,42 +662,39 @@ export function MockTestSetupHub({
                         isSelected
                           ? "border-[#FFD60A] bg-[#FFD60A]/10"
                           : "border-white/10 bg-black/35 hover:border-white/25"
-                      } ${!profile.practiceAvailable ? "opacity-85" : ""}`}
+                      } ${isUnavailable ? "opacity-75" : ""}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="font-heading text-sm font-bold text-white leading-snug">
                           {cur.subjectName}
                         </div>
-                        {profile.boardSimulationReady ? (
+                        {isUnavailable ? (
+                          <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+                            Unavailable
+                          </span>
+                        ) : bpStat?.isSimulationReady ? (
                           <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-[#FFD60A]">
                             Full Sim Ready
                           </span>
-                        ) : profile.practiceAvailable ? (
-                          <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-emerald-400">
-                            Practice Open
-                          </span>
-                        ) : cur.curriculumStatus === "verified" ? (
-                          <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-sky-300">
-                            Curriculum Ready
+                        ) : cur.verificationStatus === "provisional" ? (
+                          <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-amber-400">
+                            Provisional
                           </span>
                         ) : (
-                          <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-zinc-400">
-                            Pending
+                          <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-emerald-400">
+                            Practice Open
                           </span>
                         )}
                       </div>
 
                       <div className="text-[11px] font-mono text-zinc-400 leading-relaxed tabular-nums">
-                        {profile.practiceAvailable ? (
-                          <span>
-                            {profile.verifiedEligibleCount} verified Qs
-                            {bp ? ` · ${bp.totalMarks}m board spec` : ""}
-                            {` · ${policyShort}`}
-                          </span>
+                        {isUnavailable ? (
+                          <span>0 verified items · Content expansion pending</span>
                         ) : (
                           <span>
-                            {policyShort} · 0 verified Qs
-                            {profile.outdatedCount > 0 ? ` (${profile.outdatedCount} legacy quarantined)` : ""}
+                            {inv.verifiedEligibleCount} verified questions
+                            {bp ? ` · ${bp.totalMarks}m board spec` : ""}
+                            {cur.alpApplied ? " · ALP filtered" : " · Full syllabus"}
                           </span>
                         )}
                       </div>
@@ -884,21 +843,9 @@ export function MockTestSetupHub({
                       not counted toward marks). Pause is disabled during official simulation.
                     </p>
                     {blueprint && (
-                      <div className="text-xs font-mono text-zinc-400 pt-1 space-y-1">
-                        <div>
-                          Paper Spec: {blueprint.sourceDocumentRef} · {blueprint.totalMarks} Marks ·{" "}
-                          {blueprint.durationMinutes} min
-                          {typeof blueprint.objectiveTimeMinutes === "number" &&
-                          typeof blueprint.subjectiveTimeMinutes === "number"
-                            ? ` (${blueprint.objectiveTimeMinutes}m Objective + ${blueprint.subjectiveTimeMinutes}m Subjective)`
-                            : ""}{" "}
-                          · Pass {blueprint.passingPercentage}% (IBCC rule)
-                        </div>
-                        {blueprint.timingBreakdownNote && (
-                          <div className="text-[11px] text-zinc-500">
-                            {blueprint.timingBreakdownNote}
-                          </div>
-                        )}
+                      <div className="text-xs font-mono text-zinc-400 pt-1">
+                        Paper Spec: {blueprint.sourceDocumentRef} · {blueprint.totalMarks} Marks ·{" "}
+                        {blueprint.durationMinutes} min · Pass {blueprint.passingPercentage}% (IBCC rule)
                       </div>
                     )}
                   </div>
@@ -1176,7 +1123,7 @@ export function MockTestSetupHub({
                 <button
                   type="button"
                   disabled={
-                    !activeReadiness?.practiceAvailable ||
+                    activeCurriculum?.verificationStatus === "unavailable" ||
                     (selectedMode === "board_simulation" &&
                       Boolean(blueprintStatus && !blueprintStatus.isSimulationReady))
                   }
@@ -1217,48 +1164,15 @@ export function MockTestSetupHub({
                   <h2 className="font-heading text-lg font-bold text-white mt-0.5">
                     {activeCurriculum?.subjectName ?? "Select Subject"} · Class {grade}
                   </h2>
-                  {activeReadiness && (
-                    <p className="font-mono text-[11px] text-[#FFD60A] mt-1">
-                      {activeReadiness.summaryBadge}
-                    </p>
-                  )}
                 </div>
-                {!activeReadiness?.practiceAvailable ? (
-                  <XCircle className="h-5 w-5 text-zinc-400 shrink-0" />
+                {activeCurriculum?.verificationStatus === "unavailable" ? (
+                  <XCircle className="h-5 w-5 text-zinc-500 shrink-0" />
                 ) : blueprintStatus?.isSimulationReady ? (
                   <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
                 ) : (
                   <FileCheck2 className="h-5 w-5 text-[#FFD60A] shrink-0" />
                 )}
               </div>
-
-              {activeCurriculum && (
-                <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-1 text-[11px]">
-                  <div className="font-mono text-zinc-300">
-                    Syllabus Policy:{" "}
-                    <span className="text-white">
-                      {activeCurriculum.syllabusPolicy === "full_syllabus_no_alp"
-                        ? "Full Syllabus (No ALP Exclusions)"
-                        : activeCurriculum.syllabusPolicy === "slo_national_curriculum"
-                          ? "FBISE National Curriculum SLO"
-                          : "PECTAA 2026–27 Reduced ALP"}
-                    </span>
-                  </div>
-                  <div className="font-mono text-zinc-400">
-                    Textbook: {activeCurriculum.textbookRef}
-                  </div>
-                  {activeCurriculum.alpExclusionsSummary && (
-                    <div className="font-mono text-zinc-400">
-                      Exclusions: {activeCurriculum.alpExclusionsSummary}
-                    </div>
-                  )}
-                  {(activeReadiness?.outdatedCount ?? 0) > 0 && (
-                    <div className="font-mono text-amber-300">
-                      Legacy Quarantine: {activeReadiness?.outdatedCount} outdated legacy items isolated from live testing.
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Honest Pool Metrics */}
               <div className="grid grid-cols-3 gap-2.5 text-center">
@@ -1351,10 +1265,10 @@ export function MockTestSetupHub({
                 </div>
               ) : (
                 <div className="rounded-xl border border-white/10 bg-black/35 p-4 text-xs text-zinc-400 leading-relaxed">
-                  {!activeReadiness?.practiceAvailable ? (
+                  {activeCurriculum?.verificationStatus === "unavailable" ? (
                     <p>
-                      <strong className="text-zinc-200">{activeReadiness?.summaryBadge ?? "Testing Pending"}:</strong>{" "}
-                      {activeReadiness?.statusDetail ?? activeCurriculum?.verificationNote}
+                      <strong className="text-zinc-200">Unavailable for testing:</strong>{" "}
+                      {activeCurriculum.verificationNote}
                     </p>
                   ) : (
                     <p>
@@ -1371,17 +1285,14 @@ export function MockTestSetupHub({
               {/* Ready Simulations Callout */}
               <div className="rounded-xl border border-white/10 bg-black/30 p-3.5 space-y-1.5 text-[11px] text-zinc-400">
                 <p className="font-mono uppercase tracking-wider text-zinc-300">
-                  Live Assessment Availability Audit:
+                  Full Official Board Simulations Ready Now:
                 </p>
                 <ul className="space-y-1 text-zinc-300">
                   <li>
-                    • <strong className="text-emerald-300">Full Board Sim Ready:</strong> FBISE
-                    Islamabad · Class 9 · Physics SLO Model Paper (65 Marks, 3h · 31 verified items)
+                    • Punjab Boards · Class 10 · Computer Science &amp; Entrepreneurship (50 Marks, 2h)
                   </li>
                   <li>
-                    • <strong className="text-[#FFD60A]">Practice Open (2027 Book):</strong> Punjab
-                    Boards · Class 9 &amp; 10 CS &amp; Entrepreneurship (Python/OS/AI pool; legacy C
-                    bank quarantined)
+                    • FBISE Islamabad · Class 9 · Physics SLO Model Paper (65 Marks, 3h)
                   </li>
                 </ul>
               </div>
